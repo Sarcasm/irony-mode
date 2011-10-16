@@ -8,6 +8,6 @@ It's not aimed to run on another machine than mine for the moment.
 
 Screenshots
 ===========
-![Optional Parameters](screenshots/optional-parameters.png)
+![Optional Parameters](./irony-mode/raw/master/screenshots/optional-parameters.png)
 
-![Boost](screenshots/boost-example.png)
+![Boost](./irony-mode/raw/master/screenshots/boost-example.png)
