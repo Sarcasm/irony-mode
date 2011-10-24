@@ -338,7 +338,8 @@ associated to the buffer if any."
     (when (zerop (setq irony-num-requests (1- irony-num-requests)))
       (let ((temp-file (irony-temp-filename)))
         (if (file-exists-p temp-file)
-            (delete-file temp-file nil))))))
+            ;; (delete-file temp-file nil)))))) ;;New in Emacs 24
+            (delete-file temp-file))))))
 
 (defun irony-buffer-identifier (&optional buffer)
   "Get the expanded buffer filename if any. If there is no
