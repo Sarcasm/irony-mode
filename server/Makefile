@@ -20,7 +20,8 @@ OBJS = $(SRCS:%.cpp=%.o)
 INCLUDES += -I. -I../utils -I.. -I$(JSON_INCLUDES_DIR)
 
 CXXFLAGS += -Wall -Wextra -Wshadow -Wpointer-arith $(INCLUDES)
-LDFLAGS = -L.. -lutils -lclang
+LLVM_LIB := -L /usr/lib/llvm # Arch Linux see /etc/ld.so.conf.d/llvm.conf
+LDFLAGS += -L.. -lutils -lclang $(LLVM_LIB)
 DEBUG = -ggdb3
 
 # Others
