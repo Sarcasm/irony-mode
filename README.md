@@ -1,12 +1,7 @@
 Status
 ======
 
-Work in progress.
-
-Note
-====
-
-It's not aimed to run on another machine than mine for the moment.
+Work in progress...
 
 Compilation
 ===========
@@ -21,6 +16,7 @@ Emacs configuration
 ===================
 
 Assuming:
+
 * [my fork](https://github.com/Sarcasm/auto-complete/) of
   [Auto Complete Mode](http://cx4a.org/software/auto-complete/)
 * [YASnippet](http://code.google.com/p/yasnippet/)
@@ -33,11 +29,11 @@ lot for package management in Emacs (see
 Copy and paste in the \*scratch\* buffer:
 
 ~~~~~ lisp
-    (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
-    (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/"))
-    (require 'irony)
-    (irony-enable '(ac eproject))
-    (add-hook 'c++-mode-hook 'irony-mode)
+ (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
+ (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/"))
+ (require 'irony)
+ (irony-enable '(ac eproject))
+ (add-hook 'c++-mode-hook 'irony-mode)
 ~~~~~
 
 Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto completions.
