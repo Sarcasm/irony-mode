@@ -1,0 +1,48 @@
+* TODO Extract compiler flags from make
+  [[http://www.gnu.org/s/make/][Make]] (GNUMake only ?) have some flags that allow to print command
+  but not run them.
+
+  This can probably be handy for project that use Makefile written by
+  hand or generated with cmake, qmake.
+
+  Exemple of usage (in a directory with a Makefile):
+  #+begin_example
+    sarcasm ~/server > make  -n
+    g++ -Wall -Wextra -Wshadow -Wpointer-arith -I. -I../utils -I.. -I../utils/SimpleJSON/src -o Server.o -c Server.cpp
+    g++ -Wall -Wextra -Wshadow -Wpointer-arith -I. -I../utils -I.. -I../utils/SimpleJSON/src -o TUManager.o -c TUManager.cpp
+    g++ -Wall -Wextra -Wshadow -Wpointer-arith -I. -I../utils -I.. -I../utils/SimpleJSON/src -o main.o -c main.cpp
+    g++ -Wall -Wextra -Wshadow -Wpointer-arith -I. -I../utils -I.. -I../utils/SimpleJSON/src -o plugins/SyntaxChecker.o -c plugins/SyntaxChecker.cpp
+    g++ -Wall -Wextra -Wshadow -Wpointer-arith -I. -I../utils -I.. -I../utils/SimpleJSON/src -o plugins/CodeCompletion.o -c plugins/CodeCompletion.cpp
+    g++ -o ../irony-server Server.o TUManager.o main.o plugins/SyntaxChecker.o plugins/CodeCompletion.o -L.. -lutils -lclang -L /usr/lib/llvm
+    sarcasm ~/server >
+  #+end_example
+
+  In a first check of the make manual there intersting options could
+  be:
+  - =-n, --just-print, --dry-run, --recon= :: Print the commands that
+    would be executed, but do not execute them (except in certain
+    circumstances).
+  - =-w, --print-directory= :: Print a message containing the working
+       directory before and after other processing. This may be useful
+       for tracking down errors from com‐ plicated nests of recursive
+       make commands.
+  - =-W file, --what-if=file, --new-file=file, --assume-new=file= ::
+       Pretend that the target file has just been modified. When used
+       with the -n flag, this shows you what would happen if you were
+       to modify that file. Without -n, it is almost the same as
+       running a touch command on the given file before running make,
+       except that the modifica‐ tion time is changed only in the
+       imagination of make.
+
+  I saw something like that: [[https://github.com/jessevdk/gedit-code-assistance/blob/master/src/gcp-c-compile-args.vala][here]]. They keep only interesting flags:
+
+  #+begin_example
+    /* Keep only those flags that are interesting:
+     * -I...: include directories
+     * -D...: defines
+     * -W...: warnings
+     * -f...: compiler flags
+     */
+  #+end_example
+
+  Maybe some tools like [[http://www.scons.org/][SCons]] can be used the same way.
