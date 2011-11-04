@@ -5,6 +5,8 @@
  *
  * \brief  See TUManager.hh
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 

@@ -5,6 +5,8 @@
  *
  * \brief  Completion plugin implementation.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 

@@ -5,6 +5,9 @@
  *
  * @brief  Shared libraries handling.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ *
  */
 
 #ifndef _PLUGINLOADER_HPP_

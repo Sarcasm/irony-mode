@@ -8,6 +8,9 @@
  * \note: Compilation need the following flag for the linker:
  *      \verbatim LDFLAGS += -ldl \endverbatim .
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ *
  */
 
 #ifndef _UTILS_DLLOADER_HH_

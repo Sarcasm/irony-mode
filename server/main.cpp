@@ -6,6 +6,9 @@
  * \brief  File containing the main() functin (application entry
  *         point).
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ *
  */
 
 #include <iostream>

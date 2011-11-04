@@ -7,6 +7,8 @@
  *         translation unit will be reparsed but not re-created if
  *         possible, etc.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  */
 
 #ifndef _IRONY_SERVER_TUMANAGER_HH_

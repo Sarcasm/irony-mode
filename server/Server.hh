@@ -5,6 +5,8 @@
  *
  * \brief  Server class definition (Unix Domain Socket).
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 

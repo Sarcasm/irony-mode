@@ -1,3 +1,7 @@
+#
+# This file is distributed under the GNU General Public License. See
+# COPYING for details.
+#
 # General configuration settings
 
 LIBNAME = libutils.a

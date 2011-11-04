@@ -5,6 +5,8 @@
  *
  * @brief  Convert a given value to it's string representation.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 

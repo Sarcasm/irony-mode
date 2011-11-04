@@ -5,6 +5,8 @@
  *
  * \brief  Plugin interface for CC Enhanced mode.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 

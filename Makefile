@@ -1,3 +1,8 @@
+#
+# This file is distributed under the GNU General Public License. See
+# COPYING for details.
+#
+
 SUBDIRS = server utils
 
 # This should be use only during the development process

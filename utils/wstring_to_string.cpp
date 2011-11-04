@@ -5,6 +5,8 @@
  *
  * \brief  wstring_to_string implementation.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 
