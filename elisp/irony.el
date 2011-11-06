@@ -26,7 +26,7 @@
 ;;
 ;; TODO:
 ;; - explain `irony-mode' in details.
-;; - checkdoc
+;; - checkdoc ?
 ;;
 
 ;;; Usage:
@@ -39,10 +39,13 @@
   (require 'cc-defs)                    ;for `c-save-buffer-state'
   (require 'cl))
 
+;; TODO: Need to be context sensitive, this is just an example.
+(defvar blacklist-kind '(:Destructor))
+
 (defgroup irony nil
   "C based language comprehension, completion, syntax checking
 and more."
-  :version "24.0"
+  :version "23.3"
   :group 'c)
 
 (defcustom irony-header-directories nil
@@ -175,8 +178,9 @@ likely) completions."
 (defconst irony-output-type-dispatching
   ;; '((:completion      . irony-completion-function)
   ;;   (:syntax-checking . irony-syntax-checking-function)))
-  '((:completion      . irony-handle-completion)
-    (:syntax-checking . irony-handle-syntax-check))
+  '((:completion        . irony-handle-completion)
+    (:completion-simple . irony-handle-completion-simple)
+    (:syntax-checking   . irony-handle-syntax-check))
   "Alist of known request type associated to their handler.")
 
 (defconst irony-eot "\n;;EOT\n"
@@ -524,35 +528,34 @@ modules that respect the following contract:
   "Handle a completion request from the irony process,
 actually because the code completion is not 'asynchronous' this
 function only set the variable `irony-last-completion'."
-  (setq irony-last-completion data))
+  (setq irony-last-completion (cons :detailed data)))
 
-(defun irony-complete-detailed (&optional pos)
-  "Return a detailed list of completion available at POS."
-  ;; FIXME: explain what a detailed result is.
+(defun irony-handle-completion-simple (data)
+  "See `irony-handle-completion'."
+  (setq irony-last-completion (cons :simple data)))
+
+(defun irony-complete (kind &optional pos)
+  "Return a list of completions available at POS. The completion
+KIND can be either :detailed or :simple."
   (let* ((location (irony-point-location (or pos (point))))
          (request-data (list (cons :file (irony-temp-filename))
                              (cons :flags (irony-get-flags))
                              (cons :line (car location))
                              (cons :column (cdr location)))))
     (setq irony-last-completion nil)
-    (irony-send-request :complete request-data (current-buffer)))
-  (loop with answer = (irony-wait-request-answer 'irony-last-completion)
-        for result in (plist-get answer :results)
+    (irony-send-request (if (eq kind :detailed)
+                            :complete
+                          :complete-simple)
+                        request-data
+                        (current-buffer)))
+  (loop with answer = (cdr (irony-wait-request-answer 'irony-last-completion))
+        for completion-cell in (plist-get answer :results)
+        for kind = (car completion-cell)
+        for result = (cdr completion-cell)
         for priority = (or (plist-get result :priority) irony-priority-limit)
-        when (< priority irony-priority-limit) collect result))
-
-(defsubst irony-completion-result-typed-text (result)
-  "Get the :typed-text part of a completion RESULT."
-  (cdr-safe (assoc :typed-text (plist-get result :result))))
-
-(defun irony-complete-simple (&optional pos)
-  "Return a list of completion string available at POS (point by
-default)."
-  (interactive)
-  (loop for result in (irony-complete-detailed pos)
-        for typed-text = (irony-completion-result-typed-text result)
-        collect typed-text into completions
-        finally return (delete-dups completions)))
+        when (and (< priority irony-priority-limit)
+                  (not (memq kind blacklist-kind)))
+        collect result))
 
 (defun irony-get-completion-point ()
   "Return the point where the completion should start from the

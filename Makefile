@@ -6,7 +6,7 @@
 SUBDIRS = server utils
 
 # This should be use only during the development process
-.DEFAULT_GOAL = debug
+.DEFAULT_GOAL = all # debug
 
 # The makefile rule
 RULE =

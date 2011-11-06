@@ -22,7 +22,7 @@
 
 ;; `irony-mode' sources for `auto-complete'. The completion strings
 ;; provided are simple (use the completion provided by
-;; `irony-complete-simple', see function documentation for more
+;; `irony-complete', see function documentation for more
 ;; information).
 
 ;;; Usage:
@@ -104,7 +104,10 @@ completion results."
   "Generate candidates for `auto-complete' (a list of strings).
 POS is the position of the beginning of the completion in the
 current buffer."
-  (irony-complete-simple pos))
+  (delete-dups
+   (mapcar (lambda (result)
+             (plist-get result :result))
+           (irony-complete :simple pos))))
 
 (provide 'irony-ac-simple)
 ;;; irony-ac-simple.el ends here

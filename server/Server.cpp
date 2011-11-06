@@ -37,7 +37,8 @@ const std::map<std::string, IPlugin *> generateBundlePlugins()
 {
   const std::pair<std::string, IPlugin*> plugins[] =
     {
-      std::make_pair("complete", new CodeCompletion()),
+      std::make_pair("complete", new CodeCompletion(true)),
+      std::make_pair("complete-simple", new CodeCompletion(false)),
       std::make_pair("syntax-check", new SyntaxChecker())
     };
   return make_container(plugins);

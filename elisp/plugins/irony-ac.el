@@ -22,8 +22,7 @@
 
 ;; `irony-mode' sources for `auto-complete'. Information displayed in
 ;; the completion try to be detailed (use the completion provided by
-;; `irony-complete-detailed', see function documentation for more
-;; information).
+;; `irony-complete', see function documentation for more information).
 ;;
 ;; The functionalities provided are:
 ;; - functions with optional parameters are distinguished in order to
@@ -147,7 +146,7 @@ current buffer."
   ;; FIXME: should results be sorted by priority ?
   (loop with window-width = (- (window-width) (popup-current-physical-column))
         with show-priority = irony-ac-show-priority
-        for result-plist in (irony-complete-detailed pos)
+        for result-plist in (irony-complete :detailed pos)
         for result = (plist-get result-plist :result)
         for priority = (if show-priority (plist-get result-plist :priority))
         if (plist-get result-plist :optional)

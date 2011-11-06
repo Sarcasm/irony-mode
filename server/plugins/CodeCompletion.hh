@@ -25,8 +25,20 @@
  */
 class CodeCompletion : public IPlugin
 {
+private:
+  bool detailedCompletions_;
+
 public:
-  CodeCompletion();
+  /**
+   *
+   * \param detailedCompletions If \c false only
+   *                            \c CXCompletionChunk_TypedText will be
+   *                            present in the completion result
+   *                            (unlike a list of cons cells).
+   *
+   * \return
+   */
+  CodeCompletion(bool detailedCompletions);
   virtual ~CodeCompletion();
 
   /**
@@ -66,6 +78,15 @@ private:
                 unsigned            line,
                 unsigned            column,
                 std::string &       buf);
+
+  /**
+   * Format a cursor kind to a keyword symbol.
+   *
+   * \param cursorKind
+   * \param buf         The string where the keyword symbol should be
+   *                    added.
+   */
+  void formatCompletionCursorKind(CXCursorKind cursorKind, std::string & buf);
 
   /**
    * Format the completion string \p completionString into the buffer
