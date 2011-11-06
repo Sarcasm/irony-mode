@@ -28,9 +28,11 @@ lot for package management in Emacs (see
 
 Copy and paste in the \*scratch\* buffer:
 
-~~~~~ lisp
+~~~~~ el
  (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
  (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/"))
+ (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/posn-on-screen"))
+ (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/popup-frame"))
  (require 'irony)
  (irony-enable '(ac eproject))
  (add-hook 'c++-mode-hook 'irony-mode)
