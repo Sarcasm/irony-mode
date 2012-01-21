@@ -11,12 +11,15 @@ Download with `git` >= 1.6.5 and later
 
 Download with `Git` < 1.6.5
 
+    git clone git://github.com/Sarcasm/irony-mode.git
     git submodule update --init
 
 Finally:
 
     cd irony-mode
-    mkdir build && cd build && cmake .. && make && make install
+    mkdir -p build && cd build
+    cmake .. && make -j 4
+    make install
 
 # Emacs configuration
 
@@ -43,7 +46,8 @@ Copy and paste in the \*scratch\* buffer:
  (add-hook 'c++-mode-hook 'irony-mode)
 ~~~~~
 
-Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto completions.
+Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto
+completion feature.
 
 
 # Screenshots
