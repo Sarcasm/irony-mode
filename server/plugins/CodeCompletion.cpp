@@ -10,14 +10,14 @@
  *
  */
 
-#include "CodeCompletion.hh"
+#include "CodeCompletion.h"
 
 #include <iostream>
 #include <cstddef>
 #include <string>
 
-#include "to_string.hpp"
-#include "utility.hpp"
+#include "str/to_string.hpp"
+#include "util/arraysize.hpp"
 
 CodeCompletion::CodeCompletion(bool detailedCompletions)
   : detailedCompletions_(detailedCompletions)
@@ -247,7 +247,7 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
   bool hasOptional = false;
 
   buf += "(:priority ";
-  buf += to_string<unsigned>(clang_getCompletionPriority(completionString));
+  buf += str::to_string<unsigned>(clang_getCompletionPriority(completionString));
   buf += " :result ";
 
   if (detailedCompletions_)

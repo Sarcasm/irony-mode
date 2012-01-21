@@ -10,6 +10,8 @@
  *
  */
 
+#include "Server.h"
+
 #include <iostream>
 #include <string>
 
@@ -17,15 +19,12 @@
 #include <cstdio>
 #include <cerrno>
 
-#include "utility.hpp"
-#include "wstring_to_string.hh"
-#include "array_to_container.hpp"
-
-#include "Server.hh"
+#include "util/arraysize.hpp"
+#include "str/wstring_to_string.h"
 
 // List of plugins
-#include "plugins/CodeCompletion.hh"
-#include "plugins/SyntaxChecker.hh"
+#include "plugins/CodeCompletion.h"
+#include "plugins/SyntaxChecker.h"
 
 namespace {
 /// An empty line with EOT
@@ -41,7 +40,7 @@ const std::map<std::string, IPlugin *> generateBundlePlugins()
       std::make_pair("complete-simple", new CodeCompletion(false)),
       std::make_pair("syntax-check", new SyntaxChecker())
     };
-  return make_container(plugins);
+  return std::map<std::string, IPlugin *>(plugins, plugins + arraysize(plugins));
 }
 } // !namespace
 

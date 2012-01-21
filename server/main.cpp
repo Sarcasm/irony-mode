@@ -16,21 +16,21 @@
 
 #include <iomanip>
 
-#include "Server.hh"
+#include "Server.h"
 
 /**
- * Entry point of the server, options are available mainly for debug.
+ * \brief Entry point of the server, options are available mainly for
+ *        debug.
  *
- * \param argc Number of arguments in the command line
- * \param argv Command line arguments
+ * \param argc
+ *              Number of arguments in the command line.
+ * \param argv
+ *              Command line arguments.
  *
  * \return 0 on success 1 on failure.
  */
-int	main(int argc, char *argv[])
+int	main()
 {
-  (void) argc;
-  (void) argv;
-
   // Required for wstring
   setlocale(LC_CTYPE, "");
 

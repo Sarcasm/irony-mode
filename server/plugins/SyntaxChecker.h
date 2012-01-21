@@ -1,35 +1,38 @@
 /**
- * \file   SyntaxChecker.hh
+ * \file   SyntaxChecker.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Wed Aug 24 13:52:10 2011
  *
- * \brief  Syntax checker plugin definition.
+ * \brief  Syntax checker plugin declaration.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
  *
  */
 
-#ifndef _IRONY_SERVER_SYNTAXCHECKER_HH_
-#define _IRONY_SERVER_SYNTAXCHECKER_HH_
+#ifndef IRONY_MODE_SERVER_PLUGINS_SYNTAXCHECKER_H_
+#define IRONY_MODE_SERVER_PLUGINS_SYNTAXCHECKER_H_
 
-#include "clang-c/Index.h"
+#include "IPlugin.h"
 
-#include "IPlugin.hh"
+#include <clang-c/Index.h>
+
+#include "util/NonCopyable.h"
 
 /**
- * A syntax checking plugin, give informations about the translation
- * unit parsing. Errors found, possible fix, etc.
+ * \brief A syntax checking plugin, give informations about the
+ *        translation unit parsing. Errors found, possible fix, etc.
  *
  */
-class SyntaxChecker : public IPlugin
+class SyntaxChecker : public IPlugin,
+                      public util::NonCopyable
 {
 public:
   SyntaxChecker();
   virtual ~SyntaxChecker();
 
   /**
-   * Execute a "check syntax" request.
+   * \brief Execute a "check syntax" request.
    *
    * \see \c IPlugin.
    *
@@ -43,8 +46,8 @@ public:
 
 private:
   /**
-   * Format the Clang diagnostic \p diagnostic into an Emacs Lisp
-   * object written in \p buf.
+   * \brief Format the Clang diagnostic \p diagnostic into an Emacs
+   *        Lisp object written in \p buf.
    *
    * \param diagnostic  The diagnostic to format.
    * \param [out] buf   The buffer where the diagnostic should be
@@ -54,8 +57,8 @@ private:
                         std::string &        buf);
 
   /**
-   * Format the source location \p location into an Emacs Lisp
-   * expression of the following form:
+   * \brief Format the source location \p location into an Emacs Lisp
+   *        expression of the following form:
    *
    * \code
    * ;; ("filename" offset (line . column))
@@ -77,7 +80,7 @@ private:
                             std::string &            buf);
 
   /**
-   * Format a range, a range is a cons of 2 sources locations.
+   * \brief Format a range, a range is a cons of 2 sources locations.
    *
    * \code
    * (("/bar.cpp" 27 (3 . 1)) . ("/bar.cpp" 29 (3 . 2)))
@@ -90,7 +93,9 @@ private:
                          std::string &         buf);
 
   /**
-   * Format diagnostic fix-it hints. Fix-its hints is a list of cons.
+   * \brief Format diagnostic fix-it hints. Fix-its hints is a list of
+   *        cons.
+   *
    * The cons is of the form:
    *
    * \code
@@ -102,9 +107,6 @@ private:
    */
   void formatFitItHints(const CXDiagnostic & diagnostic,
                         std::string &        buf);
-
-  SyntaxChecker(SyntaxChecker const &);
-  SyntaxChecker& operator=(SyntaxChecker const &);
 };
 
-#endif /* !_IRONY_SERVER_SYNTAXCHECKER_HH_ */
+#endif /* !IRONY_MODE_SERVER_PLUGINS_SYNTAXCHECKER_H_ */

@@ -46,3 +46,12 @@
   #+end_example
 
   Maybe some tools like [[http://www.scons.org/][SCons]] can be used the same way.
+
+* TODO Write only from the beginning of the file to completion point
+* TODO A cmake generator
+  [[www.cmake.org/][CMake]] is an open source software that allow project file generation.
+  A module that generate a file for Emacs (an Elisp data file) could
+  be a good idea to easily build, find the compilation flags, etc.
+
+  See the cmake git documentation to get the source code of cmake.
+  - http://www.cmake.org/Wiki/CMake/Git/Download

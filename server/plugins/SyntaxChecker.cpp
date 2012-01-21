@@ -10,11 +10,11 @@
  *
  */
 
-#include "SyntaxChecker.hh"
+#include "plugins/SyntaxChecker.h"
 
 #include <iostream>
 
-#include "to_string.hpp"
+#include "str/to_string.hpp"
 
 SyntaxChecker::SyntaxChecker()
 { }
@@ -171,10 +171,10 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
 
 
   // ("filename" offset (line . column))
-  buf.append("(\"").append(clang_getCString(filename))     // filename
-    .append("\" ").append(to_string(offset))               // offset
-    .append(" (").append(to_string(line))                  // line
-    .append(" . ").append(to_string(column)).append("))"); // column
+  buf.append("(\"").append(clang_getCString(filename)) // filename
+    .append("\" ").append(str::to_string(offset))      // offset
+    .append(" (").append(str::to_string(line))         // line
+    .append(" . ").append(str::to_string(column)).append("))"); // column
 
   clang_disposeString(filename);
 }

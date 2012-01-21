@@ -1,5 +1,5 @@
 /**
- * \file   Server.hh
+ * \file   Server.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Tue Jul 19 14:18:24 2011
  *
@@ -10,33 +10,33 @@
  *
  */
 
-#ifndef _IRONY_SERVER_SERVER_HH_
-#define _IRONY_SERVER_SERVER_HH_
+#ifndef IRONY_MODE_SERVER_SERVER_H_
+#define IRONY_MODE_SERVER_SERVER_H_
 
 #include "clang-c/Index.h"
 
-#include "JSONObjectWrapper.hh"
+#include "util/JSONObjectWrapper.h"
+#include "util/NonCopyable.h"
 
-#include "TUManager.hh"
-#include "IPlugin.hh"
+#include "TUManager.h"
+#include "IPlugin.h"
 
-class Server
+class Server : public util::NonCopyable
 {
 private:
-  TUManager                        TUManager_; /**< Translation unit
-                                                  manager */
-  std::map<std::string, IPlugin *> plugins_;  /**< map of plugins, the
-                                                 string is the
-                                                 "request" the plugin
-                                                 handle */
+  TUManager                        TUManager_;
+  /**
+   * Map of plugins, the string is the "request" the plugin handle.
+   */
+  std::map<std::string, IPlugin *> plugins_;
 
 public:
   Server();
   ~Server();
 
   /**
-   * Run the server, loop for input and process each command received
-   * in the standard input.
+   * \brief Run the server, loop for input and process each command
+   *        received in the standard input.
    *
    * \return 0 on sucess (End of transmission received), on error a
    *         number greater than 0.
@@ -46,14 +46,15 @@ public:
 private:
 
   /**
-   * Parse the JSON buffer \p buf and proceed to the request.
+   * \brief Parse the JSON buffer \p buf and proceed to the request.
    *
    * \param buf A JSON string.
    */
   void parseJSONAndProceed(const std::string & buf);
 
 /**
- * Find a handler for the given \p request and process the request.
+ * \brief Find a handler for the given \p request and process the
+ *        request.
  *
  * \param request A string corresponding to a request (i.e.
  *                completion, error_checking, ...)
@@ -62,10 +63,6 @@ private:
   void handleRequest(const std::string &       request,
                      const JSONObjectWrapper & json,
                      const JSONObjectWrapper & data);
-
-private:
-  Server(Server const &);
-  Server& operator=(Server const &);
 };
 
-#endif /* !_IRONY_SERVER_SERVER_HH_ */
+#endif /* !IRONY_MODE_SERVER_SERVER_H_ */

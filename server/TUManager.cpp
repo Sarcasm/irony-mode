@@ -12,9 +12,9 @@
 
 #include <iostream>
 
-#include "TUManager.hh"
+#include "TUManager.h"
 
-#include "wstring_to_string.hh"
+#include "str/wstring_to_string.h"
 
 TUManager::TUManager()
   : index_(clang_createIndex(0, 0))

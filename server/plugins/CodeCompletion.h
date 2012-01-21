@@ -1,26 +1,28 @@
 /**
- * \file   CodeCompletion.hh
+ * \file   CodeCompletion.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Thu Jul 21 00:08:54 2011
  *
- * \brief  Completion plugin class definition.
+ * \brief  Completion plugin class declaration.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
  *
  */
 
-#ifndef _IRONY_SERVER_CODECOMPLETION_HH_
-#define _IRONY_SERVER_CODECOMPLETION_HH_
+#ifndef IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_
+#define IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_
 
+#include "IPlugin.h"
+
+#include <clang-c/Index.h>
 #include <string>
 
-#include "clang-c/Index.h"
+#include "util/NonCopyable.h"
 
-#include "IPlugin.hh"
 
 /**
- * A completion plugin, using the libclang completion features.
+ * \brief A completion plugin, using the libclang completion features.
  *
  */
 class CodeCompletion : public IPlugin
@@ -30,6 +32,7 @@ private:
 
 public:
   /**
+   * \brief Create a completion plugin.
    *
    * \param detailedCompletions If \c false only
    *                            \c CXCompletionChunk_TypedText will be
@@ -42,13 +45,14 @@ public:
   virtual ~CodeCompletion();
 
   /**
-   * Execute a completion request.
+   * \brief Execute a completion request.
    *
    * \see \c IPlugin.
    *
    * \param TUManager
    * \param data
-   * \param buf         A string describing the possible completions.
+   * \param buf
+   *            A string describing the possible completions.
    *
    */
   virtual std::string handleRequest(TUManager &               tuManager,
@@ -57,9 +61,10 @@ public:
 
 private:
   /**
-   * Execute a code completion at line \p line and column \p column in
-   * the file \p filename. The result of the completion should be
-   * added to the parameter \p buf.
+   * \brief Execute a code completion at line \p line and column \p
+   *        column in the file \p filename.
+   *
+   * The result of the completion is added to the parameter \p buf.
    *
    * \param tu          The translation unit of the file \p filename.
    * \param filename    The name of the file where the code completion
@@ -80,7 +85,7 @@ private:
                 std::string &       buf);
 
   /**
-   * Format a cursor kind to a keyword symbol.
+   * \brief Format a cursor kind to a keyword symbol.
    *
    * \param cursorKind
    * \param buf         The string where the keyword symbol should be
@@ -89,8 +94,8 @@ private:
   void formatCompletionCursorKind(CXCursorKind cursorKind, std::string & buf);
 
   /**
-   * Format the completion string \p completionString into the buffer
-   * \p buff in an Emacs Lisp structure.
+   * \brief Format the completion string \p completionString into the
+   *        buffer \p buff in an Emacs Lisp structure.
    *
    * \param completionString
    * \param buf
@@ -99,7 +104,8 @@ private:
                               std::string &        buf);
 
   /**
-   * Format if possible the given kind to a lisp keyword symbol.
+   * \brief Format if possible the given kind to a lisp keyword
+   *        symbol.
    *
    * \param kind The kind to format.
    * \param buf The buffer to append the text.
@@ -111,7 +117,7 @@ private:
                                   std::string &         buf);
 
   /**
-   * Add a result cons cell.
+   * \brief Add a result cons cell.
    *
    * The following cons is inserted in \p buf.
    * \verbatim
@@ -135,5 +141,4 @@ private:
   CodeCompletion& operator=(CodeCompletion const &);
 };
 
-
-#endif /* !_IRONY_SERVER_CODECOMPLETION_HH_ */
+#endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

@@ -1,5 +1,5 @@
 /**
- * \file   TUManager.hh
+ * \file   TUManager.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Tue Aug 23 23:39:33 2011
  *
@@ -11,19 +11,20 @@
  * COPYING for details.
  */
 
-#ifndef _IRONY_SERVER_TUMANAGER_HH_
-#define _IRONY_SERVER_TUMANAGER_HH_
+#ifndef IRONY_MODE_SERVER_TUMANAGER_H_
+#define IRONY_MODE_SERVER_TUMANAGER_H_
 
 #include "JSONValue.h"
 #include "JSON.h"
 
+#include "util/NonCopyable.h"
 #include "clang-c/Index.h"
 
 #include <map>
 #include <string>
 #include <vector>
 
-class TUManager
+class TUManager : public util::NonCopyable
 {
 private:
   CXIndex                                        index_;
@@ -34,8 +35,10 @@ public:
   virtual ~TUManager();
 
   /**
+   * \brief Parse \p filename with flag \p flags.
+   *
    * The first time call \c clang_parseTranslationUnit() and save the
-   * TU in the member \c translationUnits_, the next call with the
+   * TU in the member \c translationUnits_, The next call with the
    * same \p filename will call \c clang_reparseTranslationUnit().
    *
    * usage:
@@ -58,9 +61,11 @@ public:
                           const std::vector<std::string> & flags);
 
   /**
-   * Convert the JSONArray of string representing the compiler flags
-   * into a vector of strings. This is an utility function aimed to
-   * simplify the parsing of flags for the different plugins.
+   * \brief Convert the JSONArray of string representing the compiler
+   *        flags into a vector of strings.
+   *
+   * This is an utility function aimed to simplify the parsing of
+   * flags for the different plugins.
    *
    * \param flags The list of compiler flags (i.e. "-I../include",
    *              "-I.." ...).
@@ -68,10 +73,6 @@ public:
    * \return A vector of compiler flags (can be empty).
    */
   static std::vector<std::string> getFlags(const JSONValue * flags);
-
-private:
-  TUManager(TUManager const &);
-  TUManager& operator=(TUManager const &);
 };
 
-#endif /* !_IRONY_SERVER_TUMANAGER_HH_ */
+#endif /* !IRONY_MODE_SERVER_TUMANAGER_H_ */

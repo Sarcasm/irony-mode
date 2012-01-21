@@ -10,9 +10,9 @@
  *
  */
 
-#include "JSONObjectWrapper.hh"
+#include "util/JSONObjectWrapper.h"
 
-#include "wstring_to_string.hh"
+#include "str/wstring_to_string.h"
 
 JSONObjectWrapper::JSONObjectWrapper(JSONValue *value)
   : value_(value),
@@ -68,7 +68,7 @@ JSONObjectWrapper::Checker::operator std::wstring() const
 
 JSONObjectWrapper::Checker::operator std::string() const
 {
-  return wstring_to_string(this->operator std::wstring());
+  return str::wstring_to_string(this->operator std::wstring());
 }
 
 JSONObjectWrapper::Checker::operator std::vector<std::string>() const
@@ -95,7 +95,7 @@ JSONObjectWrapper::Checker::operator std::vector<std::string>() const
   std::vector<std::string> vect(ary.size());
 
   for (JSONArray::size_type i = 0, size = ary.size(); i < size; ++i)
-    vect[i] = wstring_to_string(ary[i]->AsString());
+    vect[i] = str::wstring_to_string(ary[i]->AsString());
 
   return vect;
 }

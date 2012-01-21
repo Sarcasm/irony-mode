@@ -1,19 +1,24 @@
-Status
-======
+# Status
 
 Work in progress...
 
-Compilation
-===========
 
-    git clone git@github.com:Sarcasm/irony-mode.git
-    cd irony-mode        
-    git submodule init
-    git submodule update
+# Download and compilation
+
+Download with `git` >= 1.6.5 and later
+
+    git clone --recursive git://github.com/foo/bar.git
+
+Download with `Git` < 1.6.5
+
+    git submodule update --init
+
+Finally:
+
     make
 
-Emacs configuration
-===================
+
+# Emacs configuration
 
 Assuming:
 
@@ -40,9 +45,23 @@ Copy and paste in the \*scratch\* buffer:
 
 Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto completions.
 
-Screenshots
-===========
+
+# Screenshots
 
 ![Optional Parameters](./irony-mode/raw/master/screenshots/optional-parameters.png)
 
 ![Boost](./irony-mode/raw/master/screenshots/boost-example.png)
+
+
+# Developpement conventions
+
+## File naming conventions
+
+For C++:
+
+* Templated functions and classes in file ending with the ".hpp"
+  extension
+* Functions and classes declaration in file ending with the ".h"
+  extension
+* Function and classes definitions in file ending with the ".cpp"
+  extension

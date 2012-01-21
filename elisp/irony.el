@@ -133,7 +133,7 @@ tested."
 (defcustom irony-server-executable (or (executable-find "irony-server")
                                        (let ((path (concat (file-name-directory
                                                             (locate-library "irony"))
-                                                           "../irony-server")))
+                                                           "../bin/irony-server")))
                                          (if (file-exists-p path)
                                              (expand-file-name path))))
   "The path where the \"irony-server\" executable can be found."
