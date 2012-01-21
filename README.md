@@ -7,7 +7,7 @@ Work in progress...
 
 Download with `git` >= 1.6.5 and later
 
-    git clone --recursive git://github.com/foo/bar.git
+    git clone --recursive git://github.com/Sarcasm/irony-mode.git
 
 Download with `Git` < 1.6.5
 
@@ -15,8 +15,8 @@ Download with `Git` < 1.6.5
 
 Finally:
 
-    make
-
+    cd irony-mode
+    mkdir build && cd build && cmake .. && make && make install
 
 # Emacs configuration
 
