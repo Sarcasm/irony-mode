@@ -39,7 +39,7 @@
 
 ;;; Code:
 
-(require 'irony)
+(require 'irony-completion)
 (require 'auto-complete)
 (require 'popup)
 (require 'yasnippet)

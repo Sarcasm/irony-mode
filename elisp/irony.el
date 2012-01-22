@@ -141,26 +141,13 @@ tested."
   :require 'irony
   :group 'irony)
 
+;;;###autoload
 (defcustom irony-mode-line " ⸮"
   "Text to display in the mode line (actually an irony mark) when
 irony mode is on."
   :type 'string
   :require 'irony
   :group 'irony)
-
-(defcustom irony-priority-limit 74
-  "The Clang priority threshold to keep a candidate in the
-completion list. Smaller values indicate higher-priority (more
-likely) completions."
-  :type 'integer
-  :require 'irony
-  :group 'irony)
-
-;; (defcustom irony-completion-function nil
-;;   "Function to call when new completion results are received."
-;;   :type 'function
-;;   :require 'irony
-;;   :group 'irony)
 
 ;; (defcustom irony-syntax-checking-function nil
 ;;   "Function to call when a syntax results are received."
@@ -175,13 +162,10 @@ likely) completions."
 (defvar irony-process nil
   "The current irony-server process.")
 
-(defconst irony-output-type-dispatching
-  ;; '((:completion      . irony-completion-function)
-  ;;   (:syntax-checking . irony-syntax-checking-function)))
-  '((:completion        . irony-handle-completion)
-    (:completion-simple . irony-handle-completion-simple)
-    (:syntax-checking   . irony-handle-syntax-check))
-  "Alist of known request type associated to their handler.")
+(defvar irony-request-mapping
+  '((:syntax-checking . irony-handle-syntax-check))
+  "Alist of known request types associated to their handler. New
+  server plugins must add their handlers in this list.")
 
 (defconst irony-eot "\n;;EOT\n"
   "The string sent by the server to finish the transmission of a
@@ -278,14 +262,11 @@ the value of the variable `irony-server-executable'."
     (when (memq status '(exit signal closed failed))
       (message "irony process stopped..."))))
 
-;; FIXME: search for one or MORE results in the response, for example
-;; a completion request can return syntax error informations found
-;; during the search of completion results.
 (defun irony-handle-output (process output)
   "Handle an output from the `irony-process'.
 
 If a complete response is present in the irony process buffer the
-variable `irony-output-type-dispatching' is used in order to find
+variable `irony-request-mapping' is used in order to find
 the action to do with the :type key in the request."
   ;; If with OUTPUT we get a complete answer, RESPONSE will be
   ;; non-nil.
@@ -314,7 +295,7 @@ the action to do with the :type key in the request."
              (type (plist-get sexp :type))
              (buffer-file (plist-get sexp :buffer))
              (buffer (if buffer-file (get-file-buffer buffer-file)))
-             (handler (cdr (assq type irony-output-type-dispatching))))
+             (handler (cdr (assq type irony-request-mapping))))
         (if buffer
             (irony-pop-request buffer))
         (if (null handler)
@@ -512,101 +493,6 @@ modules that respect the following contract:
 - defun irony-MODULE-NAME-disable"
   (dolist (module (if (listp modules) modules (list modules)))
     (funcall (intern (concat "irony-" (symbol-name module) "-disable")))))
-
-;; ! Irony utility functions
-
-
-;;
-;; Completions functions
-;;
-
-(defvar irony-last-completion nil
-  "If non nil contain the last completion answer received by the
-  server (internal variable).")
-
-(defun irony-handle-completion (data)
-  "Handle a completion request from the irony process,
-actually because the code completion is not 'asynchronous' this
-function only set the variable `irony-last-completion'."
-  (setq irony-last-completion (cons :detailed data)))
-
-(defun irony-handle-completion-simple (data)
-  "See `irony-handle-completion'."
-  (setq irony-last-completion (cons :simple data)))
-
-(defun irony-complete (kind &optional pos)
-  "Return a list of completions available at POS. The completion
-KIND can be either :detailed or :simple."
-  (let* ((location (irony-point-location (or pos (point))))
-         (request-data (list (cons :file (irony-temp-filename))
-                             (cons :flags (irony-get-flags))
-                             (cons :line (car location))
-                             (cons :column (cdr location)))))
-    (setq irony-last-completion nil)
-    (irony-send-request (if (eq kind :detailed)
-                            :complete
-                          :complete-simple)
-                        request-data
-                        (current-buffer)))
-  (loop with answer = (cdr (irony-wait-request-answer 'irony-last-completion))
-        for completion-cell in (plist-get answer :results)
-        for kind = (car completion-cell)
-        for result = (cdr completion-cell)
-        for priority = (or (plist-get result :priority) irony-priority-limit)
-        when (and (< priority irony-priority-limit)
-                  (not (memq kind blacklist-kind)))
-        collect result))
-
-(defun irony-get-completion-point ()
-  "Return the point where the completion should start from the
-current point. If no completion can be used in the current
-context return NIL.
-
-Note: This function try to return the point only in case where it
-seems to be interesting and not too slow to show the completion
-under point. If you want to have the completion *explicitly* you
-should use `irony-get-completion-point-anywhere'."
-  ;; Try different possibilities...
-  (or
-   ;; - Object member access: '.'
-   ;; - Pointer member access: '->'
-   ;; - Scope operator: '::'
-   (if (re-search-backward "\\(?:\\.\\|->\\|::\\)\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (let ((point (match-beginning 1)))
-         ;; fix floating number literals (the prefix tried to complete
-         ;; the following "3.[COMPLETE]")
-         (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
-           point)))
-   ;; Initialization list (use the syntactic informations partially
-   ;; stolen from `c-show-syntactic-information')
-   ;; A::A() : [complete], [complete]
-   (if (re-search-backward "[,:]\\s-*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (let* ((point (match-beginning 1))
-              (c-parsing-error nil)
-              (syntax (if (boundp 'c-syntactic-context)
-                          c-syntactic-context
-                        (c-save-buffer-state nil (c-guess-basic-syntax)))))
-         (if (or (assoc 'member-init-intro (c-guess-basic-syntax))
-                 (assoc 'member-init-cont (c-guess-basic-syntax)))
-             ;; Check if were are in an argument list
-             ;; without this when we have:
-             ;;  A::A() : foo(bar, []
-             ;; the completion is triggered.
-             (if (eq (car (syntax-ppss)) 0) ;see [[info:elisp#Parser State]]
-                 point))))
-   ;; switch/case statements, complete after the case
-   (if (re-search-backward "[ \n\t\v\r\f;{]case\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (match-beginning 1))))
-
-(defun irony-get-completion-point-anywhere ()
-  "Return the completion point for the current context, contrary
-to `irony-get-completion' a point will be returned every times."
-  (or
-   (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
-       (match-beginning 1))
-   (point)))
-
-;; ! Completion functions
 
 
 ;;

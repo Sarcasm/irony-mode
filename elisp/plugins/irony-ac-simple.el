@@ -35,7 +35,7 @@
 
 ;;; Code:
 
-(require 'irony)
+(require 'irony-completion)
 (require 'auto-complete)
 
 (defface irony-ac-simple-candidate-face
