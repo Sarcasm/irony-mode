@@ -390,11 +390,11 @@ the flag is set to a non nil value (probably the request datas).
 Once the symbol value is non nil it's value is returned."
   ;; Wait for the completion to be completed or the death of the
   ;; process (condition partially stolen from "network-stream.el".
-  ;; FIXME: Emacs can wait indefinitly in this loop if something is
-  ;; wrong with the request ?
-  (while (and (null (symbol-value sym))
-              (memq (process-status irony-process) '(open run)))
-    (accept-process-output irony-process 0.05))
+  (with-local-quit ;Otherwise we can enter in an infinite loop,
+                   ;without the possibility to exit
+    (while (and (null (symbol-value sym))
+                (memq (process-status irony-process) '(open run)))
+      (accept-process-output irony-process 0.05)))
   (symbol-value sym))
 
 (defun irony-get-flags (&optional buffer)
