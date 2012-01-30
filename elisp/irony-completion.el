@@ -31,7 +31,10 @@
 (require 'irony)
 
 (defcustom irony-completion-async-function nil
-  "Function to call when new completion results are received. The function "
+  "Function to call when new completion results are received. The
+function will be called with the point of completion, and the
+list of completion strings available (NO filtering is made to
+remove completion with non matching prefix)."
   :type 'function
   :require 'irony
   :group 'irony)
@@ -65,8 +68,9 @@ function only set the variable `irony-last-completion'."
   (setq irony-last-completion (cons :simple data)))
 
 (defun irony-complete (kind &optional pos)
-  "Return a list of completions available at POS. The completion
-KIND can be either :detailed or :simple."
+  "Return a list of completions available at POS (the current
+position if not given). The completion KIND can be
+either :detailed or :simple."
   (let* ((location (irony-point-location (or pos (point))))
          (request-data (list (cons :file (irony-temp-filename))
                              (cons :flags (irony-get-flags))
