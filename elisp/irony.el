@@ -27,6 +27,9 @@
 ;; TODO:
 ;; - explain `irony-mode' in details.
 ;; - checkdoc ?
+;; - when an irony-mode buffer is exited, inform the irony process ?
+;;   (change-major-mode-hook)
+;; - ...
 ;;
 
 ;;; Usage:
@@ -47,6 +50,14 @@
 and more."
   :version "23.3"
   :group 'c)
+
+(defcustom irony-compiler-executable
+  (or (executable-find "clang")
+      (executable-find "gcc"))
+  "Location of the compiler executable. Use Clang by default,
+otherwise try GCC."
+  :group 'irony
+  :type 'file)
 
 (defcustom irony-header-directories nil
   "Directories where header files can be found.
@@ -378,6 +389,12 @@ Once the symbol value is non nil it's value is returned."
       (accept-process-output irony-process 0.05)))
   (symbol-value sym))
 
+(defun irony-current-directory ()
+  "Return the directory of the current buffer or nil if the
+current directory couldn't be found."
+  (if buffer-file-name
+      (file-name-directory (expand-file-name buffer-file-name))))
+
 (defun irony-get-flags (&optional buffer)
   "Find the compiler flags required to parse the content of
   BUFFER (by default the current buffer).
@@ -394,23 +411,32 @@ the use of temporary file where the headers present in the same
 directory of the orignal file couldn't be found )."
   (with-current-buffer (or buffer (current-buffer))
     (or irony-flags-cache
-        (let ((lang-flag (irony-language-option-flag)))
+        (let ((lang-flag (irony-language-option-flag))
+              (cur-dir (irony-current-directory)))
           (setq irony-flags-cache
                 (append
-                 (if buffer-file-name
-                     (list (concat "-I" (file-name-directory
-                                         (expand-file-name buffer-file-name)))))
-                 (irony-include-flags
-                  (if (functionp irony-header-directories-root)
-                      (funcall irony-header-directories-root)
-                    irony-header-directories-root))
+                 (if cur-dir
+                     (list (concat "-I" cur-dir)))
+                 (irony-include-flags)
                  (if (functionp irony-extra-flags)
                      (funcall irony-extra-flags)
                    irony-extra-flags)
                  (irony-parse-config-flags)
                  (if lang-flag (list lang-flag))))))))
 
-(defun irony-include-flags (&optional root-directory)
+(defun irony-include-directories ()
+  "Convert `irony-header-directories' and
+`irony-header-directories-root' into a directy list."
+  (let ((root-directory (if (functionp irony-header-directories-root)
+                            (funcall irony-header-directories-root)
+                          irony-header-directories-root)))
+    (mapcar (lambda (path)
+              (expand-file-name path root-directory))
+            (if (functionp irony-header-directories)
+                (funcall irony-header-directories)
+              irony-header-directories))))
+
+(defun irony-include-flags ()
   "Parse a list of header directories `irony-header-directories'
 into a list of \"-Idir\" flags to send to the compiler. Relative
 path are relative to the ROOT-DIRECTORY if given.
@@ -425,10 +451,8 @@ example with ROOT-DIRECTORY equal to \"/home/user/project/my_project\":
         became:
         (\"-I/home/user/project/my_project/utils\" \"-I/my/include/directory\")"
   (mapcar (lambda (path)
-            (concat "-I" (expand-file-name path root-directory)))
-          (if (functionp irony-header-directories)
-              (funcall irony-header-directories)
-            irony-header-directories)))
+            (concat "-I" path))
+          (irony-include-directories)))
 
 (defun irony-parse-config-flags ()
   "Parse a list of pkg-config like commands
