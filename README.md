@@ -14,6 +14,9 @@ Download with `Git` < 1.6.5
     git clone git://github.com/Sarcasm/irony-mode.git
     git submodule update --init
 
+For Mac OS X a patch is necessary to fix the SimpleJSON compilation, 
+please read the comment [here](https://github.com/MJPA/SimpleJSON/commit/cf8aa3087747f76745fc30f38e6aff4af74e9cef#commitcomment-937703)
+
 Finally:
 
     cd irony-mode
