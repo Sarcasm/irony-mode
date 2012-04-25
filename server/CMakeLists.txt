@@ -14,6 +14,7 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_executable (irony-server
   # Main sources
   IPlugin.h
+  IPlugin.cpp
   Server.cpp
   Server.h
   TUManager.cpp
@@ -39,6 +40,4 @@ target_link_libraries (irony-server
   )
 
 install (TARGETS irony-server
-  RUNTIME DESTINATION ${IRONY_SOURCE_DIR}/bin
-  LIBRARY DESTINATION ${IRONY_SOURCE_DIR}/lib
-  ARCHIVE DESTINATION ${IRONY_SOURCE_DIR}/lib)
+  RUNTIME DESTINATION ${IRONY_SOURCE_DIR}/bin)

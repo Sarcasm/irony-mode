@@ -33,18 +33,27 @@ endif()
 
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Add some extra flags during cxx compilation
-if (CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER} MATCHES "clang\\+\\+")
-  # The clang c++ compiler driver is compatible with g++ (same flags)
-  set (CMAKE_CXX_FLAGS "-Wall -Wextra -Wshadow ${CMAKE_CXX_FLAGS}")
+if ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
+  set(CMAKE_COMPILER_IS_CLANGCXX TRUE)
 endif()
 
-# Don't forget to add dependencies for new executable
-# add_dependencies (executable lib)
+# Add some extra flags during C++ compilation (targets GCC and Clang
+# compatible flags).
+include(CheckCXXCompilerFlag)
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
+  foreach (flag "-Wextra" "-Wall" "-Wshadow")
+    check_cxx_compiler_flag ("${flag}" FLAG_EXIST)
+    if (FLAG_EXIST)
+      set (CMAKE_CXX_FLAGS "${flag} ${CMAKE_CXX_FLAGS}")
+    endif()
+  endforeach (flag)
+endif ()
+
 set (IRONY_UTILS_INCLUDES
   ${IRONY_SOURCE_DIR}/lib
   ${IRONY_SOURCE_DIR}/lib/SimpleJSON/src)
 
+# Don't forget to add dependencies for new executable
+# add_dependencies (executable lib)
 add_subdirectory (lib)
 add_subdirectory (server)
-# add_subdirectory (test)

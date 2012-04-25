@@ -45,7 +45,7 @@ public:
                                     const JSONObjectWrapper & data,
                                     std::string &             buf) = 0;
 
-  virtual ~IPlugin() { }
+  virtual ~IPlugin();
 };
 
 /**

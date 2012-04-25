@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include <string>
 #include <cstdio>
@@ -60,7 +61,7 @@ int Server::run()
 
   while (true)
     {
-      ssize_t nb_read = read(0, buf, arraysize(buf));
+      ssize_t nb_read = ::read(0, buf, arraysize(buf));
 
       if (nb_read == -1)
         {
