@@ -30,14 +30,9 @@
 
 (require 'irony)
 
-(defcustom irony-completion-async-function nil
-  "Function to call when new completion results are received. The
-function will be called with the point of completion, and the
-list of completion strings available (NO filtering is made to
-remove completion with non matching prefix)."
-  :type 'function
-  :require 'irony
-  :group 'irony)
+;;
+;; Public, customizable variables
+;;
 
 (defcustom irony-priority-limit 74
   "The Clang priority threshold to keep a candidate in the
@@ -47,9 +42,18 @@ likely) completions."
   :require 'irony
   :group 'irony)
 
+;;
+;; Privates variables
+;;
+
 (defvar irony-last-completion nil
   "If non nil contain the last completion answer received by the
   server (internal variable).")
+
+;;
+;; Register completion callback(s) in the `irony-request-mapping'
+;; alist.
+;;
 
 ;;;###autoload
 (add-to-list 'irony-request-mapping '(:completion . irony-handle-completion))
@@ -57,6 +61,9 @@ likely) completions."
 ;;;###autoload
 (add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion-simple))
 
+;;
+;; Functions
+;;
 (defun irony-handle-completion (data)
   "Handle a completion request from the irony process,
 actually because the code completion is not 'asynchronous' this
@@ -139,6 +146,20 @@ to `irony-get-completion' a point will be returned every times."
    (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
        (match-beginning 1))
    (point)))
+
+
+;; -- Working... --
+;;
+;; (defcustom irony-completion-async-function nil
+;;   "Function to call when new completion results are received. The
+;; function will be called with the point of completion, and the
+;; list of completion strings available (NO filtering is made to
+;; remove completion with non matching prefix)."
+;;   :type 'function
+;;   :require 'irony
+;;   :group 'irony)
+;;
+;; (setq irony-completion-async-function 'irony-trigger-completion-handler)
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here

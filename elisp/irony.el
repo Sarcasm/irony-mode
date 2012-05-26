@@ -42,6 +42,10 @@
   (require 'cc-defs)                    ;for `c-save-buffer-state'
   (require 'cl))
 
+;;
+;; Customizable variables
+;;
+
 ;; TODO: Need to be context sensitive, this is just an example.
 (defvar blacklist-kind '(:Destructor))
 
@@ -160,11 +164,11 @@ irony mode is on."
   :require 'irony
   :group 'irony)
 
-;; (defcustom irony-syntax-checking-function nil
-;;   "Function to call when a syntax results are received."
-;;   :type 'function
-;;   :require 'irony
-;;   :group 'irony)
+(defcustom irony-cancel-process-hook nil
+  "List of functions to be called after the irony process is
+cancelled."
+  :group 'irony
+  :type 'hook)
 
 ;;
 ;; Internal variables
@@ -173,8 +177,7 @@ irony mode is on."
 (defvar irony-process nil
   "The current irony-server process.")
 
-(defvar irony-request-mapping
-  '((:syntax-checking . irony-handle-syntax-check))
+(defvar irony-request-mapping nil
   "Alist of known request types associated to their handler. New
   server plugins must add their handlers in this list.")
 
@@ -219,16 +222,18 @@ mode present in `irony-known-modes'.."))
     ;; FIXME: if the process is not found, turn off `irony-mode'.
     (irony-start-process-maybe)))
 
-(defun irony-stop-process ()
-  "Stop the irony process."
+(defun irony-cancel-process ()
+  "Stop the irony process. `irony-cancel-process-hooks' are
+called when the process is cancelled."
   (if (not irony-process)
       (message "No irony process running...")
     (delete-process irony-process)
-    (setq irony-process nil)))
+    (setq irony-process nil)
+    (run-hooks 'find-file-hook)))
 
 (defun irony-restart-process ()
   "Restart the irony process."
-  (irony-stop-process)
+  (irony-cancel-process)
   (irony-start-process-maybe))
 
 (defun irony-start-process-maybe ()
@@ -517,31 +522,6 @@ modules that respect the following contract:
 - defun irony-MODULE-NAME-disable"
   (dolist (module (if (listp modules) modules (list modules)))
     (funcall (intern (concat "irony-" (symbol-name module) "-disable")))))
-
-
-;;
-;; Syntax checking functions
-;;
-
-(defvar irony-last-syntax-check nil
-  "Contain the last syntax checking made by the Irony
-  server (internal variable).")
-
-(defun irony-handle-syntax-check (data)
-  "Function called when a syntax checking answer is received."
-  (setq irony-last-syntax-check data))
-
-(defun irony-syntax-check (&optional buffer)
-  "Return a list of diagnostics found during the parsing of the
-BUFFER translation unit."
-  ;; FIXME: explain the content of the returned value.
-  (let ((request-data (list (cons :file (irony-temp-filename))
-                            (cons :flags (irony-get-flags)))))
-    (setq irony-last-syntax-check nil)
-    (irony-send-request :syntax-check request-data (or buffer (current-buffer))))
-  (irony-wait-request-answer 'irony-last-syntax-check))
-
-;; ! Syntax checking functions
 
 (provide 'irony)
 ;;; irony.el ends here

@@ -91,8 +91,6 @@ completion menu. This can help to set `irony-priority-limit'."
     (:vertical-space   . "\n"))
   "Alist of symbols and their string representation.")
 
-;; TODO: factoring the `ac-source-irony' and
-;; `ac-source-irony-anywhere'
 ;; FIXME: find how to check the availability of the completion
 ;; (available . irony-mode-on-p) ?
 (defconst ac-source-irony
