@@ -54,7 +54,7 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
 
       tu = clang_parseTranslationUnit(index_,
                                       filename.c_str(),
-                                      argv, nbArgs,
+                                      argv, static_cast<int>(nbArgs),
                                       0, 0,
                                       clang_defaultEditingTranslationUnitOptions()
                                       | CXTranslationUnit_PrecompiledPreamble

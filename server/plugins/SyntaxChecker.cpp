@@ -123,17 +123,6 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   clang_disposeString(disable);
 
   //
-  // Category
-  //
-  unsigned categoryNumber = clang_getDiagnosticCategory(diagnostic);
-  CXString category       = clang_getDiagnosticCategoryName(categoryNumber);
-
-  buf += " :category ";
-  buf.append("\"").append(clang_getCString(category)).append("\"");
-
-  clang_disposeString(category);
-
-  //
   // Ranges
   //
   // format:

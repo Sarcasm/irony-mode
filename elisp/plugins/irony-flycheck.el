@@ -137,7 +137,6 @@ completion results."
         (ranges     (plist-get diagnostic :ranges))
         (notes      (plist-get diagnostic :notes))
         (fix-its    (plist-get diagnostic :fix-its))
-        ;; (category   (plist-get diagnostic :category))
         ;; (flags      (plist-get diagnostic :flags))
         )
     (when location
@@ -160,7 +159,6 @@ completion results."
   ;; :location (/tmp/!tmp!lol.cpp 91 (5 . 36))
   ;; :diagnostic "expected ';' after expression"
   ;; :flags ( . )
-  ;; :category "Parse Issue"
   ;; :ranges (((/tmp/!tmp!lol.cpp 82 (5 . 27)) /tmp/!tmp!lol.cpp 87 (5 . 32)))
   ;; :fix-its ((";" (/tmp/!tmp!lol.cpp 91 (5 . 36)) /tmp/!tmp!lol.cpp 91 (5 . 36)))
   ;; :notes nil
