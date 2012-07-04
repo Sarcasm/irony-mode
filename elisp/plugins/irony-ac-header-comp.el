@@ -55,6 +55,7 @@
     (requires       . 0)
     (candidate-face . irony-ac-header-comp-candidate-face)
     (selection-face . irony-ac-header-comp-selection-face)
+    (action         . irony-header-comp-action)
     (cache))
   "Auto-complete source for `irony-mode'.")
 
@@ -80,6 +81,19 @@ completion results."
   "Display available completions on demand."
   (interactive)
   (auto-complete '(ac-source-irony-header-comp)))
+
+(defun irony-header-comp-action ()
+  "After the completion is complete, add the closing
+character (double quote or angle-bracket) if needed."
+  ;; (let ((result (popup-item-value (cdr ac-last-completion)))
+  (let ((ch (char-after)))
+    (when (not (or (eq ch ?\")
+                   (eq ch ?>)))
+      (let ((line (buffer-substring-no-properties (point-at-bol) (point))))
+        (when (string-match "#\\s-*include\\s-+\\([<\"]\\)" line)
+          (insert (if (eq (string-to-char (match-string 1)) ?<)
+                      ">"
+                    "\"")))))))
 
 (provide 'irony-ac-header-comp)
 ;;; irony-ac-header-comp.el ends here
