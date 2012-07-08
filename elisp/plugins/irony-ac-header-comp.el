@@ -85,13 +85,12 @@ completion results."
 (defun irony-header-comp-action ()
   "After the completion is complete, add the closing
 character (double quote or angle-bracket) if needed."
-  ;; (let ((result (popup-item-value (cdr ac-last-completion)))
   (let ((ch (char-after)))
     (when (not (or (eq ch ?\")
                    (eq ch ?>)))
       (let ((line (buffer-substring-no-properties (point-at-bol) (point))))
         (when (string-match "#\\s-*include\\s-+\\([<\"]\\)" line)
-          (insert (if (eq (string-to-char (match-string 1)) ?<)
+          (insert (if (eq (string-to-char (match-string 1 line)) ?<)
                       ">"
                     "\"")))))))
 
