@@ -14,6 +14,7 @@
 
 #include <iostream>
 
+#include "QuotedCXString.h"
 #include "str/to_string.hpp"
 
 SyntaxChecker::SyntaxChecker()
@@ -99,12 +100,8 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   //
   // Diagnostic text
   //
-  CXString spelling = clang_getDiagnosticSpelling(diagnostic);
-
   buf += " :diagnostic ";
-  buf.append("\"").append(clang_getCString(spelling)).append("\"");
-
-  clang_disposeString(spelling);
+  buf += QuotedCXString(clang_getDiagnosticSpelling(diagnostic)).asString();
 
   //
   // Compiler flags that produce or remove the diagnostic

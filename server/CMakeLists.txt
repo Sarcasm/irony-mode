@@ -13,8 +13,10 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 #
 add_executable (irony-server
   # Main sources
-  IPlugin.h
   IPlugin.cpp
+  IPlugin.h
+  QuotedCXString.cpp
+  QuotedCXString.h
   Server.cpp
   Server.h
   TUManager.cpp
