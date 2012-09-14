@@ -57,3 +57,17 @@
   - http://www.cmake.org/Wiki/CMake/Git/Download
 * TODO Bundle fallback packages
   - https://github.com/tarsius/auto-complete/commit/d8a832d4d40fc8259e55087be08abfa5c1b9701d
+* TODO Show assembly
+  Watch the comments here: http://programmers.stackexchange.com/a/156723
+
+  : gcc -O -c -g -Wa,-ahl=so.s so.c
+* TODO stddef.h
+
+  #+begin_example
+    Make sure that Clang is using its own <stddef.h>. It will be in a
+    directory ending in `clang/3.2/include/` where 3.2 is the version of
+    clang that you are using. You may need to explicitly add it to your
+    header search. Usually clang finds this directory relative to the
+    executable withCompilerInvocation::GetResourcesPath(Argv0, MainAddr),
+    but using just the libraries, it can't automatically find it.
+  #+end_example

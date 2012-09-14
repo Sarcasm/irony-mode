@@ -279,7 +279,7 @@ the value of the variable `irony-server-executable'."
       (message "irony process stopped..."))))
 
 (defun irony-handle-output (process output)
-  "Handle an output from the `irony-process'.
+  "Handle output that come from the `irony-process'.
 
 If a complete response is present in the irony process buffer the
 variable `irony-request-mapping' is used in order to find

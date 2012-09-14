@@ -33,6 +33,8 @@ endif()
 
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+# If Clang specific code is not used it will be a better idea to use:
+#       if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 if ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
   set(CMAKE_COMPILER_IS_CLANGCXX TRUE)
 endif()

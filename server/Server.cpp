@@ -61,6 +61,8 @@ int Server::run()
 
   while (true)
     {
+      // Try stream iterators:
+      // http://www.cplusplus.com/reference/std/iterator/istreambuf_iterator/
       ssize_t nb_read = ::read(0, buf, arraysize(buf));
 
       if (nb_read == -1)
