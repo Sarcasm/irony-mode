@@ -229,7 +229,9 @@ called when the process is cancelled."
       (message "No irony process running...")
     (delete-process irony-process)
     (setq irony-process nil)
-    (run-hooks 'find-file-hook)))
+    ;; TODO: remove this comment, but why did I call that here???
+    ;; (run-hooks 'find-file-hook)
+    ))
 
 (defun irony-restart-process ()
   "Restart the irony process."

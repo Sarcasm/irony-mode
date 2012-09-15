@@ -32,14 +32,6 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
 
   if (! tu)
     {
-      // FIXME: needed ?
-      // Note: the -cc1 argument indicates the compiler front-end, and
-      // not the driver, should be run. The compiler front-end has
-      // several additional Clang specific features which are not
-      // exposed through the GCC compatible driver interface.
-      // from: http://clang.llvm.org/get_started.html
-      // const_cast<std::vector<std::string> &>(flags).push_back("-cc1");
-
       std::size_t   nbArgs = flags.size();
       const char  **argv   = 0;
 
@@ -52,6 +44,9 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
             argv[i] = flags[i].c_str();
         }
 
+      // TODO: See if it's necessary, but using a CMake compilation
+      // database may require to do a chdir() to the build directory
+      // before parsing those commands.
       tu = clang_parseTranslationUnit(index_,
                                       filename.c_str(),
                                       argv, static_cast<int>(nbArgs),

@@ -71,3 +71,20 @@
     executable withCompilerInvocation::GetResourcesPath(Argv0, MainAddr),
     but using just the libraries, it can't automatically find it.
   #+end_example
+* TODO hide-ifdef-mode
+
+  If the list of defines (-DXXX) is available it's possible to hide
+  some ifdef with hide-ifdef-mode.
+
+  Following this methods:
+
+  #+begin_src elisp
+    (setq hide-ifdef-define-alist '((linux HAVE_UNISTD_H)
+                                    (win HAVE_WINDOWS_H)))
+
+    ;; or hit C-@ U in a buffer with `hide-ifdef-mode' enabled
+    (hide-ifdef-use-define-alist 'linux)
+  #+end_src
+
+  - http://www.emacs.uniyar.ac.ru/doc/em24h/emacs159.htm
+  - http://www.emacswiki.org/emacs/HideIfDef

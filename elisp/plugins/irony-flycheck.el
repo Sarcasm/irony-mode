@@ -42,25 +42,29 @@ By default after 1 second of 'idling' a syntax check is made."
   :group 'irony)
 
 (defface irony-flycheck-error
-  '((((class color) (background dark)) (:foreground "white smoke" :underline "dark red"))
-    ;; (((class color) (background light)) (:background "LightBlue2"))
-    (t (:bold t)))
+  '((((class color) (min-colors 88) (background dark))
+     :foreground "white smoke" :underline "dark red")
+    (t
+     :bold t))
   "Face used for marking error lines."
-  :group 'flymake)
+  :group 'irony)
 
 (defface irony-flycheck-warning
-  '((((class color) (background dark)) (:underline "#4477aa"))
-    (((class color) (background light)) (:background "LightBlue2"))
-    (t (:bold t)))
+  '((((class color) (min-colors 88) (background dark))
+     :underline "#4477aa")
+    (((class color) (min-colors 88) (background light))
+     :background "LightBlue2")
+    (t
+     :bold t))
   "Face used for marking warning lines."
-  :group 'flymake)
+  :group 'irony)
 
 ;; (defface irony-note
 ;;   '((((class color) (background dark)) (:background "DarkBlue"))
 ;;     (((class color) (background light)) (:background "LightBlue2"))
 ;;     (t (:bold t)))
 ;;   "Face used for marking note lines."
-;;   :group 'flymake)
+;;   :group 'irony)
 
 (defcustom irony-flycheck-overlay-priority 1000
   "Priority of `irony-check-mode' highlighting overlays."
@@ -108,7 +112,6 @@ completion results."
 (defun irony-flycheck-on-timer-event ()
   "Call when `irony-flycheck-timer' (idle) seconds have passed."
   (when irony-mode
-    (message "Syntax checking...")
     (let* ((syntax-check-data (irony-syntax-check))
            (diagnostics (plist-get syntax-check-data :diagnostics)))
       (irony-flycheck-remove-overlays)
@@ -148,7 +151,7 @@ completion results."
                                                 ranges
                                                 notes
                                                 fix-its)
-        (message "other buffer syntax error (maybe a header ?)")))))
+        (message "[%s] %s: %s" severity (car location) diagnostic)))))
 
 (defun irony-flycheck-make-local-diagnostic (buffer severity
                                                     diagnostic
@@ -164,12 +167,13 @@ completion results."
   ;; :notes nil
   (let* ((diag-offset (car location))
          (overlay (make-overlay (+ diag-offset 1) (+ diag-offset 2) buffer t t)))
-    (message "Woot: %s %s"  (1- diag-offset) (1+ diag-offset))
+    ;; (message "Woot: %s %s"  (1- diag-offset) (1+ diag-offset))
     (overlay-put overlay 'irony-flycheck t)
     ;; (overlay-put overlay 'category '(CATEGORIE_PROPERTIES))
     ;; (overlay-put overlay 'face 'irony-flycheck-error)
     (overlay-put overlay 'face 'show-paren-match)
     (overlay-put overlay 'priority irony-flycheck-overlay-priority)
+    (overlay-put overlay 'help-echo diagnostic)
     ;; (overlay-put overlay 'mouse-face 'highlight)
     ;; (overlay-put overlay 'rfclink-section (match-string 1))
     ;; (overlay-put overlay 'help-echo (format "This word has a size of %d." rfclink-word-size))
