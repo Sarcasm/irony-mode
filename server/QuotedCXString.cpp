@@ -28,18 +28,18 @@ std::string QuotedCXString::asString() const
   std::size_t  escapes = std::count_if(cStr, cStr + len, needEscape);
   std::string  quotedStr;
 
-  quotedStr.reserve(len + escapes);
+  quotedStr.reserve(len + escapes + 2); // +2 for the first and last quote
   quotedStr += '"';
-  if (escapes) {
+  if (! escapes) {
+    quotedStr.append(cStr, len);
+  } else {
     for (std::size_t i = 0; i < len; ++i) {
       if (needEscape(cStr[i])) {
         quotedStr += '\\';
       }
       quotedStr += cStr[i];
     }
-  } else {
-    std::string(cStr, len);
   }
-  quotedStr[0] = '"';
+  quotedStr += '"';
   return quotedStr;
 }
