@@ -134,7 +134,9 @@ file with a different extension will not be added."
       (loop for file in (directory-files include-dir nil nil t)
             for is-dir = (file-directory-p (concat include-dir file))
             if (if authorized-extensions
-                   (or is-dir
+                   (or (and is-dir
+                            (not (or (string= file ".")
+                                     (string= file ".."))))
                        (member (file-name-extension file) authorized-extensions))
                  t)
             collect (if is-dir (concat file "/") file)))))
