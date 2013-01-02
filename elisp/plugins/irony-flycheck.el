@@ -43,7 +43,10 @@ By default after 1 second of 'idling' a syntax check is made."
 
 (defface irony-flycheck-error
   '((((class color) (min-colors 88) (background dark))
-     :foreground "white smoke" :underline "dark red")
+     :foreground "white smoke" :underline "dark red"
+     :background "grey15" :italic t)
+    (((type tty) (class mono))
+     :inverse-video t)
     (t
      :bold t))
   "Face used for marking error lines."
@@ -51,9 +54,12 @@ By default after 1 second of 'idling' a syntax check is made."
 
 (defface irony-flycheck-warning
   '((((class color) (min-colors 88) (background dark))
-     :underline "#4477aa")
+     :underline "#4477aa" :background "grey15"
+     :italic t)
     (((class color) (min-colors 88) (background light))
      :background "LightBlue2")
+    (((type tty) (class mono))
+     :inverse-video t)
     (t
      :bold t))
   "Face used for marking warning lines."
@@ -151,12 +157,15 @@ completion results."
                                                 ranges
                                                 notes
                                                 fix-its)
-        (message "[%s] %s: %s" severity (car location) diagnostic)))))
+        ;; XXX: annoying move the current position in the buffer
+        ;; (message "[%s] %s: %s" severity (car location) diagnostic)
+        ))))
 
 (defun irony-flycheck-make-local-diagnostic (buffer severity
                                                     diagnostic
                                                     location
-                                                    ranges notes
+                                                    ranges
+                                                    notes
                                                     fix-its)
   ;; :severity :error
   ;; :location (/tmp/!tmp!lol.cpp 91 (5 . 36))
@@ -172,6 +181,7 @@ completion results."
     ;; (overlay-put overlay 'category '(CATEGORIE_PROPERTIES))
     ;; (overlay-put overlay 'face 'irony-flycheck-error)
     (overlay-put overlay 'face 'show-paren-match)
+    (overlay-put overlay 'face 'mode-line)
     (overlay-put overlay 'priority irony-flycheck-overlay-priority)
     (overlay-put overlay 'help-echo diagnostic)
     ;; (overlay-put overlay 'mouse-face 'highlight)
@@ -181,7 +191,24 @@ completion results."
     ;; (overlay-put overlay 'after-string " < ")
     ;; (overlay-put overlay 'invisible t)
     ;; (overlay-put overlay 'local-map rfclink-mode-overlay-keymap)
-    ))
+    (dolist (range ranges)
+      (let ((begin (nth 1 (car range)))
+            (end (nth 1 (cdr range)))
+            (ov (copy-overlay overlay))
+            (color (if (eq severity :error)
+                       'irony-flycheck-error
+                     'irony-flycheck-warning)))
+        ;; TODO:
+        ;; For each range on the same line (the line is given by clang)
+        ;; - color the line softly                    | mostly underlined, and soft background
+        ;; - color the range a little bit less softly | mostly underlined, and not so soft background
+        ;; - color the exact point not softly at all  | same as before but with a box
+
+        ;; (message "COL: %s" color)
+        ;; (message "begin: %s" begin)
+        ;; (message "end: %s" end)
+        (overlay-put ov 'face color)
+        (move-overlay ov (1+ begin) (1+ end))))))
 
 (provide 'irony-flycheck)
 ;;; irony-flycheck.el ends here

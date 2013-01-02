@@ -433,7 +433,7 @@ directory of the orignal file couldn't be found )."
 
 (defun irony-include-directories ()
   "Convert `irony-header-directories' and
-`irony-header-directories-root' into a directy list."
+`irony-header-directories-root' into a directory list."
   (let ((root-directory (if (functionp irony-header-directories-root)
                             (funcall irony-header-directories-root)
                           irony-header-directories-root)))

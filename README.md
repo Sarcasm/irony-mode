@@ -125,7 +125,7 @@ This file should contain 2 methods takind no argument:
    `irony-PLUGIN_NAME-enable` you can remove it inside this function.
 
 
-Example from the *irony-ac.el*:
+Example from the file *elisp/plugins/irony-ac.el*:
 
 ~~~~~ el
 (defun irony-ac-setup ()

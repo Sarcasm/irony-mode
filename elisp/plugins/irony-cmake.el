@@ -109,8 +109,7 @@ be found or if it's the first time (in this Emacs session) that
 this root is referenced we ask the user to provide the
 directory."
   ;; looking for the root of the CMake project
-  (let ((current-dir (or (if buffer-file-name
-                             (file-name-directory buffer-file-name))
+  (let ((current-dir (or (irony-current-directory)
                          default-directory)))
     ;; either we return the cached value or we calculate the good one
     (or (gethash current-dir irony-cmake-root-dir-hash)
@@ -230,6 +229,7 @@ For example:
 (defun irony-cmake-setup ()
   "Irony-mode hook for irony-cmake plugin."
   ;; looking for the root of the CMake project
+  (interactive)
   (when (and buffer-file-name
              (not irony-cmake-enabled))
     (setq irony-cmake-enabled t)
@@ -244,10 +244,12 @@ For example:
 
 (defun irony-cmake-enable ()
   "Enable cmake settings for `irony-mode'."
+  (interactive)
   (add-hook 'irony-mode-hook 'irony-cmake-setup))
 
 (defun irony-cmake-disable ()
   "Disable cmake settings for `irony-mode'."
+  (interactive)
   (remove-hook 'irony-mode-hook 'irony-cmake-setup))
 
 
