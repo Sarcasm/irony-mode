@@ -13,6 +13,7 @@
 #include "plugins/SyntaxChecker.h"
 
 #include <iostream>
+#include <cassert>
 
 #include "QuotedCXString.h"
 #include "str/to_string.hpp"
@@ -128,8 +129,12 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   unsigned numRanges = clang_getDiagnosticNumRanges(diagnostic);
 
   buf += " :ranges (";
-  for (unsigned i = 0; i < numRanges; ++i)
-    formatSourceRange(clang_getDiagnosticRange(diagnostic, i), buf);
+  for (unsigned i = 0; i < numRanges; ++i) {
+    const CXSourceRange & range = clang_getDiagnosticRange(diagnostic, i);
+
+    assert(! clang_Range_isNull(range));
+    formatSourceRange(range, buf);
+  }
   buf += ")";
 
   //
@@ -152,15 +157,21 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
   CXFile   file;
   unsigned line, column, offset;
 
-  clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+  clang_getExpansionLocation(location, &file, &line, &column, &offset);
+
   CXString filename = clang_getFileName(file);
 
-
-  // ("filename" offset (line . column))
-  buf.append("(\"").append(clang_getCString(filename)) // filename
-    .append("\" ").append(str::to_string(offset))      // offset
-    .append(" (").append(str::to_string(line))         // line
-    .append(" . ").append(str::to_string(column)).append("))"); // column
+  if (const char *filenameStr = clang_getCString(filename)) {
+    // ("filename" offset (line . column))
+    buf.append("(\"").append(filenameStr)           // filename
+      .append("\" ").append(str::to_string(offset)) // offset
+      .append(" (").append(str::to_string(line))    // line
+      .append(" . ").append(str::to_string(column)).append("))"); // column
+  } else {
+    // XXX: Absence of a filename is not interesting for the client
+    // and is considered equivalent to a null location.
+    buf += " nil ";
+  }
 
   clang_disposeString(filename);
 }
