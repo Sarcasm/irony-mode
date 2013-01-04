@@ -14,7 +14,7 @@ Download with `Git` < 1.6.5
     git clone git://github.com/Sarcasm/irony-mode.git
     git submodule update --init
 
-For Mac OS X a patch is necessary to fix the SimpleJSON compilation, 
+For Mac OS X a patch is necessary to fix the SimpleJSON compilation,
 please read the comment [here](https://github.com/MJPA/SimpleJSON/commit/cf8aa3087747f76745fc30f38e6aff4af74e9cef#commitcomment-937703)
 
 Finally:
@@ -96,6 +96,43 @@ Vim plugin.
 
 ![Boost](./irony-mode/raw/master/screenshots/boost-example.png)
 
+# FAQ
+
+## It's slow, why?
+
+A bug in old version of Clang (at least '3.1-8') caused the completion
+to fail on the standard library types. To eliminate this bug an
+optimisation has been disabled in the parsing of a translation unit.
+This result in a slower parsing.
+
+This only affect old versions of Clang (< 3.2), it is suggested to
+update your libclang installation if you want to take advantage of the
+optimisations.
+
+## I got an error due to 'stdarg.h', how to solve this?
+
+If by looking into the log file (`/tmp/irony.$$PID.log` on Linux) you
+can have the following error:
+
+    'stdarg.h' file not found
+
+Assuming (otherwise it might be necessary to adjust the code):
+
+* Clang version is 3.2
+* Clang is installed in `/usr/`
+
+You can use the following configuration:
+
+```lisp
+;; The Clang installation missed the system include directory
+;; "/usr/lib/clang/3.2/include/", man clang said we can use the
+;; environment variable CPATH.
+(let ((old-cpath (getenv "CPATH")))
+  (when (file-exists-p "/usr/lib/clang/3.2/include/")
+    (setenv "CPATH" (if old-cpath
+                        (concat old-cpath ":" "/usr/lib/clang/3.2/include/")
+                      "/usr/lib/clang/3.2/include/"))))
+```
 
 # How to contribute
 
