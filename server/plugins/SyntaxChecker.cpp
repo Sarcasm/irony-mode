@@ -157,7 +157,14 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
   CXFile   file;
   unsigned line, column, offset;
 
+  // clang_getInstantiationLocation() has been marked deprecated and
+  // is aimed to be replaced by clang_getExpansionLocation().
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
+  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
   clang_getExpansionLocation(location, &file, &line, &column, &offset);
+#else
+  clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+#endif
 
   CXString filename = clang_getFileName(file);
 
