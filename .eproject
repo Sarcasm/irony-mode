@@ -1,3 +1,4 @@
 :includes '("." "server" "lib" "lib/SimpleJSON/src")
 ;; :extra-flags '("-cc1")
 :irrelevant-files '("tests/")
+:local-variables '(c-basic-offset 2 c-default-style "gnu")
