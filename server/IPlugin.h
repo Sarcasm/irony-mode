@@ -22,6 +22,14 @@
 /**
  * \brief A simple plugin interface.
  *
+ * At the creation of a plugin the server TUManager is given and the
+ * plugin can configure it to suit its needs (e.g: activate some
+ * special flags for Clang) and can it can also be used in the \c
+ * handleRequest() method when working on CXTranslationUnit (and take
+ * advantage of it's caching).
+ *
+ * \note If a plugin add some configurations to the TUManager at
+ *       construction time it should clean them up in the destructor.
  */
 class IPlugin
 {
@@ -31,8 +39,6 @@ public:
    *        \p buf will be sent to the Emacs process in response to
    *        the request.
    *
-   * \param tuManager
-   *            The TUManager associated to the request.
    * \param data
    *            The JSON object containing the plugin data.
    * \param [out] buf
@@ -41,8 +47,7 @@ public:
    *
    * \return The answer "type" to the request.
    */
-  virtual std::string handleRequest(TUManager &               tuManager,
-                                    const JSONObjectWrapper & data,
+  virtual std::string handleRequest(const JSONObjectWrapper & data,
                                     std::string &             buf) = 0;
 
   virtual ~IPlugin();

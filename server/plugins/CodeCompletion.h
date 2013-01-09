@@ -25,15 +25,18 @@
  * \brief A completion plugin, using the libclang completion features.
  *
  */
-class CodeCompletion : public IPlugin
+class CodeCompletion : public IPlugin,
+                       public util::NonCopyable
 {
 private:
-  bool detailedCompletions_;
+  TUManager & tuManager_;
+  bool        detailedCompletions_;
 
 public:
   /**
    * \brief Create a completion plugin.
    *
+   * \param TUManager
    * \param detailedCompletions If \c false only
    *                            \c CXCompletionChunk_TypedText will be
    *                            present in the completion result
@@ -41,22 +44,20 @@ public:
    *
    * \return
    */
-  CodeCompletion(bool detailedCompletions);
-  virtual ~CodeCompletion();
+  CodeCompletion(TUManager & tuManager, bool detailedCompletions);
+  ~CodeCompletion();
 
   /**
    * \brief Execute a completion request.
    *
    * \see \c IPlugin.
    *
-   * \param TUManager
    * \param data
    * \param buf
    *            A string describing the possible completions.
    *
    */
-  virtual std::string handleRequest(TUManager &               tuManager,
-                                    const JSONObjectWrapper & data,
+  virtual std::string handleRequest(const JSONObjectWrapper & data,
                                     std::string &             buf);
 
 private:
@@ -135,10 +136,6 @@ private:
                             const std::string & value,
                             std::string &       buf,
                             bool                needQuote = false);
-
-private:
-  CodeCompletion(CodeCompletion const &);
-  CodeCompletion& operator=(CodeCompletion const &);
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

@@ -27,21 +27,22 @@
 class SyntaxChecker : public IPlugin,
                       public util::NonCopyable
 {
+private:
+  TUManager & tuManager_;
+
 public:
-  SyntaxChecker();
-  virtual ~SyntaxChecker();
+  SyntaxChecker(TUManager & tuManager);
+  ~SyntaxChecker();
 
   /**
    * \brief Execute a "check syntax" request.
    *
    * \see \c IPlugin.
    *
-   * \param TUManager
    * \param data
    * \param buf         A string describing parsing errors.
    */
-  virtual std::string handleRequest(TUManager &               tuManager,
-                                    const JSONObjectWrapper & data,
+  virtual std::string handleRequest(const JSONObjectWrapper & data,
                                     std::string &             buf);
 
 private:
