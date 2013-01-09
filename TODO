@@ -47,6 +47,12 @@
 
   Maybe some tools like [[http://www.scons.org/][SCons]] can be used the same way.
 
+** TODO From the clang mailing list: Bear on Github
+
+   Can be used to get a compile_commands.json
+
+   - https://github.com/rizsotto/Bear
+
 * TODO Write only from the beginning of the file to completion point
 * TODO A cmake generator
   [[www.cmake.org/][CMake]] is an open source software that allow project file generation.
