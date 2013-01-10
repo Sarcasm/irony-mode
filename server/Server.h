@@ -23,12 +23,15 @@
 
 class Server : public util::NonCopyable
 {
+  typedef std::map<std::string, IPlugin *> PluginMap;
+
 private:
-  TUManager                        tuManager_;
+  TUManager tuManager_;
   /**
-   * Map of plugins, the string is the "request" the plugin handle.
+   * \brief Map of plugins, the string is the "request" the plugin
+   *        handles.
    */
-  std::map<std::string, IPlugin *> plugins_;
+  PluginMap plugins_;
 
 public:
   Server();

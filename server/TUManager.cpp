@@ -16,9 +16,31 @@
 
 #include "str/wstring_to_string.h"
 
+typedef TUManager::SettingsID SettingsID;
+typedef TUManager::Settings Settings;
+
+Settings::Settings()
+  : parseTUOptions(0)
+{ }
+
+void Settings::merge(const Settings & other)
+{
+  parseTUOptions |= other.parseTUOptions;
+}
+
+bool Settings::equal(const Settings & other) const
+{
+  return (parseTUOptions == other.parseTUOptions);
+}
+
 TUManager::TUManager()
   : index_(clang_createIndex(0, 0))
-{ }
+  , translationUnits_()
+  , effectiveSettings_()
+  , settingsList_()
+{
+  effectiveSettings_ = computeEffectiveSettings();
+}
 
 TUManager::~TUManager()
 {
@@ -44,23 +66,6 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
             argv[i] = flags[i].c_str();
         }
 
-      // XXX: A bug in old version of Clang (at least '3.1-8') caused
-      //      the completion to fail on the standard library types
-      //      when CXTranslationUnit_PrecompiledPreamble is used. We
-      //      disable this option for old versions of libclang. As a
-      //      result the completion will work but significantly
-      //      slower.
-#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
-  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
-      unsigned parseOptions = (clang_defaultEditingTranslationUnitOptions()
-                               | CXTranslationUnit_PrecompiledPreamble
-                               | CXTranslationUnit_CacheCompletionResults);
-#else
-      unsigned parseOptions = ((clang_defaultEditingTranslationUnitOptions()
-                                & ~CXTranslationUnit_PrecompiledPreamble)
-                               | CXTranslationUnit_CacheCompletionResults);
-#endif
-
       // TODO: See if it's necessary, but using a CMake compilation
       // database may require to do a chdir() to the build directory
       // before parsing those commands.
@@ -68,7 +73,7 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
                                       filename.c_str(),
                                       argv, static_cast<int>(nbArgs),
                                       0, 0,
-                                      parseOptions);
+                                      effectiveSettings_.parseTUOptions);
       delete [] argv;
       translationUnits_[filename] = tu;
     }
@@ -98,7 +103,76 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
       // a 'fatal' error occur (even a diagnostic is impossible)
       clang_disposeTranslationUnit(tu);
       translationUnits_[filename] = 0;
+      return 0;
     }
 
   return tu;
+}
+
+SettingsID TUManager::registerSettings(const Settings & settings)
+{
+  SettingsID settingsID = settingsList_.insert(settingsList_.end(), settings);
+
+  onSettingsChanged();
+  return settingsID;
+}
+
+void TUManager::unregisterSettings(SettingsID settingsID)
+{
+  onSettingsChanged();
+  settingsList_.erase(settingsID);
+}
+
+void TUManager::onSettingsChanged()
+{
+  const Settings & newSettings = computeEffectiveSettings();
+
+  if (newSettings.equal(effectiveSettings_)) {
+    return ;
+  }
+
+  effectiveSettings_ = newSettings;
+  invalidateAllCachedTUs();
+}
+
+Settings TUManager::computeEffectiveSettings() const
+{
+  Settings settings;
+
+  // XXX: A bug in old version of Clang (at least '3.1-8') caused
+  //      the completion to fail on the standard library types
+  //      when CXTranslationUnit_PrecompiledPreamble is used. We
+  //      disable this option for old versions of libclang. As a
+  //      result the completion will work but significantly
+  //      slower.
+  settings.parseTUOptions =
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
+  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+    (clang_defaultEditingTranslationUnitOptions() |
+     CXTranslationUnit_PrecompiledPreamble);
+#else
+  (clang_defaultEditingTranslationUnitOptions() &
+   ~CXTranslationUnit_PrecompiledPreamble);
+#endif
+
+  for (std::list<Settings>::const_iterator it = settingsList_.begin(),
+         end = settingsList_.end(); it != end; ++it) {
+    settings.merge(*it);
+  }
+
+  return settings;
+}
+
+void TUManager::invalidateAllCachedTUs()
+{
+  TranslationUnitsMap::iterator it = translationUnits_.begin();
+
+  while (it != translationUnits_.end()) {
+    if (CXTranslationUnit & tu = it->second) {
+      clang_disposeTranslationUnit(tu);
+      translationUnits_.erase(it++); // post-increment, iterator valid
+    } else {
+      it++;
+    }
+  }
 }

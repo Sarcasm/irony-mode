@@ -51,7 +51,14 @@ Server::Server()
 { }
 
 Server::~Server()
-{ }
+{
+  for (PluginMap::iterator it = plugins_.begin(), end = plugins_.end();
+       it != end; ++it) {
+    if (IPlugin *plugin = it->second) {
+      delete plugin;
+    }
+  }
+}
 
 int Server::run()
 {

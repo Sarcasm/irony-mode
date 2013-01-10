@@ -23,10 +23,18 @@ CodeCompletion::CodeCompletion(TUManager & tuManager,
                                bool        detailedCompletions)
   : tuManager_(tuManager)
   , detailedCompletions_(detailedCompletions)
-{ }
+{
+  TUManager::Settings settings;
+
+  settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
+
+  settingsID_ = tuManager.registerSettings(settings);
+}
 
 CodeCompletion::~CodeCompletion()
-{ }
+{
+  tuManager_.unregisterSettings(settingsID_);
+}
 
 std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
                                           std::string &             buf)

@@ -29,8 +29,9 @@ class CodeCompletion : public IPlugin,
                        public util::NonCopyable
 {
 private:
-  TUManager & tuManager_;
-  bool        detailedCompletions_;
+  TUManager &           tuManager_;
+  TUManager::SettingsID settingsID_;
+  bool                  detailedCompletions_;
 
 public:
   /**
