@@ -14,9 +14,6 @@
 #ifndef IRONY_MODE_SERVER_TUMANAGER_H_
 #define IRONY_MODE_SERVER_TUMANAGER_H_
 
-#include "JSONValue.h"
-#include "JSON.h"
-
 #include "util/NonCopyable.h"
 #include "clang-c/Index.h"
 
@@ -59,20 +56,6 @@ public:
    */
   CXTranslationUnit parse(const std::string &              filename,
                           const std::vector<std::string> & flags);
-
-  /**
-   * \brief Convert the JSONArray of string representing the compiler
-   *        flags into a vector of strings.
-   *
-   * This is an utility function aimed to simplify the parsing of
-   * flags for the different plugins.
-   *
-   * \param flags The list of compiler flags (i.e. "-I../include",
-   *              "-I.." ...).
-   *
-   * \return A vector of compiler flags (can be empty).
-   */
-  static std::vector<std::string> getFlags(const JSONValue * flags);
 };
 
 #endif /* !IRONY_MODE_SERVER_TUMANAGER_H_ */

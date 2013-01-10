@@ -18,14 +18,14 @@
 #include "QuotedCXString.h"
 #include "str/to_string.hpp"
 
-SyntaxChecker::SyntaxChecker()
+SyntaxChecker::SyntaxChecker(TUManager & tuManager)
+  : tuManager_(tuManager)
 { }
 
 SyntaxChecker::~SyntaxChecker()
 { }
 
-std::string SyntaxChecker::handleRequest(TUManager &               tuManager,
-                                         const JSONObjectWrapper & data,
+std::string SyntaxChecker::handleRequest(const JSONObjectWrapper & data,
                                          std::string &             buf)
 {
   bool                             valid = true;
@@ -38,7 +38,7 @@ std::string SyntaxChecker::handleRequest(TUManager &               tuManager,
     {
       std::clog << "invalid/incomplete data for syntax checking." << std::endl;
     }
-  else if (CXTranslationUnit tu = tuManager.parse(file, flags))
+  else if (CXTranslationUnit tu = tuManager_.parse(file, flags))
     {
       unsigned numDiagnostic   = clang_getNumDiagnostics(tu);
       unsigned firstDiagnostic = 0;

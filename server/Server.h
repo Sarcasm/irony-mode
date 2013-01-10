@@ -24,7 +24,7 @@
 class Server : public util::NonCopyable
 {
 private:
-  TUManager                        TUManager_;
+  TUManager                        tuManager_;
   /**
    * Map of plugins, the string is the "request" the plugin handle.
    */

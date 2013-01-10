@@ -19,15 +19,16 @@
 #include "str/to_string.hpp"
 #include "util/arraysize.hpp"
 
-CodeCompletion::CodeCompletion(bool detailedCompletions)
-  : detailedCompletions_(detailedCompletions)
+CodeCompletion::CodeCompletion(TUManager & tuManager,
+                               bool        detailedCompletions)
+  : tuManager_(tuManager)
+  , detailedCompletions_(detailedCompletions)
 { }
 
 CodeCompletion::~CodeCompletion()
 { }
 
-std::string CodeCompletion::handleRequest(TUManager &               tuManager,
-                                          const JSONObjectWrapper & data,
+std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
                                           std::string &             buf)
 {
   bool                             valid  = true;
@@ -43,7 +44,7 @@ std::string CodeCompletion::handleRequest(TUManager &               tuManager,
       std::clog << "Invalid completion request \"file\" and/or \"line\""
         " and/or \"column\" are invalid." << std::endl;
     }
-  else if (CXTranslationUnit tu = tuManager.parse(file, flags))
+  else if (CXTranslationUnit tu = tuManager_.parse(file, flags))
     {
       // TODO: enhance ? actually the function return false on error,
       // we can display the error to the user maybe ?

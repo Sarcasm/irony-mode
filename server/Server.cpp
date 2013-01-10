@@ -33,20 +33,21 @@ const std::string eot_str               = "\nEOT\n";
 /// Initial size of the completion buffer
 const std::size_t SEXP_BUF_INITIAL_SIZE = 16384;
 
-const std::map<std::string, IPlugin *> generateBundlePlugins()
+const std::map<std::string, IPlugin *> generateBundlePlugins(TUManager & tuManager)
 {
   const std::pair<std::string, IPlugin*> plugins[] =
     {
-      std::make_pair("complete", new CodeCompletion(true)),
-      std::make_pair("complete-simple", new CodeCompletion(false)),
-      std::make_pair("syntax-check", new SyntaxChecker())
+      std::make_pair("complete",        new CodeCompletion(tuManager, true)),
+      std::make_pair("complete-simple", new CodeCompletion(tuManager, false)),
+      std::make_pair("syntax-check",    new SyntaxChecker(tuManager))
     };
   return std::map<std::string, IPlugin *>(plugins, plugins + arraysize(plugins));
 }
 } // !namespace
 
 Server::Server()
-  : plugins_(generateBundlePlugins())
+  : tuManager_()                // order matters
+  , plugins_(generateBundlePlugins(tuManager_))
 { }
 
 Server::~Server()
@@ -133,7 +134,7 @@ void Server::handleRequest(const std::string &       request,
       buf.reserve(SEXP_BUF_INITIAL_SIZE);
 
       // Fill \c buf with the request answer.
-      type = current->handleRequest(TUManager_, data, buf);
+      type = current->handleRequest(data, buf);
     }
 
   std::cout << intro << ":type " << type << " " << buf << ")\n;;EOT" << std::endl;
