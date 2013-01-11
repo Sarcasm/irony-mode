@@ -28,6 +28,8 @@ add_executable (irony-server
   plugins/CodeCompletion.h
   plugins/SyntaxChecker.cpp
   plugins/SyntaxChecker.h
+  plugins/CacheInvalidation.h
+  plugins/CacheInvalidation.cpp
   )
 
 add_dependencies (irony-server

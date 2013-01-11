@@ -177,7 +177,7 @@ cancelled."
 (defvar irony-process nil
   "The current irony-server process.")
 
-(defvar irony-request-mapping nil
+(defvar irony-request-mapping '((:status-code . irony-handle-status-code))
   "Alist of known request types associated to their handler. New
   server plugins must add their handlers in this list.")
 
@@ -504,6 +504,13 @@ corresponding to POS. The narrowing is skipped temporary."
 ;; Irony utility functions
 ;;
 
+(defun irony-handle-status-code (data)
+  "Generic handler for requests that do not require an answer
+from the irony process, such as for the command that reload the
+cached flags on a file."
+  (unless (eq (plist-get data :value) :success)
+    (message "error: irony-handle-status-code")))
+
 ;; TODO:
 ;; Interactive with completion (see `completion-read')
 (defun irony-enable (modules)
@@ -524,6 +531,23 @@ modules that respect the following contract:
 - defun irony-MODULE-NAME-disable"
   (dolist (module (if (listp modules) modules (list modules)))
     (funcall (intern (concat "irony-" (symbol-name module) "-disable")))))
+
+
+;;
+;; "built-in" plugins
+;;
+
+(defun irony-reload-flags ()
+  "Invalidate the cached flags on the current buffer. To be used
+when the compiler flags has changed while working on a file."
+  (interactive)
+  ;; invalidate the flags on the Emacs side first
+  (setq irony-flags-cache nil)
+  ;; then on the irony-server process
+  (let* ((request-data (list (cons :file (irony-temp-filename)))))
+    (irony-send-request :reload-flags
+                        request-data
+                        (current-buffer))))
 
 (provide 'irony)
 ;;; irony.el ends here

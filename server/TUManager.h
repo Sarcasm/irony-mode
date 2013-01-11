@@ -144,14 +144,24 @@ public:
   void unregisterSettings(SettingsID settingsID);
 
   /**
-   * \brief Invalidate all cached TU, the next use of a TU will
+   * \brief Invalidate a given cached TU, the next use of a TU will
    *        require reparsing.
    *
    * This can be useful for example: when the flags used to compile a
    * file have changed.
    *
-   * \todo Make a similar method that invalidates only a given
-   *       translation unit.
+   * \param filename    The filename for which the associated
+   *                    translation unit flags need to be invalidated.
+   *
+   * \sa invalidateAllCachedTUs()
+   */
+  void invalidateCachedTU(const std::string & filename);
+
+  /**
+   * \brief Invalidate all cached TU, the next use of a TU will
+   *        require reparsing.
+   *
+   * \sa invalidateCachedTU()
    */
   void invalidateAllCachedTUs();
 

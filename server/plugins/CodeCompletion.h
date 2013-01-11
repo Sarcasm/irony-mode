@@ -20,7 +20,6 @@
 
 #include "util/NonCopyable.h"
 
-
 /**
  * \brief A completion plugin, using the libclang completion features.
  *

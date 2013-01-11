@@ -26,6 +26,7 @@
 // List of plugins
 #include "plugins/CodeCompletion.h"
 #include "plugins/SyntaxChecker.h"
+#include "plugins/CacheInvalidation.h"
 
 namespace {
 /// An empty line with EOT
@@ -39,6 +40,7 @@ const std::map<std::string, IPlugin *> generateBundlePlugins(TUManager & tuManag
     {
       std::make_pair("complete",        new CodeCompletion(tuManager, true)),
       std::make_pair("complete-simple", new CodeCompletion(tuManager, false)),
+      std::make_pair("reload-flags",    new CacheInvalidation(tuManager)),
       std::make_pair("syntax-check",    new SyntaxChecker(tuManager))
     };
   return std::map<std::string, IPlugin *>(plugins, plugins + arraysize(plugins));

@@ -47,7 +47,7 @@ std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
 
   buf += ":results (";
 
-  if (not valid)
+  if (! valid)
     {
       std::clog << "Invalid completion request \"file\" and/or \"line\""
         " and/or \"column\" are invalid." << std::endl;

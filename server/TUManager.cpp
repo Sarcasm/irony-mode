@@ -163,6 +163,18 @@ Settings TUManager::computeEffectiveSettings() const
   return settings;
 }
 
+void TUManager::invalidateCachedTU(const std::string & filename)
+{
+  TranslationUnitsMap::iterator it = translationUnits_.find(filename);
+
+  if (it != translationUnits_.end()) {
+    if (CXTranslationUnit & tu = it->second) {
+      clang_disposeTranslationUnit(tu);
+    }
+    translationUnits_.erase(it);
+  }
+}
+
 void TUManager::invalidateAllCachedTUs()
 {
   TranslationUnitsMap::iterator it = translationUnits_.begin();
