@@ -200,7 +200,7 @@ the value reach 0 it means the temporary file can be deleted.")
 
 (define-minor-mode irony-mode
   ;; FIXME: describe the mode here
-  ;; Check if turning off the mode with -1 work.
+  ;; Check if turning off the mode with -1 works.
   "Toggle irony mode.
 
 With no argument, this command toggles the mode. Non-null prefix
@@ -214,7 +214,7 @@ mode."
   :group 'irony
 
   (when irony-mode             ;start irony mode
-    ;; If not in a known mode warn the user
+    ;; if not in a known mode, warn the user
     (unless (memq major-mode irony-known-modes)
       (display-warning 'irony
                        "Irony mode is aimed to work with a major \
@@ -406,11 +406,10 @@ current directory couldn't be found."
   "Find the compiler flags required to parse the content of
   BUFFER (by default the current buffer).
 
-The value returned is a list of flags where the variable
-  `irony-header-directories', `irony-config-commands',
-  `irony-lang-option-alist' and `irony-extra-flags' will be
-  used (check the documentation of the variables for more
-  informations).
+The value returned is a list of flags using the variables
+`irony-header-directories', `irony-config-commands',
+`irony-lang-option-alist' and `irony-extra-flags' (check the
+documentation of the variables for more informations).
 
 Note: In addition to `irony-header-directories' the directory of
 BUFFER will be added for the include directives (this is due to
@@ -493,7 +492,7 @@ before calling that macro."
 
 (defun irony-point-location (point)
   "Return a cons of the following form: (line . column)
-corresponding to POS. The narrowing is skipped temporary."
+corresponding to POS. The narrowing is skipped temporarily."
   (save-excursion
     (goto-char point)
     (irony-without-narrowing

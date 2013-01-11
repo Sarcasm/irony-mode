@@ -170,10 +170,10 @@ a compile_command.json file."
   already been found
 - the value is the compilation database")
 
-;; FIXME: the directory argument is not handle correctly, for example
+;; FIXME: the directory argument is not handled correctly. For example
 ;; the output file (in this case it doesn't matter...) will be -o
-;; src/foo.o, it should be /directory/given/in/the/entry/src/foo.o
-;; but it should works for most of the case like this...
+;; src/foo.o, it should be /directory/given/in/the/entry/src/foo.o but
+;; it should works for most cases...
 (defun irony-cmake-parse-compilation-entry (entry)
   "Return a list as follows (file include-dirs extra-flags) or
 Nil if the entry doesn't seems correct (for example an unknown

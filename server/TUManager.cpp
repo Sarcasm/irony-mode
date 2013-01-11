@@ -50,7 +50,7 @@ TUManager::~TUManager()
 CXTranslationUnit TUManager::parse(const std::string &              filename,
                                    const std::vector<std::string> & flags)
 {
-  CXTranslationUnit tu = translationUnits_[filename];
+  CXTranslationUnit & tu = translationUnits_[filename];
 
   if (! tu)
     {
@@ -62,8 +62,9 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
           argv         = new const char *[nbArgs + 1];
           argv[nbArgs] = 0;
 
-          for (std::size_t i = 0; i < nbArgs; ++i)
+          for (std::size_t i = 0; i < nbArgs; ++i) {
             argv[i] = flags[i].c_str();
+          }
         }
 
       // TODO: See if it's necessary, but using a CMake compilation
@@ -75,7 +76,6 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
                                       0, 0,
                                       effectiveSettings_.parseTUOptions);
       delete [] argv;
-      translationUnits_[filename] = tu;
     }
 
   if (! tu)
@@ -102,7 +102,7 @@ CXTranslationUnit TUManager::parse(const std::string &              filename,
     {
       // a 'fatal' error occur (even a diagnostic is impossible)
       clang_disposeTranslationUnit(tu);
-      translationUnits_[filename] = 0;
+      tu = 0;
       return 0;
     }
 
