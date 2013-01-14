@@ -39,6 +39,9 @@ if ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
   set(CMAKE_COMPILER_IS_CLANGCXX TRUE)
 endif()
 
+# libclang in non standard locations can cause some troubles.
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 # Add some extra flags during C++ compilation (targets GCC and Clang
 # compatible flags).
 include(CheckCXXCompilerFlag)
