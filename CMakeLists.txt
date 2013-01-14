@@ -40,7 +40,11 @@ if ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
 endif()
 
 # libclang in non standard locations can cause some troubles.
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+option(USE_RPATH "Enable rpath for shared libraries (such as libclang.so)." OFF)
+
+if (USE_RPATH)
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 
 # Add some extra flags during C++ compilation (targets GCC and Clang
 # compatible flags).

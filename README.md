@@ -134,6 +134,22 @@ You can use the following configuration:
                       "/usr/lib/clang/3.2/include/"))))
 ```
 
+## libclang.so: cannot open shared object file...
+
+Compiling `irony-server` succeed but you have the following message
+when you try to run the `irony-server` executable:
+
+    'irony-server: error while loading shared libraries: libclang.so: cannot open shared object file: No such file or directory
+
+Maybe it's due to a non-standard location for your installation of
+`libclang`. A path such as `/usr/local/lib` might not be in the path
+list of the dynamic loader (see ld.so.conf).
+
+To solve this issue it is possible to build `irony-server` with the
+following command:
+
+    cmake -DUSE_RPATH=ON ..
+
 # How to contribute
 
 ## File naming conventions
