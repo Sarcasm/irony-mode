@@ -84,19 +84,20 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
       return false;
     }
 
-  // FIXME: DEBUG
+  // log errors
   if (unsigned numErrors = clang_codeCompleteGetNumDiagnostics(completionResults))
     {
-      std::clog << numErrors << " errors found." << std::endl;
-      for (unsigned i = 0; i < numErrors; i++)
-        {
-          const CXDiagnostic& diag = clang_codeCompleteGetDiagnostic(completionResults, i);
-          const CXString&     s    = clang_getDiagnosticSpelling(diag);
+      std::clog << numErrors << " errors found during completion." << std::endl;
+      for (unsigned i = 0; i < numErrors; i++) {
+        CXDiagnostic diagnostic = clang_codeCompleteGetDiagnostic(completionResults, i);
+        CXString s = clang_formatDiagnostic(diagnostic,
+                                            clang_defaultDiagnosticDisplayOptions());
 
-          std::clog << clang_getCString(s) << std::endl;
-        }
+        std::clog << clang_getCString(s) << std::endl;
+        clang_disposeString(s);
+        clang_disposeDiagnostic(diagnostic);
+      }
     }
-  // END DEBUG
 
   for (unsigned i = 0; i != completionResults->NumResults; ++i)
     {
