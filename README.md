@@ -92,9 +92,9 @@ Vim plugin.
 
 # Screenshots
 
-![Optional Parameters](./irony-mode/raw/master/screenshots/optional-parameters.png)
+![Optional Parameters](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/optional-parameters.png)
 
-![Boost](./irony-mode/raw/master/screenshots/boost-example.png)
+![Boost](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/boost-example.png)
 
 # FAQ
 
