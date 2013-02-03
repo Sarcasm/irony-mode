@@ -2,6 +2,7 @@
 
 Work in progress...
 
+[![Build Status](https://travis-ci.org/Sarcasm/irony-mode.png)](https://travis-ci.org/Sarcasm/irony-mode)
 
 # Download and compilation
 

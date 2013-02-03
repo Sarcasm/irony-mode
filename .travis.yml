@@ -1,0 +1,21 @@
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+  - git submodule update --init --recursive
+  - sudo apt-get install libclang-dev -qq
+
+before_script:
+  - mkdir build
+  - cd build
+
+script:
+  - cmake ..
+  - make -k -j 4
+
+after_script:
+  - cd ..
+  - rm -rf build
