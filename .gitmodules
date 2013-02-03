@@ -1,9 +1,3 @@
-[submodule "elisp/plugins/popup-frame"]
-	path = elisp/plugins/popup-frame
-	url = git://github.com/Sarcasm/popup-frame.git
-[submodule "elisp/plugins/posn-on-screen"]
-	path = elisp/plugins/posn-on-screen
-	url = git://github.com/Sarcasm/posn-on-screen.git
 [submodule "lib/SimpleJSON"]
 	path = lib/SimpleJSON
 	url = https://github.com/MJPA/SimpleJSON.git
