@@ -18,4 +18,8 @@ script:
 
 after_script:
   - cd ..
-  - rm -rf build
+
+# ATM the master branch doesn't build and it doesn't matter
+branches:
+  except:
+    - master
