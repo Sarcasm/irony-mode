@@ -1,6 +1,6 @@
-;;; irony-cmake.el --- `irony-mode` CMake integration
+;;; irony/compilation-db.el --- `irony-mode` CMake integration
 
-;; Copyright (C) 2012  Guillaume Papin
+;; Copyright (C) 2012-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience, tools
@@ -21,7 +21,7 @@
 ;;; Commentary:
 
 ;; Usage:
-;; TODO: ...
+;;     (irony-enable 'compilation-db)
 
 ;;; Code:
 
@@ -30,16 +30,16 @@
 (eval-when-compile
   (require 'cl))
 
-(defcustom irony-cmake-build-directory-name "emacs-build"
+(defcustom irony-compilation-db-build-dir "emacs-build"
   "Default directory name to use for the cmake build directory."
   :type 'string
   :require 'irony
   :group 'irony)
 
-(defcustom irony-cmake-generator nil
+(defcustom irony-compilation-db-cmake-generator nil
   "Generator to use when calling CMake, nil means use the default
   CMake generator. If non-nil the CMake option \"-G
-  `irony-cmake-generator'\" will be the default for CMake
+  `irony-compilation-db-cmake-generator'\" will be the default for CMake
   generation.
 
 Known working values are:
@@ -49,10 +49,10 @@ Known working values are:
   :require 'irony
   :group 'irony)
 
-(defcustom irony-cmake-known-binaries '("cc" "c++"
-                                        "gcc" "g++"
-                                        "clang" "clang++"
-                                        "llvm-gcc" "llvm-g++")
+(defcustom irony-compilation-db-known-binaries '("cc"       "c++"
+                                                 "gcc"      "g++"
+                                                 "clang"    "clang++"
+                                                 "llvm-gcc" "llvm-g++")
   "List of valid compilers in a compilation_commands.json file.
 They should be compatible with the libclang
 clang_parseTranslationUnit() command line arguments."
@@ -61,23 +61,24 @@ clang_parseTranslationUnit() command line arguments."
   :require 'irony
   :group 'irony)
 
-;;
+
 ;; Internal variables
 ;;
 
-(defvar irony-cmake-enabled nil
-  "A boolean value to inform if yes or not the setup method had
+(defvar irony-compilation-db-enabled nil
+  "A boolean value to inform if yes or no the setup method had
   already been called. The hook seems to be called twice for no
-  apparent reason, this is a way to get around this strange
+  apparent reasons, this is a way to get around this strange
   behavior.")
-(make-variable-buffer-local 'irony-cmake-enabled)
+(make-variable-buffer-local 'irony-compilation-db-enabled)
 
-;; TODO: re-write (It seems to work but it's ugly...)
-(defun irony-cmake-find-root-1 (dir)
+;; TODO: Rewrite (it seems to work but it's ugly...)
+(defun irony-compilation-db-find-cmake-root-1 (dir)
   "Find the root CMakeLists.txt file starting from DIR and
 looking back until the first CMakeLists.txt is found (assuming
 each directory after the root CMakeLists.txt contain a
-CMakeLists.txt)."
+CMakeLists.txt).
+Returns nil if no directory is found."
   (let ((old-dir ""))
     ;; Loop until a directory containing a CMakeLists.txt file is found
     (while (and (not (string= old-dir dir))
@@ -93,65 +94,89 @@ CMakeLists.txt)."
               dir (file-truename (expand-file-name ".." dir))))
       old-dir)))
 
-(defvar irony-cmake-root-dir-hash (make-hash-table :test 'equal)
+(defvar irony-compilation-db-root-dir-hash (make-hash-table :test 'equal)
   "*internal variable* Memoize already found CMake project roots.
 - the key is a directory for which a root as already been found
 - the value is the root")
 
-(defvar irony-cmake-root-dir-list nil
+(defvar irony-compilation-db-root-dir-list nil
   "*internal variable* Memoize already found CMake project
   roots.")
 
-(defun irony-cmake-find-root ()
+(defun irony-compilation-db-find-cmake-root ()
   "Look for the root directory of the project, the directory
 where we can find the CMakeLists.txt. If a CMakeLists.txt can't
 be found or if it's the first time (in this Emacs session) that
 this root is referenced we ask the user to provide the
-directory."
+directory.
+
+This might be a bad idea but the function returns either:
+- a string:
+      The path to the root directory of the project.
+- nil:
+      Couldn't find a root even if it seems to be a CMake
+      project (maybe the user was just annoyed by the prompt).
+- 'not-a-cmake-project:
+      The project is apparently not a CMake project but we can
+      look for some other compilation-db solution than CMake
+      compile_commands.json
+"
   ;; looking for the root of the CMake project
   (let ((current-dir (or (irony-current-directory)
                          default-directory)))
     ;; either we return the cached value or we calculate the good one
-    (or (gethash current-dir irony-cmake-root-dir-hash)
-        (let ((root (irony-cmake-find-root-1 current-dir))
-              (need-prompt t))
-          ;; if the directory is know return it otherwise ask confirmation
-          (if (member root irony-cmake-root-dir-list)
-              root
-            (setq root (read-directory-name "Confirm CMake root directory: " root))
-            (if (file-exists-p (expand-file-name "CMakeLists.txt" root))
-                (progn
-                  (setq irony-cmake-root-dir-list (cons root irony-cmake-root-dir-list))
-                  (puthash current-dir root irony-cmake-root-dir-hash))
-              (message "No CMakeLists.txt found for this buffer.")
-              nil))))))
+    (or (gethash current-dir irony-compilation-db-root-dir-hash)
+        (let ((root (irony-compilation-db-find-cmake-root-1 current-dir)))
+          ;; if the directory is known, return it, otherwise ask
+          ;; confirmation
+          (cond
+           ((member root irony-compilation-db-root-dir-list)
+            root)
+           ;; let the caller know it's not a CMake project
+           ((not root)
+            'not-a-cmake-project)
+           (t
+            (let ((inhibit-quit t))
+              (setq root
+                    (with-local-quit
+                      (read-directory-name "Confirm CMake directory: " root)
+                      (if (file-exists-p (expand-file-name "CMakeLists.txt" root))
+                          (progn
+                            (setq irony-compilation-db-root-dir-list
+                                  (cons root irony-compilation-db-root-dir-list))
+                            (puthash current-dir root irony-compilation-db-root-dir-hash))
+                        (message "No CMakeLists.txt found for this buffer."))))
+              (setq quit-flag nil)
+              root)))))))
 
-(defvar irony-cmake-build-dir-hash (make-hash-table :test 'equal)
+(defvar irony-compilation-db-build-dir-hash (make-hash-table :test 'equal)
   "*internal variable* Memoize already found CMake build dir
   containing a compile_commands.json file.
  - the key is the root directory containing the CMakeLists.txt
  - the value is the build dir")
 
-(defun irony-cmake-generate-cmake (src-dir)
+(defun irony-compilation-db-generate-cmake (src-dir)
   "Prompt the user for arguments and then generate a cmake build.
 Return t if the generation was successful (0 returned by the
 command), return nil on error."
   ;; we hide the fact -DEXPORT_COMPILE_COMMANDS=ON will be added and
   ;; the source directory
   (let ((args (read-string "Additionnal CMake arguments: "
-                           (if irony-cmake-generator
-                               (concat "-G \"" irony-cmake-generator "\" ")))))
-    (eq 0
-        (shell-command
-         (concat "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON " src-dir " " args)))))
+                           (if irony-compilation-db-cmake-generator
+                               (format "-G \"%s\" "
+                                       irony-compilation-db-cmake-generator)))))
+    (eq 0 (shell-command
+           (concat "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "
+                   args " "
+                   src-dir)))))
 
-(defun irony-cmake-find-build-dir (root)
-  "Find or create the CMake build directory which should contain
-a compile_command.json file."
-  (or (gethash root irony-cmake-build-dir-hash)
+(defun irony-compilation-db-find-build-dir (root)
+  "Find or create the CMake build directory containing a
+compile_command.json file."
+  (or (gethash root irony-compilation-db-build-dir-hash)
       (let ((build-dir (read-directory-name
                         "CMake build directory: "
-                        (expand-file-name irony-cmake-build-directory-name
+                        (expand-file-name irony-compilation-db-build-dir
                                           root))))
         (unless (string= build-dir "")
           ;; ensure final '/' for required by `default-directory'
@@ -160,11 +185,11 @@ a compile_command.json file."
             ;; create directory invoke CMake ask for additionnal arguments
             (when (ignore-errors (make-directory build-dir t) t)
               (let ((default-directory build-dir))
-                (irony-cmake-generate-cmake root))))
+                (irony-compilation-db-generate-cmake root))))
           (if (file-exists-p (expand-file-name "compile_commands.json" build-dir))
-              (puthash root build-dir irony-cmake-build-dir-hash))))))
+              (puthash root build-dir irony-compilation-db-build-dir-hash))))))
 
-(defvar irony-cmake-compilation-db-hash (make-hash-table :test 'equal)
+(defvar irony-compilation-db-compilation-db-hash (make-hash-table :test 'equal)
   "*internal variable* Memoize already found compilation databases.
 - the key is a build directory for which a compilation DB as
   already been found
@@ -174,7 +199,7 @@ a compile_command.json file."
 ;; the output file (in this case it doesn't matter...) will be -o
 ;; src/foo.o, it should be /directory/given/in/the/entry/src/foo.o but
 ;; it should works for most cases...
-(defun irony-cmake-parse-compilation-entry (entry)
+(defun irony-compilation-db-parse-entry (entry)
   "Return a list as follows (file include-dirs extra-flags) or
 Nil if the entry doesn't seems correct (for example an unknown
 compilers/command).
@@ -191,7 +216,7 @@ For example:
                (split-string-and-unquote (cdr (assq 'command entry))))))
     (when (and cmd
                (member (file-name-nondirectory (car cmd))
-                       irony-cmake-known-binaries))
+                       irony-compilation-db-known-binaries))
       (cons (file-truename file)
             (loop for arg in (cdr cmd)
                   ;; XXX: this is bad, this is an assumption on the
@@ -206,52 +231,60 @@ For example:
                     collect arg into extra-flags
                   finally return (list include-dirs extra-flags))))))
 
-(defun irony-cmake-parse-compilation-db (compilation-db-file)
+(defun irony-compilation-db-parse-file (compilation-db-file)
   "Parse the compilation database by calling
-  `irony-cmake-parse-compilation-entry' on each entry and filling
+  `irony-compilation-db-parse-entry' on each entry and filling
   a hash with a filename as a key."
-  (let ((entries (mapcar 'irony-cmake-parse-compilation-entry
+  (let ((entries (mapcar 'irony-compilation-db-parse-entry
                          (json-read-file compilation-db-file)))
         (compilation-db (make-hash-table :test 'equal)))
     (dolist (entry entries compilation-db)
       (when entry
         (puthash (car entry) (cdr entry) compilation-db)))))
 
-(defun irony-cmake-get-compilation-db (build-dir)
+(defun irony-compilation-db-get-db (build-dir)
   "Get or load the compilation database present in BUILD-DIR."
-  (or (gethash build-dir irony-cmake-compilation-db-hash)
-      (let ((compilation-db (irony-cmake-parse-compilation-db
+  (or (gethash build-dir irony-compilation-db-compilation-db-hash)
+      (let ((compilation-db (irony-compilation-db-parse-file
                              ;; FIXME: redundancy with the calls in
-                             ;; `irony-cmake-find-build-dir'
+                             ;; `irony-compilation-db-find-build-dir'
                              (expand-file-name "compile_commands.json" build-dir))))
-        (puthash build-dir compilation-db irony-cmake-compilation-db-hash))))
+        (puthash build-dir compilation-db irony-compilation-db-compilation-db-hash))))
 
-(defun irony-cmake-setup ()
-  "Irony-mode hook for irony-cmake plugin."
+(defun irony-compilation-db-setup ()
+  "Irony-mode hook for irony-compilation-db plugin."
   ;; looking for the root of the CMake project
   (interactive)
   (when (and buffer-file-name
-             (not irony-cmake-enabled))
-    (setq irony-cmake-enabled t)
-    (let ((root (irony-cmake-find-root)))
-      (when root
-        (let* ((build-dir (irony-cmake-find-build-dir root))
-               (compilation-db (irony-cmake-get-compilation-db build-dir))
-               (flags (gethash (file-truename buffer-file-name) compilation-db)))
-          (when flags
-            (setq irony-header-directories (car flags)
-                  irony-extra-flags (cadr flags))))))))
+             (not irony-compilation-db-enabled))
+    (setq irony-compilation-db-enabled t)
+    (let ((root (irony-compilation-db-find-cmake-root)))
+      (cond ((stringp root)
+             (let* ((build-dir (irony-compilation-db-find-build-dir root))
+                    (compilation-db (irony-compilation-db-get-db build-dir))
+                    (flags (gethash (file-truename buffer-file-name) compilation-db)))
+               (when flags
+                 (setq irony-header-directories (car flags)
+                       irony-extra-flags (cadr flags)))))
+            ((eq root 'not-a-cmake-project)
+             (message "find work around..."))
+            ((not root)
+             (message "leave the user alone..."))))))
 
-(defun irony-cmake-enable ()
+(defun irony-compilation-db-enable ()
   "Enable cmake settings for `irony-mode'."
   (interactive)
-  (add-hook 'irony-mode-hook 'irony-cmake-setup))
+  (add-hook 'irony-mode-hook 'irony-compilation-db-setup))
 
-(defun irony-cmake-disable ()
+(defun irony-compilation-db-disable ()
   "Disable cmake settings for `irony-mode'."
   (interactive)
-  (remove-hook 'irony-mode-hook 'irony-cmake-setup))
+  (remove-hook 'irony-mode-hook 'irony-compilation-db-setup))
 
+(provide 'irony/compilation-db)
 
-(provide 'irony-cmake)
-;;; irony-cmake.el ends here
+;; Local variables:
+;; generated-autoload-load-name: "irony/cmake"
+;; End:
+
+;;; irony/compilation-db.el ends here
