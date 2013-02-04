@@ -2,7 +2,7 @@
 
 Work in progress...
 
-[![Build Status](https://travis-ci.org/Sarcasm/irony-mode.png)](https://travis-ci.org/Sarcasm/irony-mode)
+[![Build Status](https://api.travis-ci.org/Sarcasm/irony-mode.png?branch=develop)](https://travis-ci.org/Sarcasm/irony-mode)
 
 # Download and compilation
 
@@ -32,7 +32,7 @@ Recommended packages and versions:
 | Package                           | Version      | Status      | Comment                                             |
 | --------------------------------- | ------------ | ----------- | --------------------------------------------------- |
 | [auto-complete][ac-ref]           | 1.4          | recommended | version in auto-complete.el header                  |
-| [YASnippet][yasnippet-ref]        | 0.1.1 and up | recommended | `yas--version` or `yas/version`                     |
+| [YASnippet][yasnippet-ref]        | ALL          | recommended | `yas--version` or `yas/version`                     |
 | [auto-complete fork][ac-fork-ref] | 1.4          | legacy      | detailed completion (e.g show overloaded functions) |
 | [eproject][eproject-ref]          | ???          | legacy      |                                                     |
 
