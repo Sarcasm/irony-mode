@@ -32,7 +32,7 @@ Recommended packages and versions:
 | Package                           | Version      | Status      | Comment                                             |
 | --------------------------------- | ------------ | ----------- | --------------------------------------------------- |
 | [auto-complete][ac-ref]           | 1.4          | recommended | version in auto-complete.el header                  |
-| [YASnippet][yasnippet-ref]        | 0.5.8 and up | recommended | `yas--version` or `yas/version`                     |
+| [YASnippet][yasnippet-ref]        | 0.1.1 and up | recommended | `yas--version` or `yas/version`                     |
 | [auto-complete fork][ac-fork-ref] | 1.4          | legacy      | detailed completion (e.g show overloaded functions) |
 | [eproject][eproject-ref]          | ???          | legacy      |                                                     |
 
