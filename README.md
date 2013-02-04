@@ -27,16 +27,22 @@ Finally:
 
 # Emacs configuration
 
-Assuming:
+Recommended packages and versions:
 
-* [my fork](https://github.com/Sarcasm/auto-complete/) of
-  [Auto Complete Mode](http://cx4a.org/software/auto-complete/) (it
-  will be hopefully merged in the official auto-complete "soon")
-* [YASnippet](https://github.com/capitaomorte/yasnippet)
-* [eproject](https://github.com/jrockway/eproject)
+| Package                           | Version      | Status      | Comment                                             |
+| --------------------------------- | ------------ | ----------- | --------------------------------------------------- |
+| [auto-complete][ac-ref]           | 1.4          | recommended | version in auto-complete.el header                  |
+| [YASnippet][yasnippet-ref]        | 0.5.8 and up | recommended | `yas--version` or `yas/version`                     |
+| [auto-complete fork][ac-fork-ref] | 1.4          | legacy      | detailed completion (e.g show overloaded functions) |
+| [eproject][eproject-ref]          | ???          | legacy      |                                                     |
 
-are already loaded. [el-get](https://github.com/dimitri/el-get) help a
-lot for package management in Emacs (see
+[ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
+[ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
+[yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
+[eproject-ref]:  https://github.com/jrockway/eproject           "Eproject"
+
+[el-get](https://github.com/dimitri/el-get) help a lot for package
+management in Emacs. You can take a look at
 [my configuration](https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-el-get.el)).
 
 Copy and paste in the \*scratch\* buffer:

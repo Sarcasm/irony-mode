@@ -27,8 +27,9 @@
 ;; The functionalities provided are:
 ;; - functions with optional parameters are distinguished in order to
 ;;   choose the correct function directly.
-;; - Snippet (with `yasnippet') expansion are made after the
-;;   completion is performed
+;; - if yasnippet is installed on the system, snippet expansion is
+;;   performed after the completion a completion has been entered by
+;;   the user.
 
 ;;; Usage:
 ;;      (add-to-list 'load-path "/path/to/irony-ac-directory")
@@ -42,7 +43,6 @@
 (require 'irony-completion)
 (require 'auto-complete)
 (require 'popup)
-(require 'yasnippet)
 
 (defcustom irony-ac-show-priority nil
   "Non-nil means the priority of the result will be shown in the
@@ -73,6 +73,13 @@ completion menu. This can help to set `irony-priority-limit'."
 ;;
 ;; Internal variables
 ;;
+
+(defvar irony-ac-expand-snippet-function nil
+  "Function to expand a snippet at a given point (by default to
+  the current position).
+
+  e.g: (defun my-expand-snippet (snippet-str &optional pos)
+         (do-stuff (or pos (point)))")
 
 (defconst irony-symbol-to-str-alist
   '((:left-paren       . "(")
@@ -122,10 +129,66 @@ activated."
   (add-to-list 'ac-sources 'ac-source-irony)
   (define-key irony-mode-map [(control return)] 'ac-complete-irony))
 
+(defun irony-ac-yas-disabled-p ()
+  "If the current yasnippet version offers a minor-mode, check if
+this mode is disable by returning t, otherwise returns nil and
+it's partially safe to assume that yasnippet expansion can be
+used."
+  ;; XXX: work only when yasnippet is enabled, otherwise
+  ;;      some variables use for the snippet expansion are
+  ;;      not set and it causes some errors.
+  (if (boundp 'yas-minor-mode)
+      (not yas-minor-mode)
+    (if (boundp 'yas/minor-mode)
+        (not yas/minor-mode))))
+
+(defun irony-ac-expand-yas-1 (snippet-str &optional pos)
+  "Expand snippets for YASnippet version <= 0.6.0c."
+  (unless (irony-ac-yas-disabled-p)
+    (yas/expand-snippet (or pos (point))
+                        (or pos (point))
+                        snippet-str)))
+
+(defun irony-ac-expand-yas-2 (snippet-str &optional pos)
+  "Expand snippets for YASnippet version < 0.8.
+
+See also `irony-ac-expand-yas-1'."
+  (unless (irony-ac-yas-disabled-p)
+    (when pos
+        (goto-char pos))
+    (yas/expand-snippet snippet-str)))
+
+(defun irony-ac-expand-yas-3 (snippet-str &optional pos)
+  "Expand snippets for YASnippet version >= 0.8.
+
+See also `irony-ac-expand-yas-2'."
+  (unless (irony-ac-yas-disabled-p)
+    (when pos
+        (goto-char pos))
+    (yas-expand-snippet snippet-str)))
+
 (defun irony-ac-enable ()
   "Enable `auto-complete-mode' handling of `irony-mode'
 completion results."
-  (add-hook 'irony-mode-hook 'irony-ac-setup))
+  (add-hook 'irony-mode-hook 'irony-ac-setup)
+  ;; find the snippet expand function
+  (when (and (not irony-ac-expand-snippet-function)
+             (require 'yasnippet nil t))
+    (let ((yas-version (or (and (boundp 'yas--version) yas--version)
+                           (and (boundp 'yas/version) yas/version)))) ;for old versions
+      (when (stringp yas-version)
+        (setq yas-version (replace-regexp-in-string "(\\|)" "" yas-version))
+        (setq irony-ac-expand-snippet-function
+              (cond ((version<= yas-version "0.6.0c")
+                     'irony-ac-expand-yas-1)
+                    ;; `version<' thinks "0.8beta" < "0.8", we want to
+                    ;; consider anything starting with "0.8" as "0.8"
+                    ;; and more.
+                    ((and (version< yas-version "0.8")
+                          (not (string-prefix-p "0.8" yas-version)))
+                     'irony-ac-expand-yas-2)
+                    (t
+                     'irony-ac-expand-yas-3)))))))
 
 (defun irony-ac-disable ()
   "Disable `auto-complete-mode' handling of `irony-mode'
@@ -149,7 +212,7 @@ current buffer."
         for priority = (if show-priority (plist-get result-plist :priority))
         if (plist-get result-plist :optional)
         append (mapcar (lambda (r) (irony-new-item r window-width priority))
-                       (irony-expand-optionals result))
+                       (irony-ac-expand-optionals result))
         into candidates
         else collect (irony-new-item result window-width priority)
         into candidates
@@ -206,7 +269,7 @@ the summary is truncated in order to not span on multiple lines."
                       (format ":%3d" priority)))))
     (popup-make-item typed-text :view view :value result :summary summary)))
 
-(defun irony-expand-optionals (data)
+(defun irony-ac-expand-optionals (data)
   "Expand a DATA into a list of results, where optional chunks
 are expanded."
   (let ((results (list nil)))
@@ -214,7 +277,7 @@ are expanded."
       (cond
        ((eq (car cell) :optional)
         (let (new-results)
-          (dolist (opt-chunks (irony-expand-optionals (plist-get (cdr cell) :result)))
+          (dolist (opt-chunks (irony-ac-expand-optionals (plist-get (cdr cell) :result)))
             (let* ((res (copy-tree results)) ;FIXME: copy alist ?
                    (new-elems (mapcar (lambda (r)
                                         (nconc (nreverse opt-chunks) r))
@@ -234,30 +297,52 @@ are expanded."
               (nreverse res))
             results)))
 
-(defun irony-ac-action ()
-  "Action to execute after a completion was done."
-  (let ((result (popup-item-value (cdr ac-last-completion)))
-        (text "")
-        (snippet 0))
+(defun irony-ac-dynamic-snippet (completion-result)
+  "Return a cons of the for (SNIPPET-STR . HAS-PLACEHOLDER-P)
+where SNIPPET-STR is a string of the form:
+
+ - \"()\"
+ - \"(${1:int x}, ${2:int y})$0\"
+
+if HAS-PLACEHOLDER-P is nil then it's not a snippet and doesn't
+need special expansion, otherwise it's a snippet and it will end
+with the $0 string to the represent the final position after
+expansion.
+
+See `irony-new-item' for a description of COMPLETION-RESULT
+format."
+  (let ((result (popup-item-value completion-result))
+        (dynamic-snippet "")
+        (num-placeholders 0))
     ;; skip after the typed text
     (while (not (eq (caar result) :typed-text))
       (setq result (cdr result)))
+    ;; build snippet
     (dolist (cell result)
       (let ((identifier (car cell))
             (value (cdr cell)))
-        (setq text
-              (concat text (cond
-                            ((eq identifier :symbol)
-                             (cdr (assq value irony-symbol-to-str-alist)))
-                            ((or (eq identifier :place-holder)
-                                 (eq identifier :current-place-holder)) ;FIXME: "couldn't test"
-                             (setq snippet (1+ snippet))
-                             (format "${%d:%s}" snippet value))
-                            ((eq identifier :text)
-                             value)))))) ;!dolist
-    (if (eq snippet 0)
-        (insert text)
-      (yas/expand-snippet (concat text "$0")))))
+        (setq dynamic-snippet
+              (concat dynamic-snippet
+                      (cond
+                       ((eq identifier :symbol)
+                        (cdr (assq value irony-symbol-to-str-alist)))
+                       ((or (eq identifier :place-holder)
+                            (eq identifier :current-place-holder)) ;FIXME: "can't test"
+                        (setq num-placeholders (1+ num-placeholders))
+                        (format "${%d:%s}" num-placeholders value))
+                       ((eq identifier :text)
+                        value))))))     ;!dolist
+    (cons dynamic-snippet
+          (> num-placeholders 0))))
+
+(defun irony-ac-action ()
+  "Action to execute after a completion was done."
+    (let ((dyn-snip (irony-ac-dynamic-snippet (cdr ac-last-completion))))
+      (if (cdr dyn-snip)                ;has placeholder(s)?
+          (when irony-ac-expand-snippet-function
+            (funcall irony-ac-expand-snippet-function (car dyn-snip)))
+        ;; no placeholder, just insert the string
+        (insert (car dyn-snip)))))
 
 (provide 'irony-ac)
 ;;; irony-ac.el ends here
