@@ -1,6 +1,6 @@
-;;; irony-ac.el --- Irony completion with auto-complete
+;;; irony/ac.el --- Irony completion with auto-complete
 
-;; Copyright (C) 2011  Guillaume Papin
+;; Copyright (C) 2011-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience
@@ -26,17 +26,18 @@
 ;;
 ;; The functionalities provided are:
 ;; - functions with optional parameters are distinguished in order to
-;;   choose the correct function directly.
+;;   choose the correct function directly when possible. ATM of this
+;;   writting the only known possible way to get this is to use a
+;;   special fork of auto-complete as specified in the README.md.
 ;; - if yasnippet is installed on the system, snippet expansion is
 ;;   performed after the completion a completion has been entered by
 ;;   the user.
 
 ;;; Usage:
-;;      (add-to-list 'load-path "/path/to/irony-ac-directory")
-;;      (irony-load '(ac))
+;;      (irony-enable 'ac)
 ;;
-;; note: `ac-complete-irony' to trigger the completion on demand
-;; (binded to C-RET by default when `irony-ac-setup' is used)
+;; Note: Call `ac-complete-irony' to trigger the completion manually.
+;; It's binded to `C-RET' by default when `irony-ac-setup' is used.
 
 ;;; Code:
 
@@ -46,11 +47,29 @@
 
 (defcustom irony-ac-show-priority nil
   "Non-nil means the priority of the result will be shown in the
-completion menu. This can help to set `irony-priority-limit'."
+completion menu.
+
+This can help to set `irony-priority-limit'. Works only with
+detailed completion."
   :type '(choice (const :tag "Yes" t)
                  (const :tag "Never" nil))
   :group 'irony
   :group 'auto-complete)
+
+;; XXX: Not sure how to make this option for the moment. I think AC
+;;      caches the sources and it might be a bad idea to change the
+;;      definition of a source dynamically.
+;;
+;; (defcustom irony-ac-prefer-simple-results nil
+;;   "Non-nil means that, even if detailed completion is available
+;;   the plugin should stick to simple candidates display.
+;;
+;; Note: ATM it is not possible to change this value dynamically, it
+;; should be set before the plugin is loaded."
+;;   :type '(choice (const :tag "Yes" t)
+;;                  (const :tag "No" nil))
+;;   :group 'irony
+;;   :group 'auto-complete)
 
 (defface ac-irony-candidate-face
   '((((class color) (min-colors 88))
@@ -70,7 +89,7 @@ completion menu. This can help to set `irony-priority-limit'."
   :group 'irony
   :group 'auto-complete)
 
-;;
+
 ;; Internal variables
 ;;
 
@@ -79,7 +98,9 @@ completion menu. This can help to set `irony-priority-limit'."
   the current position).
 
   e.g: (defun my-expand-snippet (snippet-str &optional pos)
-         (do-stuff (or pos (point)))")
+         (do-stuff (or pos (point)))
+
+Will be set to nil if no snippet expansion function is found.")
 
 (defconst irony-symbol-to-str-alist
   '((:left-paren       . "(")
@@ -96,31 +117,31 @@ completion menu. This can help to set `irony-priority-limit'."
     (:equal            . "=")
     (:horizontal-space . " ")
     (:vertical-space   . "\n"))
-  "Alist of symbols and their string representation.")
+  "Alist of symbol names and their string representation.")
 
-;; FIXME: find how to check the availability of the completion
-;; (available . irony-mode-on-p) ?
-(defconst ac-source-irony
+(defconst ac-source-irony-base
   '((candidates     . (irony-ac-candidates ac-point))
-    (prefix         . irony-get-completion-point)
     (requires       . 0)
     (candidate-face . ac-irony-candidate-face)
     (selection-face . ac-irony-selection-face)
     (action         . irony-ac-action)
-    (allow-dups)
     (cache))
   "Auto-complete source for `irony-mode'.")
 
-(defconst ac-source-irony-anywhere
-  '((candidates     . (irony-ac-candidates ac-point))
-    (prefix         . irony-get-completion-point-anywhere)
-    (requires       . 0)
-    (candidate-face . ac-irony-candidate-face)
-    (selection-face . ac-irony-selection-face)
-    (action         . irony-ac-action)
-    (allow-dups)
-    (cache))
+(defvar ac-source-irony (cons '(prefix . irony-get-completion-point)
+                              ac-source-irony-base)
   "Auto-complete source for `irony-mode'.")
+
+(defvar ac-source-irony-anywhere (cons '(prefix . irony-get-completion-point-anywhere)
+                                       ac-source-irony-base)
+  "Auto-complete source for `irony-mode'.")
+
+(defun irony-ac-support-detailed-display-p ()
+  "Return non-nil if the completion system can (and should)
+  displayed detailed results."
+  ;; ATM only my auto-complete fork support this feature. The fork
+  ;; defines `ac-sarcasm-fork-version'.
+  (boundp 'ac-sarcasm-fork-version))
 
 (defun irony-ac-setup ()
   "Hook to run for `auto-complete-mode' when `irony-mode' is
@@ -170,7 +191,9 @@ See also `irony-ac-expand-yas-2'."
 (defun irony-ac-enable ()
   "Enable `auto-complete-mode' handling of `irony-mode'
 completion results."
-  (add-hook 'irony-mode-hook 'irony-ac-setup)
+  (when (irony-ac-support-detailed-display-p)
+    (add-to-list 'ac-source-irony '(allow-dups) t)
+    (add-to-list 'ac-source-irony-anywhere '(allow-dups) t))
   ;; find the snippet expand function
   (when (and (not irony-ac-expand-snippet-function)
              (require 'yasnippet nil t))
@@ -188,7 +211,9 @@ completion results."
                           (not (string-prefix-p "0.8" yas-version)))
                      'irony-ac-expand-yas-2)
                     (t
-                     'irony-ac-expand-yas-3)))))))
+                     'irony-ac-expand-yas-3))))))
+
+  (add-hook 'irony-mode-hook 'irony-ac-setup))
 
 (defun irony-ac-disable ()
   "Disable `auto-complete-mode' handling of `irony-mode'
@@ -200,11 +225,14 @@ completion results."
   (interactive)
   (auto-complete '(ac-source-irony-anywhere)))
 
-(defun irony-ac-candidates (pos)
-  "Generate candidates for `auto-complete' (a list of strings).
-POS is the position of the beginning of the completion in the
-current buffer."
-  ;; FIXME: should results be sorted by priority ?
+(defun irony-ac-simple-candidates (pos)
+  "Generate a list of candidates identifier."
+  (delete-dups (mapcar (lambda (result)
+                         (plist-get result :result))
+                       (irony-complete :simple pos))))
+
+(defun irony-ac-detailed-candidates (pos)
+  "Generate detailed candidates."
   (loop with window-width = (- (window-width) (popup-current-physical-column))
         with show-priority = irony-ac-show-priority
         for result-plist in (irony-complete :detailed pos)
@@ -217,6 +245,14 @@ current buffer."
         else collect (irony-new-item result window-width priority)
         into candidates
         finally return candidates))
+
+(defun irony-ac-candidates (pos)
+  "Generate candidates for `auto-complete' (a list of strings).
+POS is the position of the beginning of the completion in the
+current buffer."
+  (if (irony-ac-support-detailed-display-p)
+      (irony-ac-detailed-candidates pos)
+    (irony-ac-simple-candidates pos)))
 
 (defun irony-new-item (result window-width &optional priority)
   "Return a new item of a result element. RESULT has the
@@ -344,5 +380,10 @@ format."
         ;; no placeholder, just insert the string
         (insert (car dyn-snip)))))
 
-(provide 'irony-ac)
-;;; irony-ac.el ends here
+(provide 'irony/ac)
+
+;; Local variables:
+;; generated-autoload-load-name: "irony/ac"
+;; End:
+
+;;; irony/ac.el ends here

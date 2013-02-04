@@ -519,7 +519,7 @@ modules that respect the following contract:
 - defun irony-MODULE-NAME-enable
 - defun irony-MODULE-NAME-disable"
   (dolist (module (if (listp modules) modules (list modules)))
-    (require (intern (concat "irony-" (symbol-name module))))
+    (require (intern (concat "irony/" (symbol-name module))))
     (funcall (intern (concat "irony-" (symbol-name module) "-enable")))))
 
 (defun irony-disable (modules)
