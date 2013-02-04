@@ -9,6 +9,14 @@ Note: This is a work in progress:
 * use at your own risk!
 * open issues, fork-it and create pull-request!
 
+
+# Screenshots
+
+![Optional Parameters](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/optional-parameters.png)
+
+![Boost](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/boost-example.png)
+
+
 # Download and compilation
 
 Download with `git` >= 1.6.5 and later
@@ -21,92 +29,87 @@ Download with `Git` < 1.6.5
     git submodule update --init
 
 For Mac OS X a patch is necessary to fix the SimpleJSON compilation,
-please read the comment [here](https://github.com/MJPA/SimpleJSON/commit/cf8aa3087747f76745fc30f38e6aff4af74e9cef#commitcomment-937703)
+please read the comment
+[here](https://github.com/MJPA/SimpleJSON/commit/cf8aa3087747f76745fc30f38e6aff4af74e9cef#commitcomment-937703)
 
 Finally:
 
     cd irony-mode
-    mkdir -p build && cd build
+    mkdir -p build
+    cd build
     cmake .. && make -j 4
     make install
+
+Note: It is recommended to proceed to the installation step. This is
+not a "system-wide" installation, it shouldn't require any privilege.
+The installation step will help `irony.el` to find the binary without
+additional configuration.
+
 
 # Emacs configuration
 
 Recommended packages and versions:
 
-| Package                           | Version      | Status      | Comment                                             |
-| --------------------------------- | ------------ | ----------- | --------------------------------------------------- |
-| [auto-complete][ac-ref]           | 1.4          | recommended | version in auto-complete.el header                  |
-| [YASnippet][yasnippet-ref]        | ALL          | recommended | `yas--version` or `yas/version`                     |
-| [auto-complete fork][ac-fork-ref] | 1.4          | legacy      | detailed completion (e.g show overloaded functions) |
-| [eproject][eproject-ref]          | ???          | legacy      |                                                     |
+| Package                           | Version  | Status      | Comment                                                                                       |
+| --------------------------------- | -------- | ----------- | --------------------------------------------------------------------------------------------- |
+| [auto-complete][ac-ref]           | 1.4      | recommended | you can check the version in the auto-complete.el header                                      |
+| [auto-complete fork][ac-fork-ref] | 1.4      | as-you-wish | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
+| [YASnippet][yasnippet-ref]        | All      | recommended | `yas--version` or `yas/version`                                                               |
+| [eproject][eproject-ref]          | ???      | broken      | correspond irony plugins hasn't been ported yet to the new layout                             |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
 [yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
-[eproject-ref]:  https://github.com/jrockway/eproject           "Eproject"
+[eproject-ref]:  https://github.com/jrockway/eproject           "Project"
 
 [el-get](https://github.com/dimitri/el-get) help a lot for package
 management in Emacs. You can take a look at
 [my configuration](https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-el-get.el)).
 
-Copy and paste in the \*scratch\* buffer:
+Copy and paste in the **\*scratch\*** buffer:
 
-~~~~~ el
+```el
 (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
-(add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/plugins/"))
+
+(require 'auto-complete)
 (require 'irony)
-(irony-enable '(eproject ac ac-header-comp))
+
+(irony-enable 'ac)
 (add-hook 'c++-mode-hook 'irony-mode)
-~~~~~
+(add-hook 'c-mode-hook 'irony-mode)
+;if note
+```
 
 Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto
 completion feature.
 
 If you want the completion to work on a project you will probably need
-give some informations:
+give some information:
 
-There are 3 methods:
+There is one method at the moment but some others are on the way:
 
-1. Setting `irony-header-directories`,
-   `irony-header-directories-root`, `irony-config-commands`,
-   `irony-extra-flags`. This can be done "natively" in Emacs by
-   creating a `.dir-locals.el` file in your project containing
-   something like:
+Create a `.dir-locals.el` file in your project containing something
+like:
 
-~~~~~ el
+```el
 ((c++-mode
       (irony-header-directories-root . "/path/to/project/root")
-      (irony-header-directories . ("utils" "some/include/patth"))))
-~~~~~
+      (irony-header-directories . ("utils" "some/include/path"))))
+```
 
-2. Each variable `irony-header-directories`,
-   `irony-header-directories-root`, `irony-config-commands` and
-   `irony-extra-flags` can be an ELisp function that will find the
-   relevants informations.
+You can take a look at the documentation of the following variables:
+`irony-header-directories`, `irony-header-directories-root`,
+`irony-config-commands` and `irony-extra-flags`. You can also use the
+`customize` inside Emacs to set variables.
 
-3. Using the `eproject` plugin, activated by the line `(irony-enable
-'(eproject ...))`. Create a `.eproject` file at the root of your
-project:
+Some other methods are on the way:
 
-~~~~~ el
-;; Irony mode configuration
-:includes '("lib" "lib/Unix" "SFML/include")
-:extra-flags '("-Weverything")
-:config-commands '("pkg-config --cflags sdl")
-~~~~~
+1. `CMake` (and more generally `compile_commands.json`) integration.
 
+2. A `.clang_complete` file like in the
+  [clang_complete](http://www.vim.org/scripts/script.php?script_id=3302)
+  Vim plugin.
 
-Another method will probably appear soon, to be compatible with the
-`.clang_complete` file of the
-[clang_complete](http://www.vim.org/scripts/script.php?script_id=3302)
-Vim plugin.
-
-# Screenshots
-
-![Optional Parameters](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/optional-parameters.png)
-
-![Boost](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/boost-example.png)
 
 # FAQ
 
@@ -135,7 +138,7 @@ Assuming (otherwise it might be necessary to adjust the code):
 
 You can use the following configuration:
 
-```lisp
+```el
 ;; The Clang installation missed the system include directory
 ;; "/usr/lib/clang/3.2/include/", man clang said we can use the
 ;; environment variable CPATH.
@@ -173,8 +176,8 @@ In order to enable header completion, such as:
 The `ac` plugin allows `auto-complete` to complete inside string
 literals in `irony-ac-enable`.
 
-```lisp
-(setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces)))
+```el
+(setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces))
 ```
 
 Please create an issue if you find this not unacceptable.
