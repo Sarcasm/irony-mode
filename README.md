@@ -1,8 +1,13 @@
 # Status
 
-Work in progress...
-
 [![Build Status](https://api.travis-ci.org/Sarcasm/irony-mode.png?branch=develop)](https://travis-ci.org/Sarcasm/irony-mode)
+
+Note: This is a work in progress:
+
+* documentation might not be up-to-date
+* changes can break compability with earlier versions
+* use at your own risk!
+* open issues, fork-it and create pull-request!
 
 # Download and compilation
 
