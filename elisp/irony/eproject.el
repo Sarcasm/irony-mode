@@ -1,6 +1,6 @@
-;;; irony-eproject.el --- `eproject-mode' integration in `irony-mode'.
+;;; irony/eproject.el --- `eproject-mode' integration in `irony-mode'.
 
-;; Copyright (C) 2011  Guillaume Papin
+;; Copyright (C) 2011-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience, tools
@@ -21,8 +21,7 @@
 ;;; Commentary:
 
 ;;; Usage:
-;;      (add-to-list 'load-path "/path/to/irony-eproject-directory")
-;;      (irony-load '(eproject))
+;;      (irony-enable 'eproject)
 
 ;;; Code:
 
@@ -50,5 +49,10 @@ activated."
   "Disable eproject settings for `irony-mode'."
   (remove-hook 'irony-mode-hook 'irony-eproject-setup))
 
-(provide 'irony-eproject)
-;;; irony-eproject.el ends here
+(provide 'irony/eproject)
+
+;; Local variables:
+;; generated-autoload-load-name: "irony/eproject"
+;; End:
+
+;;; irony/eproject.el ends here

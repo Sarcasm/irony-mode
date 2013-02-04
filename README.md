@@ -46,12 +46,12 @@ additional configuration.
 
 Recommended packages and versions:
 
-| Package                           | Version  | Status      | Comment                                                                                       |
-| --------------------------------- | -------- | ----------- | --------------------------------------------------------------------------------------------- |
-| [auto-complete][ac-ref]           | 1.4      | recommended | you can check the version in the auto-complete.el header                                      |
-| [auto-complete fork][ac-fork-ref] | 1.4      | as-you-wish | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
-| [YASnippet][yasnippet-ref]        | All      | recommended | `yas--version` or `yas/version`                                                               |
-| [eproject][eproject-ref]          | ???      | broken      | correspond irony plugins hasn't been ported yet to the new layout                             |
+| Package                           | Version   | Status        | Comment                                                                                       |
+| --------------------------------- | --------- | ------------- | --------------------------------------------------------------------------------------------- |
+| [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                      |
+| [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
+| [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                               |
+| [eproject][eproject-ref]          | (unknown) | not necessary | can be useful if you already have eproject installed                                          |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
@@ -106,6 +106,68 @@ Some other methods are on the way:
   [clang_complete](http://www.vim.org/scripts/script.php?script_id=3302)
   Vim plugin.
 
+# Plugins
+
+To enable one plugin call `(irony-enable 'plugin-name)`, to enable
+more than one plugin at once call the same function with a list
+`(irony-enable '(plugin-1 plugin-2))`.
+
+## ac
+
+Code completion with auto-complete.
+
+Requires:
+* auto-complete
+* yasnippet (optionnal)
+
+The configuration might look like this:
+
+```el
+(require 'auto-complete)
+(require 'yasnippet)
+(require 'irony)
+
+;; the ac plugin will be activated in each buffer using irony-mode
+(irony-enable 'ac)
+
+(defun my-enable-ac-and-yas ()
+  ;; if not set before (auto-complete-mode 1), overlays persist after
+  ;; an expansion
+  (yas/minor-mode-on)
+  (auto-complete-mode 1))
+
+(add-hook 'c++-mode-hook 'sarcasm-enable-ac-and-yas)
+(add-hook 'c++-mode-hook 'irony-mode)
+(add-hook 'c-mode-hook 'sarcasm-enable-ac-and-yas)
+(add-hook 'c-mode-hook 'irony-mode)
+```
+
+## eproject
+
+Usage:
+
+```el
+(irony-enable 'eproject)
+```
+
+When working on a project you can create a file called `.eproject` at
+the root with the following content:
+
+```el
+:includes '("." "server" "lib" "lib/SimpleJSON/src")
+:extra-flags '("-std=c++11")
+:config-commands
+:irrelevant-files '("tests/")
+```
+
+All the variables are optional:
+
+* `:includes`: relative path are relative to the eproject root (the
+  directory containing the `.eproject` file)
+* `:config-commands`: if you have to execute some commands to get the
+  flags (such as `pkg-config --cflags gtk+-2.0`).
+* `:extra-flags`: Some extra flag (e.g: "-DNDEBUG", "-std=c++11", ...)
+
 
 # FAQ
 
@@ -144,6 +206,18 @@ You can use the following configuration:
                         (concat old-cpath ":" "/usr/lib/clang/3.2/include/")
                       "/usr/lib/clang/3.2/include/"))))
 ```
+
+This is issue is a known problem:
+
+* http://lists.cs.uiuc.edu/pipermail/cfe-dev/2012-July/022893.html
+
+> Make sure that Clang is using its own <stddef.h>. It will be in a
+> directory ending in `clang/3.2/include/` where 3.2 is the version of
+> clang that you are using. You may need to explicitly add it to your
+> header search. Usually clang finds this directory relative to the
+> executable with CompilerInvocation::GetResourcesPath(Argv0,
+> MainAddr), but using just the libraries, it can't automatically find
+> it.
 
 ## libclang.so: cannot open shared object file...
 

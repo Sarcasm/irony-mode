@@ -1,0 +1,38 @@
+* TODO Compile_commands.json generator
+
+  Found in the clang mailing list: [[https://github.com/rizsotto/Bear][Bear on Github]]
+
+  Can be used to generate a /compile_commands.json/ from a compile
+  command such as =make=
+
+  : $ bear -- make
+  : $ ls
+  : <files...> compile_commands.json
+
+* TODO Bundle fallback packages (if any)
+  - https://github.com/auto-complete/auto-complete/commit/d8a832d4d40fc8259e55087be08abfa5c1b9701d
+
+* TODO Display assembly
+  Watch the comments here: http://programmers.stackexchange.com/a/156723
+
+  : gcc -O -c -g -Wa,-ahl=so.s so.c
+
+  And some interesting tools are available here: http://isocpp.org/blog/2013/01/online-c-compilers
+
+* TODO hide-ifdef-mode
+
+  If the list of defines (-DXXX) is available it's possible to hide
+  some ifdef with hide-ifdef-mode.
+
+  Following this method:
+
+  #+begin_src elisp
+    (setq hide-ifdef-define-alist '((linux HAVE_UNISTD_H)
+                                    (win HAVE_WINDOWS_H)))
+
+    ;; or hit C-@ U in a buffer with `hide-ifdef-mode' enabled
+    (hide-ifdef-use-define-alist 'linux)
+  #+end_src
+
+  - http://www.emacs.uniyar.ac.ru/doc/em24h/emacs159.htm
+  - http://www.emacswiki.org/emacs/HideIfDef
