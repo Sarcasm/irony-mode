@@ -42,6 +42,7 @@
 ;;; Code:
 
 (require 'irony-completion)
+(require 'irony-header-comp)
 (require 'auto-complete)
 (require 'popup)
 
@@ -128,11 +129,11 @@ Will be set to nil if no snippet expansion function is found.")
     (cache))
   "Auto-complete source for `irony-mode'.")
 
-(defvar ac-source-irony (cons '(prefix . irony-get-completion-point)
+(defvar ac-source-irony (cons '(prefix . irony-ac-completion-point)
                               ac-source-irony-base)
   "Auto-complete source for `irony-mode'.")
 
-(defvar ac-source-irony-anywhere (cons '(prefix . irony-get-completion-point-anywhere)
+(defvar ac-source-irony-anywhere (cons '(prefix . irony-ac-completion-point-anywhere)
                                        ac-source-irony-base)
   "Auto-complete source for `irony-mode'.")
 
@@ -212,7 +213,12 @@ completion results."
                      'irony-ac-expand-yas-2)
                     (t
                      'irony-ac-expand-yas-3))))))
-
+  ;; Enable ac even if we are in a C string. Allow the completion to
+  ;; work for the following case:
+  ;;
+  ;;    for #include "head[COMP]..
+  ;;
+  (setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces))
   (add-hook 'irony-mode-hook 'irony-ac-setup))
 
 (defun irony-ac-disable ()
@@ -250,9 +256,11 @@ completion results."
   "Generate candidates for `auto-complete' (a list of strings).
 POS is the position of the beginning of the completion in the
 current buffer."
-  (if (irony-ac-support-detailed-display-p)
-      (irony-ac-detailed-candidates pos)
-    (irony-ac-simple-candidates pos)))
+  (if (irony-header-comp-inside-include-stmt-p)
+      (irony-header-comp-complete-at pos)
+    (if (irony-ac-support-detailed-display-p)
+        (irony-ac-detailed-candidates pos)
+      (irony-ac-simple-candidates pos))))
 
 (defun irony-new-item (result window-width &optional priority)
   "Return a new item of a result element. RESULT has the
@@ -371,14 +379,47 @@ format."
     (cons dynamic-snippet
           (> num-placeholders 0))))
 
+(defun irony-ac-action-detailed ()
+  "Action to execute after a detailed completion is done."
+  (let ((dyn-snip (irony-ac-dynamic-snippet (cdr ac-last-completion))))
+    (if (cdr dyn-snip)                ;has placeholder(s)?
+        (when irony-ac-expand-snippet-function
+          (funcall irony-ac-expand-snippet-function (car dyn-snip)))
+      ;; no placeholder, just insert the string
+      (insert (car dyn-snip)))))
+
+(defun irony-header-comp-action ()
+  "After the completion is complete, add the closing
+character (double quote or angle-bracket) if needed."
+  ;; do not add closing '>' or '"' when the completed item was a
+  ;; directory.
+  (unless (string-match-p "/$" (cdr ac-last-completion))
+    (let ((ch (char-after)))
+      (when (not (or (eq ch ?\")
+                     (eq ch ?>)))
+        (let ((line (buffer-substring-no-properties (point-at-bol) (point))))
+          (when (string-match "#\\s-*include\\s-+\\([<\"]\\)" line)
+            (insert (if (eq (string-to-char (match-string 1 line)) ?<)
+                        ">"
+                      "\""))))))))
+
 (defun irony-ac-action ()
-  "Action to execute after a completion was done."
-    (let ((dyn-snip (irony-ac-dynamic-snippet (cdr ac-last-completion))))
-      (if (cdr dyn-snip)                ;has placeholder(s)?
-          (when irony-ac-expand-snippet-function
-            (funcall irony-ac-expand-snippet-function (car dyn-snip)))
-        ;; no placeholder, just insert the string
-        (insert (car dyn-snip)))))
+  "Action to execute after a completion is done."
+  (if (irony-header-comp-inside-include-stmt-p)
+      (irony-header-comp-action)
+    (when (irony-ac-support-detailed-display-p)
+      (irony-ac-action-detailed))))
+
+(defun irony-ac-completion-point ()
+  "Return the point of completion either for a header or a
+standard identifier."
+  (or (irony-header-comp-point)
+      (irony-get-completion-point)))
+
+(defun irony-ac-completion-point-anywhere ()
+  "See `irony-ac-completion-point-anywhere'."
+  (or (irony-header-comp-point)
+      (irony-get-completion-point-anywhere)))
 
 (provide 'irony/ac)
 

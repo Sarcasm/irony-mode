@@ -161,3 +161,20 @@ To solve this issue it is possible to build `irony-server` with the
 following command:
 
     cmake -DUSE_RPATH=ON ..
+
+## auto-complete acts strangely, it tries to complete inside string literals
+
+In order to enable header completion, such as:
+
+```cpp
+#include "heade[COMP]
+```
+
+The `ac` plugin allows `auto-complete` to complete inside string
+literals in `irony-ac-enable`.
+
+```lisp
+(setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces)))
+```
+
+Please create an issue if you find this not unacceptable.

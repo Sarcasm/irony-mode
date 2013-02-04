@@ -41,9 +41,14 @@
   :group 'irony
   :type '(choice (repeat string)))
 
-;;
+
 ;; Internal variables
 ;;
+
+(defvar irony-header-comp-include-re
+  "^#\\s-*include\\s-+[<\"]\\(\\(?:[^>\"]*\\)\\)\\="
+  "Regexp used to search backward if we are inside an include
+  statement.")
 
 (defvar irony-header-comp-subdir nil
   "*internal variable* Contain the last subdirectory (or nil when
@@ -100,6 +105,16 @@ search in a hash table."
                  (irony-get-compiler-header-directories-1 lang-flag) ;value is returned
                  irony-compiler-header-directories-cache))))
 
+(defun irony-header-comp-inside-include-stmt-p ()
+  "Return t if the cursor is inside an include statement, such
+  as:
+
+    #include <[POINT]           -> t
+    #include <iostream[POINT]>  -> t
+    #include <toto>[POINT]      -> nil
+    int i[POINT]                -> nil"
+  (looking-back irony-header-comp-include-re (point-at-bol)))
+
 (defun irony-header-comp-point ()
   "Return the completion prefix for point, if the current context
   of point is an #include C/C++ directive. Return the position of
@@ -110,7 +125,7 @@ Example:
 
     #include <str[]
               ^~~~ Completion point returned."
-  (when (re-search-backward "^#\\s-*include\\s-+[<\"]\\(\\(?:[^<\"]*\\)\\)\\=" nil t)
+  (when (re-search-backward irony-header-comp-include-re nil t)
     (let* ((slash-offset (position ?/ (string-to-vector (match-string 1))
                                    :from-end t))
            (begin (match-beginning 1))
