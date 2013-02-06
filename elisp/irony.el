@@ -436,11 +436,11 @@ directory of the orignal file couldn't be found )."
   (let ((root-directory (if (functionp irony-header-directories-root)
                             (funcall irony-header-directories-root)
                           irony-header-directories-root)))
-    (mapcar (lambda (path)
-              (expand-file-name path root-directory))
-            (if (functionp irony-header-directories)
-                (funcall irony-header-directories)
-              irony-header-directories))))
+    (delete-dups (mapcar (lambda (path)
+                           (expand-file-name path root-directory))
+                         (if (functionp irony-header-directories)
+                             (funcall irony-header-directories)
+                           irony-header-directories)))))
 
 (defun irony-include-flags ()
   "Parse a list of header directories `irony-header-directories'

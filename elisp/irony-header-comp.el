@@ -160,20 +160,24 @@ file with a different extension will not be added."
   "Return the list of headers and directories available at
 POS (the current position if not given). Headers extension is
 filtered according to `irony-header-comp-allowed-extensions'."
-  (let ((prefix-dir))
+  (let ((cwd (irony-current-directory))
+        (header-directories (irony-get-compiler-header-directories)))
     (append
-     (irony-header-comp-list-dir (irony-current-directory)
+     (irony-header-comp-list-dir cwd
                                  irony-header-comp-subdir
                                  irony-header-comp-allowed-extensions)
-     (loop for dir in (irony-get-compiler-header-directories)
+     (loop for dir in header-directories
            append (irony-header-comp-list-dir dir irony-header-comp-subdir) into completions
            finally return completions)
      (loop for dir in (irony-include-directories)
-           append (irony-header-comp-list-dir dir
-                                              irony-header-comp-subdir
-                                              irony-header-comp-allowed-extensions)
-           into completions
-           finally return completions))))
+           with done = (append '(cwd) header-directories)
+           unless (member dir done)
+             append (irony-header-comp-list-dir dir
+                                                irony-header-comp-subdir
+                                                irony-header-comp-allowed-extensions)
+             into completions
+           finally
+             return completions))))
 
 (provide 'irony-header-comp)
 ;;; irony-header-comp.el ends here
