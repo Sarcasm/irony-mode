@@ -136,25 +136,27 @@ Example:
                 (buffer-substring-no-properties begin end)))
       end)))
 
-(defun irony-header-comp-list-dir (base-dir sub-dir &optional authorized-extensions)
+(defun irony-header-comp-list-dir (base-dir sub-dir &optional filter-extensions)
   "List the content of SUB-DIR in BASE-DIR. If SUB-DIR is nil
-list BASE-DIR. Add a slash for directories in the result.
-AUTHORIZED-EXTENSIONS filter the extensions that should be kept,
-file with a different extension will not be added."
+list BASE-DIR.
+
+A slash will be added for directory entry.
+
+If FILTER-EXTENSIONS is non-nil, then
+`irony-header-comp-allowed-extensions' will be use to filter
+files and directories."
   (let (filelist is-dir
         (include-dir (file-name-as-directory
                       (concat (file-name-as-directory base-dir)
                               (or sub-dir "")))))
-    (when (file-directory-p include-dir)
-      (loop for file in (directory-files include-dir nil nil t)
-            for is-dir = (file-directory-p (concat include-dir file))
-            if (if authorized-extensions
-                   (or (and is-dir
-                            (not (or (string= file ".")
-                                     (string= file ".."))))
-                       (member (file-name-extension file) authorized-extensions))
-                 t)
-            collect (if is-dir (concat file "/") file)))))
+    (ignore-errors ;; "safer" this way than(file-directory-p include-dir)
+      (loop for file in (directory-files include-dir nil "^[^.]" t)
+            if (file-directory-p (concat include-dir file))
+              collect (concat file "/")
+            else if (or (not filter-extensions)
+                        (member (file-name-extension file)
+                                irony-header-comp-allowed-extensions))
+            collect file))))
 
 (defun irony-header-comp-complete-at (pos)
   "Return the list of headers and directories available at
@@ -165,7 +167,7 @@ filtered according to `irony-header-comp-allowed-extensions'."
     (append
      (irony-header-comp-list-dir cwd
                                  irony-header-comp-subdir
-                                 irony-header-comp-allowed-extensions)
+                                 t)
      (loop for dir in header-directories
            append (irony-header-comp-list-dir dir irony-header-comp-subdir) into completions
            finally return completions)
@@ -174,10 +176,10 @@ filtered according to `irony-header-comp-allowed-extensions'."
            unless (member dir done)
              append (irony-header-comp-list-dir dir
                                                 irony-header-comp-subdir
-                                                irony-header-comp-allowed-extensions)
+                                                t)
              into completions
            finally
-             return completions))))
+             return (delete-dups completions)))))
 
 (provide 'irony-header-comp)
 ;;; irony-header-comp.el ends here

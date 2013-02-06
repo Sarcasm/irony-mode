@@ -126,6 +126,7 @@ Will be set to nil if no snippet expansion function is found.")
     (candidate-face . ac-irony-candidate-face)
     (selection-face . ac-irony-selection-face)
     (action         . irony-ac-action)
+    (limit          . nil)
     (cache))
   "Auto-complete source for `irony-mode'.")
 
@@ -393,7 +394,8 @@ format."
 character (double quote or angle-bracket) if needed."
   ;; do not add closing '>' or '"' when the completed item was a
   ;; directory.
-  (unless (string-match-p "/$" (cdr ac-last-completion))
+  (if (string-match-p "/$" (cdr ac-last-completion))
+      (ac-start)
     (let ((ch (char-after)))
       (when (not (or (eq ch ?\")
                      (eq ch ?>)))
