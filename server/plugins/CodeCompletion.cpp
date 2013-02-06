@@ -19,6 +19,8 @@
 #include "str/to_string.hpp"
 #include "util/arraysize.hpp"
 
+#include "ClangString.h"
+
 CodeCompletion::CodeCompletion(TUManager & tuManager,
                                bool        detailedCompletions)
   : tuManager_(tuManager)
@@ -242,13 +244,9 @@ void CodeCompletion::formatCompletionCursorKind(CXCursorKind  cursorKind,
 
 void CodeCompletion::appendConsCellResult(const std::string & keyword,
                                           const std::string & value,
-                                          std::string &       buf,
-                                          bool                needQuote)
+                                          std::string &       buf)
 {
-  if (needQuote)
-    buf.append("(").append(keyword).append(" . \"").append(value).append("\")");
-  else
-    buf.append("(").append(keyword).append(" . ").append(value).append(")");
+  buf.append("(").append(keyword).append(" . ").append(value).append(")");
 }
 
 void CodeCompletion::formatCompletionString(CXCompletionString & completionString,
@@ -286,11 +284,12 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
 
       if (const char *keyword = tryTextKindIdentifier(chunkKind))
         {
-          CXString text = clang_getCompletionChunkText(completionString, i);
+          ClangString text(clang_getCompletionChunkText(completionString, i),
+                           ClangString::Escape);
 
-          if (const char *ctext = clang_getCString(text))
-            appendConsCellResult(keyword, ctext, buf, true);
-          clang_disposeString(text);
+          if (! text.isNull()) {
+            appendConsCellResult(keyword, text.asString(), buf);
+          }
           continue ;            // kind was a 'chunk text'
         }
 

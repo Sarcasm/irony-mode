@@ -129,13 +129,10 @@ private:
    * \param keyword
    * \param value
    * \param buf         The string where the text shoulb be added.
-   * \param needQuote   \c true if the value need to be quoted, \c
-   *                    false otherwise (default to false).
    */
   void appendConsCellResult(const std::string & keyword,
                             const std::string & value,
-                            std::string &       buf,
-                            bool                needQuote = false);
+                            std::string &       buf);
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

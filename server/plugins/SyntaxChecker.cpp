@@ -15,7 +15,7 @@
 #include <iostream>
 #include <cassert>
 
-#include "QuotedCXString.h"
+#include "ClangString.h"
 #include "str/to_string.hpp"
 
 SyntaxChecker::SyntaxChecker(TUManager & tuManager)
@@ -101,8 +101,10 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   //
   // Diagnostic text
   //
+  ClangString diagnosticStr(clang_getDiagnosticSpelling(diagnostic),
+                            ClangString::AddQuotes);
   buf += " :diagnostic ";
-  buf += QuotedCXString(clang_getDiagnosticSpelling(diagnostic)).asString();
+  buf += diagnosticStr.asString();
 
   //
   // Compiler flags that produce or remove the diagnostic

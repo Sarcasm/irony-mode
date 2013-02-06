@@ -15,8 +15,8 @@ add_executable (irony-server
   # Main sources
   IPlugin.cpp
   IPlugin.h
-  QuotedCXString.cpp
-  QuotedCXString.h
+  ClangString.cpp
+  ClangString.h
   Server.cpp
   Server.h
   TUManager.cpp
