@@ -95,7 +95,7 @@ either :detailed or :simple."
         for result = (cdr completion-cell)
         for priority = (or (plist-get result :priority) irony-priority-limit)
         when (and (< priority irony-priority-limit)
-                  (not (memq kind blacklist-kind)))
+                  (not (memq kind irony-blacklist-kind)))
         collect result))
 
 (defun irony-get-completion-point ()

@@ -47,7 +47,7 @@
 ;;
 
 ;; TODO: Need to be context sensitive, this is just an example.
-(defvar blacklist-kind '(:Destructor))
+(defvar irony-blacklist-kind '(:Destructor))
 
 (defgroup irony nil
   "C based language comprehension, completion, syntax checking
