@@ -137,6 +137,9 @@ should use `irony-get-completion-point-anywhere'."
                  point))))
    ;; switch/case statements, complete after the case
    (if (re-search-backward "[ \n\t\v\r\f;{]case\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+       (match-beginning 1))
+   ;; preprocessor #define, #include, ...
+   (if (re-search-backward "^\\s-*#\\s-*\\([[:alpha:]]*\\)\\=" nil t)
        (match-beginning 1))))
 
 (defun irony-get-completion-point-anywhere ()
