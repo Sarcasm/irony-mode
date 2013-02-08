@@ -11,7 +11,7 @@
     (require 'irony)))
 
 (or (require 'ert nil t)
- (let ((load-path (cons (expand-file-name test-dir "support")
+ (let ((load-path (cons (expand-file-name "support" test-dir)
                         load-path)))
    (require 'ert)))
 
