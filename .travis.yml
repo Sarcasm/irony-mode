@@ -15,6 +15,7 @@ before_script:
 script:
   - cmake ..
   - make -k -j 4
+  - ctest --output-on-failure 
 
 after_script:
   - cd ..

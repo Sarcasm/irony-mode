@@ -66,3 +66,5 @@ set (IRONY_UTILS_INCLUDES
 # add_dependencies (executable lib)
 add_subdirectory (lib)
 add_subdirectory (server)
+enable_testing ()
+add_subdirectory (test)
