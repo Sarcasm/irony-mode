@@ -12,7 +12,6 @@ if (EMACS_EXECUTABLE)
   function(ert_test name test_file)
     add_test(${name}
       ${EMACS_EXECUTABLE} -batch
-      -l ert
       -l ${CMAKE_CURRENT_SOURCE_DIR}/${test_file}
       -f ert-run-tests-batch-and-exit)
   endfunction()
