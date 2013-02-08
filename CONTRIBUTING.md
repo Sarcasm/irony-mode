@@ -11,6 +11,82 @@ For C++:
 * Function and classes definitions in file ending with the ".cpp"
   extension
 
+## C++ coding style
+
+```cpp
+class CamelCaseClassName
+{
+  // types, constants, enums can be declared on top of the class
+public:
+  typedef void (*blah)(int);
+
+private:
+  enum
+    {
+      BOB,
+      MICHELLE
+    };
+
+private:
+  /**
+   * member variables:
+   * - declared before methods
+   * - are aligned if possible, with `M-x align-region-or-current`
+   */
+  bool           camelCaseExceptFirstLetter_;
+  float          endWithUnderscore_;
+  // references have a space before and after '&'
+  std::string &  ref_;
+  // strangely pointers do not follow the same rules and require space
+  // only before
+  std::string   *ptr_;
+
+  /**
+   * Declare public stuff first, then protected/private at the end of
+   * the file.
+   *
+   * Start with ctor/dtor/operator= then member functions
+   */
+public:
+  /**
+   * Constructors/init-list look like this.
+   */
+  CamelCaseClassName(bool camelCaseExceptFirstLetter)
+    : camelCaseExceptFirstLetter_(camelCaseExceptFirstLetter)
+    , endWithUnderscore_(3.0f)
+    , ref_()
+    , ptr_()
+  { }
+
+  /**
+   * Empty body like this '{ }', but here it's a bad example because
+   * we better let the compiler generate this destructor.
+   */
+  ~CamelCaseClassName()
+  { }
+
+  /**
+   * Methods use this kind camelCase.
+   *
+   * For the comments, if possible follow how it's done in
+   * `clang-c/Index.h`, with the exception that `\brief` doesn't need
+   * to be everywhere, autobrief is fine.
+   *
+   * Exhaustive Doxygen document is not mandatory but it looks good,
+   * and hopefully one day irony-mode will be able to show these kind
+   * of documentations while working on the code, it would be nice to
+   * have the sources compliant with this.
+   *
+   * \param bar
+   *            pfiou.
+   */
+  void fooBar(int bar);
+
+private:
+  void barFoo();
+};
+```
+
 ## Adding a plugin
 
 Create a file named irony-PLUGIN_NAME.el
