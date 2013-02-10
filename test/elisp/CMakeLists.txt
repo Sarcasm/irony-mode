@@ -25,4 +25,6 @@ else()
   endfunction()
 endif()
 
-ert_test(irony-el tests.el)
+ert_test(irony-el test-irony.el)
+
+add_subdirectory (irony)

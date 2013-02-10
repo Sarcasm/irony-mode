@@ -145,6 +145,16 @@ tested."
   :require 'irony
   :group 'irony)
 
+(defcustom irony-known-source-extensions '("c"   "cc"
+                                           "C"   "CC"
+                                           "cpp" "cxx" "c++"
+                                           "m"   "mm")
+  "Known file extensions used for source code in C/C++/Obj-C.
+
+Header files extensions shouldn't take part of this list."
+  :group 'irony
+  :type '(choice (repeat string)))
+
 (defcustom irony-server-executable (or (executable-find "irony-server")
                                        (let ((path (concat (file-name-directory
                                                             (locate-library "irony"))
@@ -421,14 +431,14 @@ directory of the orignal file couldn't be found )."
               (cur-dir (irony-current-directory)))
           (setq irony-flags-cache
                 (append
+                 (if lang-flag (list lang-flag))
                  (if cur-dir
                      (list (concat "-I" cur-dir)))
                  (irony-include-flags)
                  (if (functionp irony-extra-flags)
                      (funcall irony-extra-flags)
                    irony-extra-flags)
-                 (irony-parse-config-flags)
-                 (if lang-flag (list lang-flag))))))))
+                 (irony-parse-config-flags)))))))
 
 (defun irony-include-directories ()
   "Convert `irony-header-directories' and
@@ -499,7 +509,6 @@ corresponding to POS. The narrowing is skipped temporarily."
       (cons (line-number-at-pos) (1+ (current-column))))))
 
 
-;;
 ;; Irony utility functions
 ;;
 
@@ -531,8 +540,31 @@ modules that respect the following contract:
   (dolist (module (if (listp modules) modules (list modules)))
     (funcall (intern (concat "irony-" (symbol-name module) "-disable")))))
 
+(defun irony-find-traverse-for-subpath (subpath dir)
+  "Look starting at DIR for and traverse the filesystem until
+  SUBPATH is found.
+
+  Return the directory where dir/subpath exists, the ending slash
+  will always be here. Returns nil if nothing if found.
+
+Example:
+
+- we are looking for: build/compile_commands.json
+- we start at: /home/jimmy/project/blah/src/server/
+
+The function will look respectively for:
+- /home/jimmy/project/blah/src/server/build/compile_commands.json -- not found
+- /home/jimmy/project/blah/src/build/compile_commands.json -- not found
+- /home/jimmy/project/blah/build/compile_commands.json -- found
+"
+  (unless (string= (setq dir (file-truename dir)) "/")
+    (if (file-exists-p (expand-file-name subpath dir))
+        (file-name-as-directory dir)
+      (irony-find-traverse-for-subpath
+       subpath
+       (directory-file-name (file-name-directory dir))))))
+
 
-;;
 ;; "built-in" plugins
 ;;
 
