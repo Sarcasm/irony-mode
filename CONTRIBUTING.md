@@ -14,14 +14,21 @@ For C++:
 ## C++ coding style
 
 ```cpp
+/**
+ * The order of declarations in the body of a class looks like this:
+ * - public member variables and constants
+ * - public, then protected, then private member functions
+ * - private member variables and constants
+ */
 class CamelCaseClassName
 {
-  // types, constants, enums can be declared on top of the class
+  // types can be declared on the top of a class no matter of the
+  // visibility if they are required by the rest of the class
 public:
   typedef void (*blah)(int);
 
 private:
-  enum
+  enum Name
     {
       BOB,
       MICHELLE
@@ -83,7 +90,7 @@ public:
   void fooBar(int bar);
 
 private:
-  void barFoo();
+  Name barFoo();
 };
 ```
 
