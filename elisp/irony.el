@@ -63,68 +63,22 @@ otherwise try GCC."
   :group 'irony
   :type 'file)
 
-(defcustom irony-header-directories nil
-  "Directories where header files can be found.
-
-Typically each element of this list will be transmitted to the
-compile with a \"-I\" prefix.
-
-The value can *also* be a function (called without any arguments)
-that return header directories.
-
-.dir-locals.el example:
-        ((c++-mode
-          (irony-header-directories . (\"../includes\"
-                                       \"../utils\"))))
-
-Note: see also `irony-header-directories-root'."
-  :type '(choice (repeat string)
-                 (function :tag "Function name that can find the\
-header directories"))
+(defcustom irony-compile-flags-work-dir nil
+  "If non-nil, contains default directory used to expand
+  relatives paths in the compile command for the current buffer."
+  :type '(string :tag "compile command default directory")
   :require 'irony
   :group 'irony)
-(make-variable-buffer-local 'irony-header-directories)
+(make-variable-buffer-local 'irony-compile-flags-work-dir)
 
-(defcustom irony-header-directories-root nil
-  "If non-nil relative paths in `irony-header-directories' are
-made relative to the value of this variable/function."
-  :type '(choice (string :tag "the directory path")
-                 (function :tag "a function that return the directory path"))
+(defcustom irony-compile-flags nil
+  "List of compiler flags to compile the current buffer.
+
+    e.g: '(\"-std=c++11\" \"-DNDEBUG\")"
+  :type '(repeat string)
   :require 'irony
   :group 'irony)
-(make-variable-buffer-local 'irony-header-directories-root)
-
-(defcustom irony-config-commands nil
-  "The value should be either a list of strings or a function
-that return a list of strings.
-
-Each string should be a *shell command* that return flags to send
-to the compiler, typically the pkg-config commands.
-
-i.e. for a project using the SDL:
-        (\"pkg-config --cflags sdl\")"
-  :type '(choice (repeat string)
-                 (function :tag "Function name that can find the\
-header directories"))
-  :require 'irony
-  :group 'irony)
-(make-variable-buffer-local 'irony-config-commands)
-
-(defcustom irony-extra-flags nil
-  "The value should be either a list of strings or a function
-that return a list of string.
-
-Each string is a flags to send to the Clang parser. Only for
-flags that can't fit in `irony-header-directories' or
-`irony-config-commands'.
-
-i.e: '(\"-std=c++0x\" \"-DNDEBUG\""
-  :type '(choice (repeat string)
-                 (function :tag "Function name that can find the\
-header directories"))
-  :require 'irony
-  :group 'irony)
-(make-variable-buffer-local 'irony-extra-flags)
+(make-variable-buffer-local 'irony-compile-flags)
 
 (defcustom irony-known-modes '(c++-mode
                                c-mode)
@@ -137,10 +91,10 @@ tested."
   :require 'irony
   :group 'irony)
 
-(defcustom irony-lang-option-alist '((c++-mode . "-xc++")
-                                     (c-mode   . "-xc"))
-  "Association list of major-mode -> lang option to pass to the
-  compiler."
+(defcustom irony-lang-option-alist '((c++-mode . "c++")
+                                     (c-mode   . "c"))
+  "Association list of major-mode -> -x <lang_option> to pass to
+  the compiler ."
   :type '(alist :key-type symbol :value-type string)
   :require 'irony
   :group 'irony)
@@ -412,83 +366,71 @@ current directory couldn't be found."
   (if buffer-file-name
       (file-name-directory (expand-file-name buffer-file-name))))
 
-(defun irony-get-flags (&optional buffer)
-  "Find the compiler flags required to parse the content of
-  BUFFER (by default the current buffer).
+(defun irony-get-libclang-flags ()
+  "Find the compiler flags required to parse the content of the
+  current buffer by libclang."
+  (or irony-flags-cache
+      (let ((lang-flag (irony-language-option-flag))
+            (cur-dir (irony-current-directory))
+            (work-dir-flag (irony-working-directory-flag)))
+        (setq irony-flags-cache
+              (append
+               (if lang-flag
+                   lang-flag)
+               (if cur-dir
+                   (list (concat "-I" cur-dir)))
+               (if work-dir-flag
+                   work-dir-flag)
+               irony-compile-flags)))))
 
-The value returned is a list of flags using the variables
-`irony-header-directories', `irony-config-commands',
-`irony-lang-option-alist' and `irony-extra-flags' (check the
-documentation of the variables for more informations).
-
-Note: In addition to `irony-header-directories' the directory of
-BUFFER will be added for the include directives (this is due to
-the use of temporary file where the headers present in the same
-directory of the orignal file couldn't be found )."
-  (with-current-buffer (or buffer (current-buffer))
-    (or irony-flags-cache
-        (let ((lang-flag (irony-language-option-flag))
-              (cur-dir (irony-current-directory)))
-          (setq irony-flags-cache
-                (append
-                 (if lang-flag (list lang-flag))
-                 (if cur-dir
-                     (list (concat "-I" cur-dir)))
-                 (irony-include-flags)
-                 (if (functionp irony-extra-flags)
-                     (funcall irony-extra-flags)
-                   irony-extra-flags)
-                 (irony-parse-config-flags)))))))
-
-(defun irony-include-directories ()
-  "Convert `irony-header-directories' and
-`irony-header-directories-root' into a directory list."
-  (let ((root-directory (if (functionp irony-header-directories-root)
-                            (funcall irony-header-directories-root)
-                          irony-header-directories-root)))
-    (delete-dups (mapcar (lambda (path)
-                           (expand-file-name path root-directory))
-                         (if (functionp irony-header-directories)
-                             (funcall irony-header-directories)
-                           irony-header-directories)))))
-
-(defun irony-include-flags ()
-  "Parse a list of header directories `irony-header-directories'
-into a list of \"-Idir\" flags to send to the compiler. Relative
-path are relative to the ROOT-DIRECTORY if given.
-
-example without ROOT-DIRECTORY:
-        (\"utils\" \"/my/include/directory\")
-        became:
-        (\"-Iutils\" \"-I/my/include/directory\")
-
-example with ROOT-DIRECTORY equal to \"/home/user/project/my_project\":
-        (\"utils\" \"/my/include/directory\")
-        became:
-        (\"-I/home/user/project/my_project/utils\" \"-I/my/include/directory\")"
-  (mapcar (lambda (path)
-            (concat "-I" path))
-          (irony-include-directories)))
-
-(defun irony-parse-config-flags ()
-  "Parse a list of pkg-config like commands
-`irony-config-commands' into a list of arguments to send to the
-compiler.
-
-example:
-        (\"pkg-config --cflags sdl\")
-        became:
-        (\"-D_GNU_SOURCE=1\" \"-D_REENTRANT\" \"-I/usr/include/SDL\")
-"
-  (let ((commands (if (functionp irony-config-commands)
-                      (funcall irony-config-commands)
-                    irony-config-commands)))
-    (split-string (mapconcat 'shell-command-to-string commands " "))))
+(defun irony-header-search-paths ()
+  "Returns a list of header search paths for the current buffer."
+  (let ((cmd-args irony-compile-flags)
+        arg include-dirs)
+    (while cmd-args
+      (setq arg (car cmd-args))
+      (cond
+       ((string= "-I" arg)
+        (add-to-list 'include-dirs (nth 1 cmd-args) t)
+        (setq cmd-args (cdr cmd-args))) ;skip next arg
+       ((string-prefix-p "-I" arg)
+        (add-to-list 'include-dirs (substring arg 2) t)))
+      (setq cmd-args (cdr cmd-args)))
+    (if irony-compile-flags-work-dir
+	(mapcar (lambda (path)
+		  (expand-file-name path irony-compile-flags-work-dir))
+		(delete-dups include-dirs))
+      (delete-dups include-dirs))))
 
 (defun irony-language-option-flag ()
   "Find the language for filename based on the major mode. (the
 -x option of the compiler)."
-  (cdr-safe (assq major-mode irony-lang-option-alist)))
+  (let ((lang (cdr-safe (assq major-mode irony-lang-option-alist))))
+    (when lang
+      (list "-x" lang))))
+
+(defun irony-extract-working-dir-flag (flags)
+  "Get the clang \"-working-directory=<value>\" option value if
+  any."
+  (let (work-dir arg)
+    (while (and flags
+                (not work-dir))
+      (setq arg (car flags))
+      (cond
+       ((string= "-working-directory" arg)
+        (setq work-dir (cadr flags)))
+       ((string-prefix-p "-working-directory=" arg)
+        (setq work-dir (substring arg (length "-working-directory="))))
+       (t
+        (setq flags (cdr flags)))))
+    work-dir))
+
+(defun irony-working-directory-flag ()
+  "Find the -working-directory flag to set for the current buffer."
+  (when (and irony-compile-flags-work-dir
+             (not (irony-extract-working-dir-flag irony-compile-flags)))
+        (list "-working-directory"
+              irony-compile-flags-work-dir)))
 
 (defmacro irony-without-narrowing (&rest body)
   "Remove the effect of narrowing for the current buffer.
@@ -522,8 +464,9 @@ cached flags on a file."
 ;; TODO:
 ;; Interactive with completion (see `completion-read')
 (defun irony-enable (modules)
-  "Load one or more modules for Irony. (this is simply a helper function for
-modules that respect the following contract:
+  "Load one or more modules for Irony. (this is simply a helper
+function for modules that respect the following contract:
+
 - provide irony-MODULE-NAME
 - defun irony-MODULE-NAME-enable
 - defun irony-MODULE-NAME-disable"
@@ -532,8 +475,9 @@ modules that respect the following contract:
     (funcall (intern (concat "irony-" (symbol-name module) "-enable")))))
 
 (defun irony-disable (modules)
-  "Unload one or more modules for Irony. (this is simply a helper function for
-modules that respect the following contract:
+  "Unload one or more modules for Irony. (this is simply a helper
+function for modules that respect the following contract:
+
 - provide irony-MODULE-NAME
 - defun irony-MODULE-NAME-enable
 - defun irony-MODULE-NAME-disable"
@@ -544,8 +488,8 @@ modules that respect the following contract:
   "Look starting at DIR for and traverse the filesystem until
   SUBPATH is found.
 
-  Return the directory where dir/subpath exists, the ending slash
-  will always be here. Returns nil if nothing if found.
+Return the directory where dir/subpath exists, the ending slash
+will always be here. Returns nil if nothing if found.
 
 Example:
 
@@ -555,8 +499,7 @@ Example:
 The function will look respectively for:
 - /home/jimmy/project/blah/src/server/build/compile_commands.json -- not found
 - /home/jimmy/project/blah/src/build/compile_commands.json -- not found
-- /home/jimmy/project/blah/build/compile_commands.json -- found
-"
+- /home/jimmy/project/blah/build/compile_commands.json -- found"
   (unless (string= (setq dir (file-truename dir)) "/")
     (if (file-exists-p (expand-file-name subpath dir))
         (file-name-as-directory dir)
@@ -565,12 +508,12 @@ The function will look respectively for:
        (directory-file-name (file-name-directory dir))))))
 
 
-;; "built-in" plugins
+;; "built-in" commands
 ;;
 
 (defun irony-reload-flags ()
   "Invalidate the cached flags on the current buffer. To be used
-when the compiler flags has changed while working on a file."
+   when the compiler flags has changed while working on a file."
   (interactive)
   ;; invalidate the flags on the Emacs side first
   (setq irony-flags-cache nil)

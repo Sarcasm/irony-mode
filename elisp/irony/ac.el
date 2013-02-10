@@ -103,7 +103,7 @@ detailed completion."
 
 Will be set to nil if no snippet expansion function is found.")
 
-(defconst irony-symbol-to-str-alist
+(defconst irony-ac-symbol-to-str-alist
   '((:left-paren       . "(")
     (:right-paren      . ")")
     (:left-bracket     . "[")
@@ -246,10 +246,10 @@ completion results."
         for result = (plist-get result-plist :result)
         for priority = (if show-priority (plist-get result-plist :priority))
         if (plist-get result-plist :optional)
-        append (mapcar (lambda (r) (irony-new-item r window-width priority))
+        append (mapcar (lambda (r) (irony-ac-new-item r window-width priority))
                        (irony-ac-expand-optionals result))
         into candidates
-        else collect (irony-new-item result window-width priority)
+        else collect (irony-ac-new-item result window-width priority)
         into candidates
         finally return candidates))
 
@@ -263,7 +263,7 @@ current buffer."
         (irony-ac-detailed-candidates pos)
       (irony-ac-simple-candidates pos))))
 
-(defun irony-new-item (result window-width &optional priority)
+(defun irony-ac-new-item (result window-width &optional priority)
   "Return a new item of a result element. RESULT has the
 following form (:typed-text is mandatory to each item, this is
 the element that need to be completed):
@@ -288,7 +288,7 @@ the summary is truncated in order to not span on multiple lines."
                              (cond
                               ((eq identifier :symbol)
                                (unless (eq value :vertical-space) ;view should be one-line
-                                 (cdr (assq value irony-symbol-to-str-alist))))
+                                 (cdr (assq value irony-ac-symbol-to-str-alist))))
                               (t
                                value))))))) ;!dolist
     ;; Set the summary, reduce is size of summary if view + summary
@@ -354,7 +354,7 @@ need special expansion, otherwise it's a snippet and it will end
 with the $0 string to the represent the final position after
 expansion.
 
-See `irony-new-item' for a description of COMPLETION-RESULT
+See `irony-ac-new-item' for a description of COMPLETION-RESULT
 format."
   (let ((result (popup-item-value completion-result))
         (dynamic-snippet "")
@@ -370,7 +370,7 @@ format."
               (concat dynamic-snippet
                       (cond
                        ((eq identifier :symbol)
-                        (cdr (assq value irony-symbol-to-str-alist)))
+                        (cdr (assq value irony-ac-symbol-to-str-alist)))
                        ((or (eq identifier :place-holder)
                             (eq identifier :current-place-holder)) ;FIXME: "can't test"
                         (setq num-placeholders (1+ num-placeholders))
@@ -389,7 +389,7 @@ format."
       ;; no placeholder, just insert the string
       (insert (car dyn-snip)))))
 
-(defun irony-header-comp-action ()
+(defun irony-ac-header-comp-action ()
   "After the completion is complete, add the closing
 character (double quote or angle-bracket) if needed."
   ;; do not add closing '>' or '"' when the completed item was a
@@ -408,7 +408,7 @@ character (double quote or angle-bracket) if needed."
 (defun irony-ac-action ()
   "Action to execute after a completion is done."
   (if (irony-header-comp-inside-include-stmt-p)
-      (irony-header-comp-action)
+      (irony-ac-header-comp-action)
     (when (irony-ac-support-detailed-display-p)
       (irony-ac-action-detailed))))
 

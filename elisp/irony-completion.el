@@ -80,7 +80,7 @@ position if not given). The completion KIND can be
 either :detailed or :simple."
   (let* ((location (irony-point-location (or pos (point))))
          (request-data (list (cons :file (irony-temp-filename))
-                             (cons :flags (irony-get-flags))
+                             (cons :flags (irony-get-libclang-flags))
                              (cons :line (car location))
                              (cons :column (cdr location)))))
     (setq irony-last-completion nil)

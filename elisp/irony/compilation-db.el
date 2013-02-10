@@ -243,22 +243,6 @@ If the build directory doesn't exists the user the user get a
   already been found
 - the value is the compilation database")
 
-(defun irony-compilation-db-extract-working-dir (extra-flags)
-  "Get the clang \"-working-directory=<value>\" option value if
-  any."
-  (let (work-dir arg)
-    (while (and extra-flags
-                (not work-dir))
-      (setq arg (car extra-flags))
-      (cond
-       ((string= "-working-directory" arg)
-        (setq work-dir (cadr extra-flags)))
-       ((string-prefix-p "-working-directory=" arg)
-        (setq work-dir (substring arg (length "-working-directory="))))
-       (t
-        (setq extra-flags (cdr extra-flags)))))
-    work-dir))
-
 (defun irony-compilation-db-gen-clang-args-1 (cmd-args)
   "Split CMD-ARGS in 2 separate lists.
 

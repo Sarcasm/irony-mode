@@ -74,7 +74,7 @@ Please use `irony-get-compiler-header-directories'."
   (when irony-compiler-executable
     (with-temp-buffer
       (apply 'call-process irony-compiler-executable nil t nil
-             (cons lang-flag irony-header-comp-compiler-args))
+             (append lang-flag irony-header-comp-compiler-args))
       (goto-char (point-min))
       (let (directories
             (start "#include \"...\" search starts here:")

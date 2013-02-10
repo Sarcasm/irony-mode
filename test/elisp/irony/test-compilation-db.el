@@ -11,16 +11,6 @@
     (should
      (not (irony-compilation-db-extract-working-dir extra-flags)))))
 
-(ert-deftest compilation-db/extract-working-dir/present-1 ()
-  (let ((extra-flags '("-working-directory" "/tmp/lol")))
-    (should (equal "/tmp/lol"
-                   (irony-compilation-db-extract-working-dir extra-flags)))))
-
-(ert-deftest compilation-db/extract-working-dir/present-2 ()
-  (let ((extra-flags '("-Wall" "-working-directory=/tmp/lol" "-Wshadow")))
-    (should (equal "/tmp/lol"
-                   (irony-compilation-db-extract-working-dir extra-flags)))))
-
 (ert-deftest compilation-db/gen-clang-args-1/end-of-opts ()
   (should (equal
            (list nil nil)
