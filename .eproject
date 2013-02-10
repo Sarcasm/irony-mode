@@ -1,4 +1,4 @@
-:includes '("." "server" "lib" "lib/SimpleJSON/src")
+:includes '("server" "lib" "lib/SimpleJSON/src")
 ;; :extra-flags '("-cc1")
 :irrelevant-files '("tests/")
 :local-variables '(lambda (root file)
