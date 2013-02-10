@@ -51,7 +51,7 @@ Recommended packages and versions:
 | [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                      |
 | [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
 | [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                               |
-| [eproject][eproject-ref]          | (unknown) | not necessary | can be useful if you already have eproject installed                                          |
+| [eproject][eproject-ref]          | (unknown) | temporary broken | can be useful if you already have eproject installed                                          |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
