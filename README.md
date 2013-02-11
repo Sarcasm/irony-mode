@@ -112,7 +112,7 @@ To enable one plugin call `(irony-enable 'plugin-name)`, to enable
 more than one plugin at once call the same function with a list
 `(irony-enable '(plugin-1 plugin-2))`.
 
-## ac
+## Auto Complete
 
 Code completion with auto-complete.
 
@@ -141,6 +141,32 @@ The configuration might look like this:
 (add-hook 'c-mode-hook 'sarcasm-enable-ac-and-yas)
 (add-hook 'c-mode-hook 'irony-mode)
 ```
+
+## Compilation Database
+
+In order to work correctly, `irony-mode` needs to know the compile
+flags. This plugin allow aims to provide *as automatic as possible*
+compile flags discovery, with minimum user input.
+
+It works great with the following tools:
+- [CMake][cmake-ref] >= 2.8.5
+- [Bear][bear-ref]
+
+Or, more generally, it supports `compile_commands.json` files
+([more information here][clang-compile-db-ref]).
+
+Usage:
+
+```el
+(irony-enable 'compilation-db)
+```
+
+Hit `C-c C-b` to display the build configuration menu. The menu should
+be self explanatory, if it's not the case open an issue please.
+
+[cmake-ref]: http://www.cmake.org "CMake"
+[bear-ref]: https://github.com/rizsotto/Bear "Bear"
+[clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
 
 ## eproject
 
