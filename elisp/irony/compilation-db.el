@@ -133,8 +133,7 @@ To be used by `irony-cdb-menu'."
    (irony-cdb-cmake-item)
    '(:keys ((?b message "Bear build...")) :desc "Bear build")
    '(:keys ((?u message "User provided build...")) :desc "User provided")
-   '(:keys ((?u message "Customize default build dir name"))
-           :desc "Change default build directory")))
+   '(:keys ((?p customize-apropos-options "irony-cdb")) :desc "Preferences")))
 
 (defun irony-cdb-menu-make-str (item)
   (let ((keys (plist-get item :keys))
@@ -246,7 +245,7 @@ Returns nil if no directory is found."
 (defun irony-cdb-cmake-item ()
   (let ((cmake-dir (irony-cdb-find-cmake-root))
         (limit 40)
-        (keys (list '(?c irony-cdb-cmake-build)))
+        (keys (list '(?c call-interactively irony-cdb-cmake-build)))
         cmake-dir-str)
     (when cmake-dir
       (setq cmake-dir-str (irony-cdb-shorten-path cmake-dir))
@@ -292,7 +291,7 @@ compile_commands.json file."
   (interactive
    (list (read-directory-name
           "CMake root directory: "
-          (or (irony-current-directory) default-directory))))
+          (irony-cdb-find-cmake-root))))
   (unless (file-exists-p (expand-file-name "CMakeLists.txt" root-dir))
     (error "CMake root doesn't contain a CMakeLists.txt"))
   (unless build-dir
