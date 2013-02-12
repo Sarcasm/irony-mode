@@ -21,7 +21,6 @@
 #include <cerrno>
 
 #include "util/arraysize.hpp"
-#include "str/wstring_to_string.h"
 
 // list of plugins
 #include "plugins/CodeCompletion.h"
@@ -32,8 +31,6 @@
 namespace {
 /// An empty line with EOT
 const std::string eot_str               = "\nEOT\n";
-/// Initial size of the completion buffer
-const std::size_t SEXP_BUF_INITIAL_SIZE = 16384;
 
 const std::map<std::string, IPlugin *> generateBundlePlugins(TUManager & tuManager)
 {
@@ -129,24 +126,22 @@ void Server::handleRequest(const std::string &       request,
                            const JSONObjectWrapper & json,
                            const JSONObjectWrapper & data)
 {
-  std::string         intro("(");
   std::string         type("nil");
-  std::string         buf;
   bool                hasBuffer = true;
   const std::string & buffer    = json.check(L"buffer", hasBuffer);
 
-  if (hasBuffer) {
-    intro.append(":buffer \"").append(buffer).append("\" ");
-  }
+  std::cout << "(";
 
-  if (IPlugin *current = plugins_[request]) {
-    // Try to minimise the cost of buf += / buf.append() done by the
-    // handleRequest call.
-    buf.reserve(SEXP_BUF_INITIAL_SIZE);
+  if (hasBuffer)
+    {
+      std::cout << ":buffer \"" << buffer << "\" ";
+    }
 
-    // fill \c buf with the request answer.
-    type = current->handleRequest(data, buf);
-  }
+  if (IPlugin *current = plugins_[request])
+    {
+      // Print request answer to std::cout.
+      type = current->handleRequest(data, std::cout);
+    }
 
-  std::cout << intro << ":type " << type << " " << buf << ")\n;;EOT" << std::endl;
+  std::cout << " :type " << type << ")\n;;EOT" << std::endl;
 }

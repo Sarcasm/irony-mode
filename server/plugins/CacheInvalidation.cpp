@@ -22,19 +22,19 @@ CacheInvalidation::~CacheInvalidation()
 { }
 
 std::string CacheInvalidation::handleRequest(const JSONObjectWrapper & data,
-					     std::string &             buf)
+                                             std::ostream &            out)
 {
   bool                valid = true;
   const std::string & file  = data.check(L"file", valid);
 
-  buf += ":value ";
+  out << ":value ";
   if (! valid)
     {
-      buf += ":error";
+      out << ":error";
       std::clog << "invalid reload-flags request." << std::endl;
     } else {
     tuManager_.invalidateCachedTU(file);
-    buf += ":success";
+    out << ":success";
   }
   return ":status-code";
 }

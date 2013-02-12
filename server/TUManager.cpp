@@ -14,8 +14,6 @@
 
 #include "TUManager.h"
 
-#include "str/wstring_to_string.h"
-
 typedef TUManager::SettingsID SettingsID;
 typedef TUManager::Settings Settings;
 

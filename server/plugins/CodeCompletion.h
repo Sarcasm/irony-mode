@@ -53,19 +53,19 @@ public:
    * \see \c IPlugin.
    *
    * \param data
-   * \param buf
-   *            A string describing the possible completions.
+   * \param [out] out
+   *            A stream to print the possible completions.
    *
    */
   virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::string &             buf);
+                                    std::ostream &            out);
 
 private:
   /**
    * \brief Execute a code completion at line \p line and column \p
    *        column in the file \p filename.
    *
-   * The result of the completion is added to the parameter \p buf.
+   * The result of the completion is added to the parameter \p out.
    *
    * \param tu          The translation unit of the file \p filename.
    * \param filename    The name of the file where the code completion
@@ -73,54 +73,54 @@ private:
    * \param line        The line where the code completion should occur.
    * \param column      The column where the code completion should
    *                    occur.
-   * \param buf         The string result of the code completion, a
+   * \param [out] out   The stream to print result of the code completion, a
    *                    s-expression.
    *
    * \return \c true if the code completion succeed, otherwise
-   *         \c false and the value of \c buf is undefined.
+   *         \c false and nothing is printed to \p out.
    */
   bool complete(CXTranslationUnit & tu,
                 const std::string & filename,
                 unsigned            line,
                 unsigned            column,
-                std::string &       buf);
+                std::ostream &      out);
 
   /**
    * \brief Format a cursor kind to a keyword symbol.
    *
    * \param cursorKind
-   * \param buf         The string where the keyword symbol should be
+   * \param [out] out   The stream where the keyword symbol should be
    *                    added.
    */
-  void formatCompletionCursorKind(CXCursorKind cursorKind, std::string & buf);
+  void formatCompletionCursorKind(CXCursorKind cursorKind, std::ostream & out);
 
   /**
    * \brief Format the completion string \p completionString into the
-   *        buffer \p buff in an Emacs Lisp structure.
+   *        \p out stream in an Emacs Lisp structure.
    *
    * \param completionString
-   * \param buf
+   * \param [out] out
    */
   void formatCompletionString(CXCompletionString & completionString,
-                              std::string &        buf);
+                              std::ostream &       out);
 
   /**
    * \brief Format if possible the given kind to a lisp keyword
    *        symbol.
    *
-   * \param kind The kind to format.
-   * \param buf The buffer to append the text.
+   * \param kind         The kind to format.
+   * \param [out] out    The stream to append the text.
    *
    * \return \c true if the formatting to a keyword symbol was
    *         possible, otherwise \c false.
    */
   bool tryFormattingKeywordSymbol(CXCompletionChunkKind kind,
-                                  std::string &         buf);
+                                  std::ostream &        out);
 
   /**
    * \brief Add a result cons cell.
    *
-   * The following cons is inserted in \p buf.
+   * The following cons is inserted in \p out.
    * \verbatim
    *  (:keyword . "value") ;needQuote = true
    *  (:keyword . value)   ;needQuote = false
@@ -128,11 +128,11 @@ private:
    *
    * \param keyword
    * \param value
-   * \param buf         The string where the text shoulb be added.
+   * \param [out] out      The stream where the text shoulb be added.
    */
   void appendConsCellResult(const std::string & keyword,
                             const std::string & value,
-                            std::string &       buf);
+                            std::ostream &      out);
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

@@ -16,7 +16,6 @@
 #include <cstddef>
 #include <string>
 
-#include "str/to_string.hpp"
 #include "util/arraysize.hpp"
 
 #include "ClangString.h"
@@ -39,7 +38,7 @@ CodeCompletion::~CodeCompletion()
 }
 
 std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
-                                          std::string &             buf)
+                                          std::ostream &            out)
 {
   bool                             valid  = true;
   const std::string &              file   = data.check(L"file", valid);
@@ -47,7 +46,7 @@ std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
   unsigned                         column = data.check(L"column", valid);
   const std::vector<std::string> & flags  = data.get(L"flags");
 
-  buf += ":results (";
+  out << ":results (";
 
   if (! valid)
     {
@@ -58,10 +57,10 @@ std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
     {
       // TODO: enhance ? actually the function return false on error,
       // we can display the error to the user maybe ?
-      complete(tu, file, line, column, buf);
+      complete(tu, file, line, column, out);
     }
 
-  buf += ")";
+  out << ")";
   return (detailedCompletions_ ? ":completion" : ":completion-simple");
 }
 
@@ -69,7 +68,7 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
                               const std::string & filename,
                               unsigned            line,
                               unsigned            column,
-                              std::string &       buf)
+                              std::ostream &      out)
 {
   CXCodeCompleteResults   *completionResults
     = clang_codeCompleteAt(tu,
@@ -105,12 +104,12 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
     {
       CXCompletionResult result = completionResults->Results[i];
 
-      buf += "\n";
-      buf += "(";
-      formatCompletionCursorKind(result.CursorKind, buf);
-      buf += " . ";
-      formatCompletionString(result.CompletionString, buf);
-      buf += ")";
+      out << "\n";
+      out << "(";
+      formatCompletionCursorKind(result.CursorKind, out);
+      out << " . ";
+      formatCompletionString(result.CompletionString, out);
+      out << ")";
     }
 
   clang_disposeCodeCompleteResults(completionResults);
@@ -229,37 +228,30 @@ const char *completionCursorKindIdentifier(CXCursorKind  cursorKind)
 
 } // anonymous namespace
 
-/**
- * Format a cursor kind to a keyword symbol.
- *
- * \param cursorKind
- * \param buf         The string where the keyword symbol should be
- *                    added.
- */
-void CodeCompletion::formatCompletionCursorKind(CXCursorKind  cursorKind,
-                                                std::string & buf)
+void CodeCompletion::formatCompletionCursorKind(CXCursorKind   cursorKind,
+                                                std::ostream & out)
 {
-  buf += completionCursorKindIdentifier(cursorKind);
+  out << completionCursorKindIdentifier(cursorKind);
 }
 
 void CodeCompletion::appendConsCellResult(const std::string & keyword,
                                           const std::string & value,
-                                          std::string &       buf)
+                                          std::ostream &      out)
 {
-  buf.append("(").append(keyword).append(" . ").append(value).append(")");
+    out << "(" << keyword << " . " << value << ")";
 }
 
 void CodeCompletion::formatCompletionString(CXCompletionString & completionString,
-                                            std::string &        buf)
+                                            std::ostream &       out)
 {
   bool hasOptional = false;
 
-  buf += "(:priority ";
-  buf += str::to_string<unsigned>(clang_getCompletionPriority(completionString));
-  buf += " :result ";
+  out << "(:priority ";
+  out << clang_getCompletionPriority(completionString);
+  out << " :result ";
 
   if (detailedCompletions_)
-    buf += "(";
+    out << "(";
 
   for (unsigned i = 0, max = clang_getNumCompletionChunks(completionString);
        i < max;
@@ -274,10 +266,10 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
 
           CXString text = clang_getCompletionChunkText(completionString, i);
 
-          buf += "\"";
+          out << "\"";
           if (const char *ctext = clang_getCString(text))
-            buf += ctext;
-          buf += "\"";
+            out << ctext;
+          out << "\"";
           clang_disposeString(text);
           break ;               // skip the when found
         }
@@ -288,12 +280,12 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
                            ClangString::Escape);
 
           if (! text.isNull()) {
-            appendConsCellResult(keyword, text.asString(), buf);
+            appendConsCellResult(keyword, text.asString(), out);
           }
           continue ;            // kind was a 'chunk text'
         }
 
-      if (tryFormattingKeywordSymbol(chunkKind, buf))
+      if (tryFormattingKeywordSymbol(chunkKind, out))
         continue ;         // kind was convertible to a keyword symbol
 
       if (chunkKind == CXCompletionChunk_Optional) // optional, recursive call
@@ -302,20 +294,20 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
             clang_getCompletionChunkCompletionString(completionString, i);
 
           hasOptional = true;
-          buf += "(:optional . \n\t";
-          formatCompletionString(optionalString, buf);
-          buf += ")";
+          out << "(:optional . \n\t";
+          formatCompletionString(optionalString, out);
+          out << ")";
         }
     }
 
   if (detailedCompletions_)
     {
-      buf += ")";               // close ":result ("
+      out << ")";               // close ":result ("
       if (hasOptional)
-        buf += " :optional t";
+        out << " :optional t";
     }
 
-  buf += ")";                   // close "(:priority"
+  out << ")";                   // close "(:priority"
 }
 
 namespace {
@@ -344,12 +336,12 @@ static const struct kindsToLispForm_t // arraysize() can't work with
 }
 
 bool CodeCompletion::tryFormattingKeywordSymbol(CXCompletionChunkKind kind,
-                                                std::string &         buf)
+                                                std::ostream &        out)
 {
   for (std::size_t i = 0; i < arraysize(kindsToLispForm); ++i)
     if (kindsToLispForm[i].kind == kind)
       {
-        appendConsCellResult(":symbol", kindsToLispForm[i].lispForm, buf);
+        appendConsCellResult(":symbol", kindsToLispForm[i].lispForm, out);
         return true;
       }
   return false;
