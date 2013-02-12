@@ -114,7 +114,7 @@ Code completion with auto-complete.
 
 Requires:
 * [auto-complete][ac-ref]
-* [yasnippet][yasnippet-ref] (optionnal)
+* [yasnippet][yasnippet-ref] (optional)
 
 The configuration might look like this:
 
