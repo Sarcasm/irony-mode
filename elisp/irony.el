@@ -511,6 +511,77 @@ The function will look respectively for:
        subpath
        (directory-file-name (file-name-directory dir))))))
 
+(defun irony-split-command-line-1 (quoted-str)
+  "Remove the escaped quotes and backlash from a string.
+
+Return a list of the final characters in the reverse order, only
+to be consumed by `irony-split-command-line'."
+  (let ((len (length quoted-str))
+         (i 0)
+         ch next-ch
+         result)
+    (while (< i len)
+      (setq ch (aref quoted-str i))
+      (when (eq ch ?\\)
+        (let ((next-ch (and (< (1+ i) len)
+                            (aref quoted-str (1+ i)))))
+          (when (member next-ch '(?\\ ?\"))
+            (setq ch next-ch)
+            (incf i))))
+      (push ch result)
+      (incf i))
+    result))
+
+(defun irony-split-command-line (cmd-line)
+  "Split the command line into a list of arguments.
+
+Takes care of double quotes as well as backslash.
+
+Sadly I had to write this because `split-string-and-unquote'
+breaks with escaped quotes in compile_commands.json, such as in:
+
+    /usr/bin/c++ -DLLVM_VERSION_INFO=\\\\\\\"3.2svn\\\\\\\" <args>"
+  ;; everytime I write a function like this one, it makes me feel bad
+  (let* ((len (length cmd-line))
+        (spaces (string-to-list " \f\t\n\r\v"))
+        (fist-not-spaces-re (concat "[^" spaces "]"))
+        (i 0)
+        ch
+        args cur-arg)
+    (while (< i len)
+      (setq ch (aref cmd-line i))
+      (cond
+       ((member ch spaces)              ;spaces
+        (when cur-arg
+          (setq args (cons (apply 'string (nreverse cur-arg)) args)
+                cur-arg nil))
+        ;; move to the next char
+        (setq i (or (string-match-p fist-not-spaces-re cmd-line i)
+                    len)))
+       ((eq ch ?\")                     ;quoted string
+        (let ((endq (string-match-p "[^\\]\"" cmd-line (1+ i))))
+          (unless endq
+            (error "ill formed command line"))
+          (let ((quoted-str (substring cmd-line (1+ i) (1+ endq))))
+            (setq cur-arg (append (irony-split-command-line-1 quoted-str)
+                                  cur-arg)
+                  i (+ endq 2)))))
+       (t                             ;a valid char
+        ;; if it's an escape of: a backslash, a quote or a space push
+        ;; only the following char.
+        (when (eq ch ?\\)
+          (let ((next-ch (and (< (1+ i) len)
+                              (aref cmd-line (1+ i)))))
+            (when (or (member next-ch '(?\\ ?\"))
+                      (member next-ch spaces))
+              (setq ch next-ch)
+              (incf i))))
+        (push ch cur-arg)
+        (incf i))))
+    (when cur-arg
+      (setq args (cons (apply 'string (nreverse cur-arg)) args)))
+    (nreverse args)))
+
 
 ;; "built-in" commands
 ;;

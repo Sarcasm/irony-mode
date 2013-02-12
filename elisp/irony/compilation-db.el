@@ -99,8 +99,11 @@ clang_parseTranslationUnit() command line arguments."
   around this strange behavior."))
 
 (defvar irony-cdb-compile-db-cache (make-hash-table :test 'equal)
-  "*internal variable* Compilation commands cache, the key is the
-  file.")
+  "*internal variable* Compilation commands cache.
+
+The key is the true-name of the file (see `file-truename'.
+The value is a cons of (compile-flags . working-dir) where both
+can have a nil value.")
 
 
 ;; Functions
@@ -185,13 +188,30 @@ To be used by `irony-cdb-menu'."
     (when cmd
       (apply 'funcall cmd))))
 
+(defun irony-cdb-load-flags (compile-flags &optional work-dir)
+  "Set the compile flags for the current buffer and trigger a
+reload of the cache with `irony-reload-flags'."
+  (setq irony-compile-flags compile-flags)
+  (setq irony-compile-flags-work-dir work-dir)
+  (irony-reload-flags))
+
+(defun irony-cdb-try-load-from-cache ()
+  "Set the flags for the current buffer if a cache entry exists
+for this path."
+  (when buffer-file-name
+    (let ((flags-work-dir (gethash (file-truename buffer-file-name)
+                                   irony-cdb-compile-db-cache)))
+      (when flags-work-dir
+        (irony-cdb-load-flags (car flags-work-dir)
+                              (cdr flags-work-dir))))))
+
 (defun irony-compilation-db-setup ()
   "Irony-mode hook for irony-cdb plugin."
   (when (and buffer-file-name
              (not irony-cdb-enabled))
     (setq irony-cdb-enabled t)
     (define-key irony-mode-map (kbd "C-c C-b") 'irony-cdb-menu)
-    ))
+    (irony-cdb-try-load-from-cache)))
 
 (defun irony-compilation-db-enable ()
   "Enable cmake settings for `irony-mode'."
@@ -206,10 +226,50 @@ To be used by `irony-cdb-menu'."
 
 ;; compile-commands.json handling
 
+(defun irony-cdb-gen-clang-args (cmd-args)
+  "Find the compile flags discarding irrelevant arguments.
+
+Discarded option are source files for example.
+
+If we have '(\"-Wall\"\ \"a.c\" \"b.c\") only \"-Wall\" will
+subsist."
+  (let (arg compile-flags)
+    (while (and cmd-args (not (string= "--" (car cmd-args))))
+      (setq arg (car cmd-args))
+      (if (or (string-prefix-p "-" arg)
+              (not (member (file-name-extension arg) ;skip source files
+                           irony-known-source-extensions)))
+          (push arg compile-flags))
+      (setq cmd-args (cdr cmd-args)))
+    (nreverse compile-flags)))
+
+(defun irony-cdb-parse-entry (entry)
+  "Extract the flags of the entry and add them to cache."
+  (let ((file (cdr (assq 'file entry)))
+        (work-dir (cdr (assq 'directory entry)))
+        (cmd (irony-split-command-line (cdr (assq 'command entry)))))
+    (when (and cmd
+               (member (file-name-nondirectory (car cmd))
+                       irony-cdb-known-binaries))
+      (let ((compile-flags (irony-cdb-gen-clang-args (cdr cmd))))
+        (puthash (file-truename file)
+                 (cons compile-flags
+                       (unless (irony-extract-working-dir-flag compile-flags)
+                         work-dir))
+                 irony-cdb-compile-db-cache)))))
+
 (defun irony-cbd-parse-compile-commands (cc-file)
-  "Parse a compile_commands.json file and add it's files to the
-cache."
-  (message "parse: %s" cc-file))
+  "Parse a compile_commands.json file and add its entries to the
+cache `irony-cdb-compile-db-cache'.
+
+Returns nil on failure (if the file doesn't exist for example),
+otherwise return t."
+  (condition-case err
+      (progn
+	(mapc 'irony-cdb-parse-entry (json-read-file cc-file))
+	t)
+    (file-error
+     (message "%s" (error-message-string err)))))
 
 
 ;; CMake
@@ -263,9 +323,8 @@ Returns nil if no directory is found."
 ;; TODO: What if the project needs a more elaborate configuration?
 ;;       such as with cmake -i or ccmake or the CMake GUI?
 (defun irony-cdb-generate-cmake (cmake-root build-dir)
-  "Prompt the user for arguments and then generate a cmake build.
-Return t if the generation was successful (0 returned by the
-command), return nil on error."
+  "Prompt the user for arguments and then generate a CMake
+build."
   ;; ensure final '/' required by `default-directory'
   (setq build-dir (file-name-as-directory build-dir))
   ;; create directory invoke CMake ask for additionnal arguments
@@ -282,8 +341,9 @@ command), return nil on error."
                               irony-cbd-cmake-executable
                               args
                               (file-relative-name cmake-root))))
-      (message "running: %s" cmake-cmd)
-      (eq 0 (shell-command cmake-cmd cmake-buffer)))))
+      (message "Running: %s" cmake-cmd)
+      (shell-command cmake-cmd cmake-buffer)
+      (message ""))))
 
 (defun irony-cdb-cmake-build (root-dir &optional build-dir)
   "Configure a CMake build by loading (optionally generating) the
@@ -301,7 +361,8 @@ compile_commands.json file."
   (let ((cc-file (expand-file-name "compile_commands.json" build-dir)))
     (unless (file-exists-p cc-file)
       (irony-cdb-generate-cmake root-dir build-dir))
-    (irony-cbd-parse-compile-commands cc-file)))
+    (irony-cbd-parse-compile-commands cc-file)
+    (irony-cdb-try-load-from-cache)))
 
 (provide 'irony/compilation-db)
 
