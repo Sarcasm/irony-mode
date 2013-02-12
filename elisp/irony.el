@@ -99,6 +99,9 @@ tested."
   :require 'irony
   :group 'irony)
 
+(defcustom irony-libclang-additional-flags nil
+  "Additionnal flags to send to libclang.")
+
 (defcustom irony-known-source-extensions '("c"   "cc"
                                            "C"   "CC"
                                            "cpp" "cxx" "c++"
@@ -377,6 +380,7 @@ current directory couldn't be found."
               (append
                (if lang-flag
                    lang-flag)
+               irony-libclang-additional-flags
                (if cur-dir
                    (list (concat "-I" cur-dir)))
                (if work-dir-flag

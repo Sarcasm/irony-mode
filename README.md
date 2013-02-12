@@ -224,13 +224,10 @@ You can use the following configuration:
 
 ```el
 ;; The Clang installation missed the system include directory
-;; "/usr/lib/clang/3.2/include/", man clang said we can use the
-;; environment variable CPATH.
-(let ((old-cpath (getenv "CPATH")))
-  (when (file-exists-p "/usr/lib/clang/3.2/include/")
-    (setenv "CPATH" (if old-cpath
-                        (concat old-cpath ":" "/usr/lib/clang/3.2/include/")
-                      "/usr/lib/clang/3.2/include/"))))
+;; "/usr/lib/clang/3.2/include/"
+(when (file-exists-p "/usr/lib/clang/3.2/include/")
+  (setq irony-libclang-additional-flags
+        '("-isystem" "/usr/lib/clang/3.2/include/")))
 ```
 
 This is issue is a known problem:
