@@ -30,7 +30,7 @@
 (eval-when-compile
   (require 'cl))
 
-(defcustom irony-cbd-cmake-executable (executable-find "cmake")
+(defcustom irony-cdb-cmake-executable (executable-find "cmake")
   "Location of the cmake executable."
   :group 'irony
   :type 'file)
@@ -134,8 +134,10 @@ To be used by `irony-cdb-menu'."
   (list
    ;; see `substitute-env' function
    (irony-cdb-cmake-item)
-   '(:keys ((?b message "Bear build...")) :desc "Bear build")
-   '(:keys ((?u message "User provided build...")) :desc "User provided")
+   (irony-cdb-compile-commands-item)
+   ;; '(:keys ((?b message "Bear build...")) :desc "Bear build")
+   ;; TODO: .clang_complete
+   ;; '(:keys ((?u message "User provided build...")) :desc "User provided")
    '(:keys ((?p customize-apropos-options "irony-cdb")) :desc "Preferences")))
 
 (defun irony-cdb-menu-make-str (item)
@@ -143,7 +145,7 @@ To be used by `irony-cdb-menu'."
         (desc (plist-get item :desc)))
     (when (> (length keys) 3)
       (error "too many shortcut keys for one menu item"))
-    (when (> (length desc) 65)
+    (when (> (length desc) 70)
       (error "description too long for a menu item"))
     (mapc (lambda (key)
             (if (member (car key) '(?q ?Q))
@@ -258,7 +260,7 @@ subsist."
                          work-dir))
                  irony-cdb-compile-db-cache)))))
 
-(defun irony-cbd-parse-compile-commands (cc-file)
+(defun irony-cdb-parse-compile-commands (cc-file)
   "Parse a compile_commands.json file and add its entries to the
 cache `irony-cdb-compile-db-cache'.
 
@@ -269,7 +271,51 @@ otherwise return t."
 	(mapc 'irony-cdb-parse-entry (json-read-file cc-file))
 	t)
     (file-error
-     (message "%s" (error-message-string err)))))
+     (message "%s" (error-message-string err))
+     nil)))
+
+(defun irony-cdb-find-compile-commands-dir ()
+  "Find a directory containing a compile_commands.json."
+  (let ((cur-dir (or (irony-current-directory) default-directory)))
+    (or (irony-find-traverse-for-subpath "compile_commands.json" cur-dir)
+        (loop for x in (cons irony-cdb-build-dir irony-cdb-build-dir-names)
+              for build-dir = (file-name-as-directory x)
+              for subpath = (concat build-dir "compile_commands.json")
+              for found = (irony-find-traverse-for-subpath subpath cur-dir)
+              if found
+              return (concat found build-dir)))))
+
+(defun irony-cdb-load-compile-commands (cc-file)
+  "Load CC-FILE if not already loaded and use load call
+`irony-cdb-try-load-from-cache' to load the flags in the current
+buffer."
+  (interactive
+   (list (read-file-name "compile_commands.json path: "
+                         (irony-cdb-find-compile-commands-dir)
+                         nil
+                         t
+                         "compile_commands.json")))
+  (when (irony-cdb-parse-compile-commands cc-file)
+    (irony-cdb-try-load-from-cache)))
+
+(defun irony-cdb-compile-commands-item ()
+  (let ((cc-file (irony-cdb-find-compile-commands-dir))
+        (limit 40)
+        (keys (list '(?j call-interactively irony-cdb-load-compile-commands)))
+        cc-file-str)
+    (when cc-file
+      (setq cc-file (concat cc-file "compile_commands.json")
+            cc-file-str (irony-cdb-shorten-path cc-file))
+      (when (> (length cc-file-str) limit)
+        (setq cc-file-str (concat "..." (substring cc-file-str
+                                                  (- (- limit 3))))))
+      (add-to-list 'keys (list ?J 'irony-cdb-load-compile-commands cc-file) t))
+    (list
+     :keys keys
+     :short-desc "Compile commands"
+     :desc (concat "Compile commands" (if cc-file-str
+                                          (format " [with path=%s]"
+                                                  cc-file-str))))))
 
 
 ;; CMake
@@ -338,7 +384,7 @@ build."
                                           irony-cdb-cmake-generator))))
            (cmake-buffer (get-buffer-create "*CMake Command Output*"))
            (cmake-cmd (format "%s -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s %s"
-                              irony-cbd-cmake-executable
+                              irony-cdb-cmake-executable
                               args
                               (file-relative-name cmake-root))))
       (message "Running: %s" cmake-cmd)
@@ -361,7 +407,7 @@ compile_commands.json file."
   (let ((cc-file (expand-file-name "compile_commands.json" build-dir)))
     (unless (file-exists-p cc-file)
       (irony-cdb-generate-cmake root-dir build-dir))
-    (irony-cbd-parse-compile-commands cc-file)
+    (irony-cdb-parse-compile-commands cc-file)
     (irony-cdb-try-load-from-cache)))
 
 (provide 'irony/compilation-db)

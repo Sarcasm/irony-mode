@@ -63,14 +63,6 @@ otherwise try GCC."
   :group 'irony
   :type 'file)
 
-(defcustom irony-compile-flags-work-dir nil
-  "If non-nil, contains default directory used to expand
-  relatives paths in the compile command for the current buffer."
-  :type '(string :tag "compile command default directory")
-  :require 'irony
-  :group 'irony)
-(make-variable-buffer-local 'irony-compile-flags-work-dir)
-
 (defcustom irony-compile-flags nil
   "List of compiler flags to compile the current buffer.
 
@@ -79,6 +71,14 @@ otherwise try GCC."
   :require 'irony
   :group 'irony)
 (make-variable-buffer-local 'irony-compile-flags)
+
+(defcustom irony-compile-flags-work-dir nil
+  "If non-nil, contains default directory used to expand
+  relatives paths in the compile command for the current buffer."
+  :type '(string :tag "compile command default directory")
+  :require 'irony
+  :group 'irony)
+(make-variable-buffer-local 'irony-compile-flags-work-dir)
 
 (defcustom irony-known-modes '(c++-mode
                                c-mode)

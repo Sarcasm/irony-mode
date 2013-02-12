@@ -80,31 +80,25 @@ Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto
 completion feature.
 
 If you want the completion to work on a project you will probably need
-give some information:
+give some information about the flags necessary to compile a file.
 
-There is one method at the moment but some others are on the way:
+The best way to achieve that is probably to use the
+[Compilation Database](#Compilation Database) plugin.
 
-Create a `.dir-locals.el` file in your project containing something
-like:
+You can also set the flags manually by creating a `.dir-locals.el`
+file in your project containing something like:
 
 ```el
 ((c++-mode
-      (irony-header-directories-root . "/path/to/project/root")
-      (irony-header-directories . ("utils" "some/include/path"))))
+      (irony-compile-flags-work-dir . "/path/to/project/root")
+      (irony-compile-flags          . ("-Iutils"
+                                       "-Isome/include/path"))))
 ```
 
-You can take a look at the documentation of the following variables:
-`irony-header-directories`, `irony-header-directories-root`,
-`irony-config-commands` and `irony-extra-flags`. You can also use the
-`customize` inside Emacs to set variables.
+You can take a look at the documentation of the variables
+`irony-compile-flags` and `irony-compile-flags-work-dir`. You can also
+use the `customize` inside Emacs to set these variables.
 
-Some other methods are on the way:
-
-1. `CMake` (and more generally `compile_commands.json`) integration.
-
-2. A `.clang_complete` file like in the
-  [clang_complete](http://www.vim.org/scripts/script.php?script_id=3302)
-  Vim plugin.
 
 # Plugins
 
@@ -117,8 +111,8 @@ more than one plugin at once call the same function with a list
 Code completion with auto-complete.
 
 Requires:
-* auto-complete
-* yasnippet (optionnal)
+* [auto-complete][ac-ref]
+* [yasnippet][yasnippet-ref] (optionnal)
 
 The configuration might look like this:
 
@@ -128,7 +122,8 @@ The configuration might look like this:
 (require 'irony)
 
 ;; the ac plugin will be activated in each buffer using irony-mode
-(irony-enable 'ac)
+(irony-enable 'ac)             ; hit C-RET to trigger completion
+(irony-enable 'compilation-db) ; hit `C-c C-b' to open build menu
 
 (defun my-enable-ac-and-yas ()
   ;; if not set before (auto-complete-mode 1), overlays persist after
@@ -149,11 +144,21 @@ flags. This plugin allow aims to provide *as automatic as possible*
 compile flags discovery, with minimum user input.
 
 It works great with the following tools:
-- [CMake][cmake-ref] >= 2.8.5
-- [Bear][bear-ref]
 
-Or, more generally, it supports `compile_commands.json` files
-([more information here][clang-compile-db-ref]).
+- [CMake][cmake-ref] >= 2.8.5
+
+- [Bear][bear-ref] - Bear is a tool that can generate a
+  `compile_commands.json` file by "monitoring" the build of a project.
+  The typical usage for a `make` based project will be `bear -- make
+  -B`.
+
+More generally, it supports `compile_commands.json` files
+([more information here][clang-compile-db-ref]). In case some other
+tools producing such file appears in the future.
+
+
+**TODO: PUT A SIMPLE GIF DEMO HERE**
+
 
 Usage:
 
@@ -161,14 +166,27 @@ Usage:
 (irony-enable 'compilation-db)
 ```
 
-Hit `C-c C-b` to display the build configuration menu. The menu should
-be self explanatory, if it's not the case open an issue please.
+Hit `C-c C-b` to display the build configuration menu.
+
+The menu should be self explanatory, if it's not the case open an
+issue please.
+
+
+A support for the `.clang_complete` file format will be added in the
+future, compatible with the
+[.clang_complete Vim plugin][clang_complete-ref].
 
 [cmake-ref]: http://www.cmake.org "CMake"
 [bear-ref]: https://github.com/rizsotto/Bear "Bear"
 [clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
+[clang_complete-ref]: http://www.vim.org/scripts/script.php?script_id=3302 ".clang_complete"
+
 
 ## eproject
+
+
+CURRENTLY BROKEN
+
 
 Usage:
 
