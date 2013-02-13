@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   CodeCompletion.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Thu Jul 21 00:08:54 2011

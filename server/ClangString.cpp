@@ -1,3 +1,15 @@
+/**
+ * \file   ClangString.cpp
+ * \author Guillaume Papin <guillaume.papin@epitech.eu>
+ * \date   Wed Feb 13 10:49:32 2013
+ *
+ * \brief  ClangString implementation.
+ *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ *
+ */
+
 #include "ClangString.h"
 
 #include <algorithm>
@@ -5,7 +17,7 @@
 #include <iostream>
 
 ClangString::ClangString(const CXString & cxstring,
-                         unsigned         flags)
+			 unsigned         flags)
   : cxstring_(cxstring)
   , cstr_(clang_getCString(cxstring_))
   , flags_(flags)
@@ -59,7 +71,7 @@ std::string ClangString::asString() const
   } else {
     for (std::size_t i = 0; i < len; ++i) {
       if (needEscape(cStr[i])) {
-        quotedStr += '\\';
+	quotedStr += '\\';
       }
       quotedStr += cStr[i];
     }

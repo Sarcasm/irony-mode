@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   CacheInvalidation.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Fri Jan 11 18:01:07 2013

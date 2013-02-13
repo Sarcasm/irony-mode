@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   SyntaxChecker.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Wed Aug 24 13:52:10 2011

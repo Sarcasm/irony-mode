@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   TUManager.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Tue Aug 23 23:39:33 2011

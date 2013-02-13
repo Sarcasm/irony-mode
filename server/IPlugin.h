@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   IPlugin.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Tue Jul 19 15:36:20 2011

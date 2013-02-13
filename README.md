@@ -51,12 +51,10 @@ Recommended packages and versions:
 | [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                      |
 | [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
 | [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                               |
-| [eproject][eproject-ref]          | (unknown) | temporary broken | can be useful if you already have eproject installed                                          |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
 [yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
-[eproject-ref]:  https://github.com/jrockway/eproject           "Project"
 
 [el-get](https://github.com/dimitri/el-get) help a lot for package
 management in Emacs. You can take a look at
@@ -106,6 +104,7 @@ To enable one plugin call `(irony-enable 'plugin-name)`, to enable
 more than one plugin at once call the same function with a list
 `(irony-enable '(plugin-1 plugin-2))`.
 
+
 ## Auto Complete
 
 Code completion with auto-complete.
@@ -136,6 +135,7 @@ The configuration might look like this:
 (add-hook 'c-mode-hook 'sarcasm-enable-ac-and-yas)
 (add-hook 'c-mode-hook 'irony-mode)
 ```
+
 
 ## Compilation Database
 
@@ -182,38 +182,8 @@ future, compatible with the
 [clang_complete-ref]: http://www.vim.org/scripts/script.php?script_id=3302 ".clang_complete"
 
 
-## eproject
-
-
-CURRENTLY BROKEN
-
-
-Usage:
-
-```el
-(irony-enable 'eproject)
-```
-
-When working on a project you can create a file called `.eproject` at
-the root with the following content:
-
-```el
-:includes '("." "server" "lib" "lib/SimpleJSON/src")
-:extra-flags '("-std=c++11")
-:config-commands
-:irrelevant-files '("tests/")
-```
-
-All the variables are optional:
-
-* `:includes`: relative path are relative to the eproject root (the
-  directory containing the `.eproject` file)
-* `:config-commands`: if you have to execute some commands to get the
-  flags (such as `pkg-config --cflags gtk+-2.0`).
-* `:extra-flags`: Some extra flag (e.g: "-DNDEBUG", "-std=c++11", ...)
-
-
 # FAQ
+
 
 ## It's slow, why?
 
@@ -225,6 +195,7 @@ This result in a slower parsing.
 This only affect old versions of Clang (< 3.2), it is suggested to
 update your libclang installation if you want to take advantage of the
 optimisations.
+
 
 ## I got an error due to 'stdarg.h', how to solve this?
 
@@ -260,6 +231,7 @@ This is issue is a known problem:
 > MainAddr), but using just the libraries, it can't automatically find
 > it.
 
+
 ## libclang.so: cannot open shared object file...
 
 Compiling `irony-server` succeed but you have the following message
@@ -275,6 +247,7 @@ To solve this issue it is possible to build `irony-server` with the
 following command:
 
     cmake -DUSE_RPATH=ON ..
+
 
 ## auto-complete acts strangely, it tries to complete inside string literals
 

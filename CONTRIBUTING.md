@@ -13,6 +13,10 @@ For C++:
 
 ## C++ coding style
 
+Please, before writing a new file take a look at how the existing
+files are written. The license bit, the Doxygen header, the Emacs C++
+modeline for headers `-*-C++-*-`.
+
 ```cpp
 class CamelCaseClassName
 {

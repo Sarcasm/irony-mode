@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   Server.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Tue Jul 19 14:18:24 2011
