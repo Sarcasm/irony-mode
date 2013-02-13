@@ -315,8 +315,12 @@ associated to the buffer if any."
   "Get the expanded buffer filename if any. If there is no
 filename associated to this buffer return the name of the
 buffer."
-  (or (expand-file-name (buffer-file-name buffer))
-      (buffer-name buffer) "killed-buffer"))
+  (let ((buf-fname (buffer-file-name buffer)))
+    (or
+     (when buf-fname
+       (expand-file-name buf-fname))
+     (buffer-name buffer)
+     "killed-buffer")))
 
 (defun irony-temp-filename (&optional buffer)
   "Return the temporary filename associated to BUFFER (the
