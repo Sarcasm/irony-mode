@@ -155,9 +155,19 @@ It works great with the following tools:
   The typical usage for a `make` based project will be `bear -- make
   -B`.
 
-More generally, it supports `compile_commands.json` files
-([more information here][clang-compile-db-ref]). In case some other
-tools producing such file appears in the future.
+- [.clang_complete][clang_complete-doc-ref] - Just a file at the root
+  of your project containing the flags. This is compatible with the
+  with plugin [Rip-Rip/clang_complete][clang_complete-vim-ref]. If you
+  want to generates the `.clang_complete` file I suggest you to look
+  here: [cc_args.py documentation][cc_args-py-doc-ref].
+
+
+The
+[JSON Compilation Database Format Specification][clang-compile-db-ref]
+page might reference some new tools in the future supporting the
+`compile_commands.json` format (such as `cmake` and `Bear` described
+above). `irony-mode` support that file format and hopefully it should
+work *out-of-the-box* for such tool.
 
 
 **TODO: PUT A SIMPLE GIF DEMO HERE**
@@ -175,15 +185,12 @@ The menu should be self explanatory, if it's not the case open an
 issue please.
 
 
-A support for the `.clang_complete` file format will be added in the
-future, compatible with the
-[.clang_complete Vim plugin][clang_complete-ref].
-
 [cmake-ref]: http://www.cmake.org "CMake"
 [bear-ref]: https://github.com/rizsotto/Bear "Bear"
 [clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
-[clang_complete-ref]: http://www.vim.org/scripts/script.php?script_id=3302 ".clang_complete"
-
+[clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L45 ".clang_complete"
+[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
+[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L271 "cc_args.py documentation"
 
 # FAQ
 
