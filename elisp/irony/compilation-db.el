@@ -482,7 +482,7 @@ If not given CC-FILE will be defaulted to
 
 (defun irony-cdb-clang-complete-item ()
   (let ((cc-file (irony-cdb-find-clang-complete))
-        (limit 40)
+        (limit 64)
         keys cc-file-str)
     (when cc-file
       (setq cc-file-str (irony-cdb-shorten-path cc-file))
