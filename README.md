@@ -97,6 +97,9 @@ You can take a look at the documentation of the variables
 `irony-compile-flags` and `irony-compile-flags-work-dir`. You can also
 use the `customize` inside Emacs to set these variables.
 
+**Note:** If you want to force the reload of the flags on the server,
+you can use the command `M-x irony-reload-flags`.
+
 
 # Plugins
 

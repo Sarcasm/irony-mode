@@ -91,6 +91,10 @@ clang_parseTranslationUnit() command line arguments."
 ;; Internal variables
 ;;
 
+(defconst irony-cdb-menu-buffer-name "*Irony/Compilation DB*"
+  "*internal variable* Buffer name for to display the Compilation
+  DB menu.")
+
 (make-variable-buffer-local
  (defvar irony-cdb-enabled nil
    "*internal variable* A boolean value to inform if yes or no
@@ -104,6 +108,10 @@ clang_parseTranslationUnit() command line arguments."
 The key is the true-name of the file (see `file-truename'.
 The value is a cons of (compile-flags . working-dir) where both
 can have a nil value.")
+
+(defvar irony-cdb-loaded-clang-complete-files nil
+  "*internal variable* List of already loaded .clang_complete
+  files.")
 
 
 ;; Functions
@@ -135,14 +143,15 @@ To be used by `irony-cdb-menu'."
    ;; see `substitute-env' function
    (irony-cdb-cmake-item)
    (irony-cdb-compile-commands-item)
+   (irony-cdb-clang-complete-item)
    ;; '(:keys ((?b message "Bear build...")) :desc "Bear build")
-   ;; TODO: .clang_complete
    ;; '(:keys ((?u message "User provided build...")) :desc "User provided")
    '(:keys ((?p customize-apropos-options "irony-cdb")) :desc "Preferences")))
 
-(defun irony-cdb-menu-make-str (item)
+(defun irony-cdb-menu-make-item-str (item)
   (let ((keys (plist-get item :keys))
-        (desc (plist-get item :desc)))
+        (desc (plist-get item :desc))
+	(disabled (plist-get item :disabled)))
     (when (> (length keys) 3)
       (error "too many shortcut keys for one menu item"))
     (when (> (length desc) 70)
@@ -151,18 +160,23 @@ To be used by `irony-cdb-menu'."
             (if (member (car key) '(?q ?Q))
                 (error "menu items key is reserved")))
           keys)
-    (format "%-7s %s"
-            (format "[%s]"
-                    (mapconcat 'identity
-                               (mapcar '(lambda (k)
-                                          (char-to-string (car k)))
-                                       keys)
-                               "/"))
-            desc)))
+    (let ((item-str
+	   (format "%-7s %s"
+		   (format "[%s]"
+			   (mapconcat 'identity
+				      (mapcar '(lambda (k)
+						 (char-to-string (car k)))
+					      keys)
+				      "/"))
+		   desc)))
+      (if disabled
+	  (propertize item-str 'face 'shadow)
+	item-str))))
 
 (defun irony-cdb-menu-all-keys (items)
   "Return all keys and the associated action in a list."
   (loop for item in items
+	unless (plist-get item :disabled)
         append (plist-get item :keys) into keys
         finally return keys))
 
@@ -170,23 +184,27 @@ To be used by `irony-cdb-menu'."
   "Display a build configuration menu."
   (interactive)
   (let* ((items (irony-cdb-get-menu-items))
-         (items-str (mapcar 'irony-cdb-menu-make-str items))
+         (items-str (mapcar 'irony-cdb-menu-make-item-str items))
          (keys (irony-cdb-menu-all-keys items))
-         cmd)
+         k cmd)
     (save-excursion
       (save-window-excursion
 	(delete-other-windows)
-	(with-output-to-temp-buffer "*Irony/Compilation DB*"
-	  (mapc (lambda (str)
-                  (princ (concat str "\n")))
-                items-str)
-          (princ "\n[q] to quit"))
-        (fit-window-to-buffer (get-buffer-window "*Irony/Compilation DB*"))
-        (let ((k (read-char-choice "Compilation DB: "
-                                   (cons ?q (mapcar 'car keys)))))
-          (message "")                ;clear `read-char-choice' prompt
-          (unless (eq ?q k)
-            (setq cmd (cdr (assoc k keys)))))))
+	(let ((buffer (get-buffer-create irony-cdb-menu-buffer-name)))
+	  (with-current-buffer buffer
+	    (erase-buffer)
+	    (mapc (lambda (str)
+		    (insert (concat str "\n")))
+		  items-str)
+	    (insert "\n[q] to quit"))
+          (let ((pop-up-windows t))
+            (display-buffer buffer t))
+          (fit-window-to-buffer (get-buffer-window buffer))
+          (setq k (read-char-choice "Compilation DB: "
+                                    (cons ?q (mapcar 'car keys)))))))
+    (message "") ;; clear `read-char-choice' prompt
+    (unless (eq ?q k)
+      (setq cmd (cdr (assoc k keys))))
     (when cmd
       (apply 'funcall cmd))))
 
@@ -205,15 +223,37 @@ for this path."
                                    irony-cdb-compile-db-cache)))
       (when flags-work-dir
         (irony-cdb-load-flags (car flags-work-dir)
-                              (cdr flags-work-dir))))))
+                              (cdr flags-work-dir))
+	t))))
+
+(defun irony-cdb-try-load-clang-complete ()
+  (when buffer-file-name
+    (let ((cc-file
+	   (loop for f in irony-cdb-loaded-clang-complete-files
+		 with found = nil
+		 with buf-name = (file-truename buffer-file-name)
+		 for dir = (file-name-directory f)
+		 if (and (string-prefix-p dir buf-name)
+			 (> (length dir) (length found)))
+		 do (setq found dir)
+		 finally return (when found
+				  (concat found ".clang_complete")))))
+      (when cc-file
+	(irony-cdb-load-clang-complete cc-file)))))
 
 (defun irony-compilation-db-setup ()
   "Irony-mode hook for irony-cdb plugin."
   (when (and buffer-file-name
-             (not irony-cdb-enabled))
+	     (not irony-cdb-enabled))
     (setq irony-cdb-enabled t)
     (define-key irony-mode-map (kbd "C-c C-b") 'irony-cdb-menu)
-    (irony-cdb-try-load-from-cache)))
+    (or
+     ;; try load flags for this file if an entry is in compilation db
+     ;; first
+     (irony-cdb-try-load-from-cache)
+     ;; then try to look for a .clang_complete that has already been
+     ;; loaded once
+     (irony-cdb-try-load-clang-complete))))
 
 (defun irony-compilation-db-enable ()
   "Enable cmake settings for `irony-mode'."
@@ -409,6 +449,54 @@ compile_commands.json file."
       (irony-cdb-generate-cmake root-dir build-dir))
     (irony-cdb-parse-compile-commands cc-file)
     (irony-cdb-try-load-from-cache)))
+
+
+;; .clang_complete
+;;
+
+(defun irony-cdb-find-clang-complete ()
+  "Find a .clang_complete file by looking recursively in the
+filesystem."
+  (let ((cc-file (irony-find-traverse-for-subpath
+		  ".clang_complete"
+		  (or (irony-current-directory) default-directory))))
+    (when cc-file
+     (concat cc-file ".clang_complete"))))
+
+(defun irony-cdb-load-clang-complete (&optional cc-file)
+  "Load the flags from CC-FILE (a .clang_complete file).
+
+If not given CC-FILE will be defaulted to
+`irony-cdb-find-clang-complete'."
+  (let ((f (or cc-file (irony-cdb-find-clang-complete)))
+	compile-flags work-dir)
+    (unless (file-exists-p f)
+      (error "%s doesn't exist" (or f ".clang_complete")))
+    (with-temp-buffer
+      (insert-file-contents f)
+      (setq compile-flags (split-string (buffer-string) "\n" t)
+	    work-dir (file-name-directory f)))
+    (irony-cdb-load-flags compile-flags work-dir)
+    (add-to-list 'irony-cdb-loaded-clang-complete-files
+		 (file-truename f))))
+
+(defun irony-cdb-clang-complete-item ()
+  (let ((cc-file (irony-cdb-find-clang-complete))
+        (limit 40)
+        keys cc-file-str)
+    (when cc-file
+      (setq cc-file-str (irony-cdb-shorten-path cc-file))
+      (when (> (length cc-file-str) limit)
+        (setq cc-file-str (concat "..." (substring cc-file-str
+                                                   (- (- limit 3))))))
+      (add-to-list 'keys (list ?l 'irony-cdb-load-clang-complete cc-file) t))
+    (list
+     :keys (or keys (list '(?l nil))) ;ugly, but show the key even if disabled
+     :short-desc ".clang_complete"
+     :disabled (eq cc-file nil)
+     :desc (concat "Load " (if cc-file-str
+			       cc-file-str
+			     ".clang_complete")))))
 
 (provide 'irony/compilation-db)
 
