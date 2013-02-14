@@ -391,24 +391,34 @@ current directory couldn't be found."
                    work-dir-flag)
                irony-compile-flags)))))
 
-(defun irony-header-search-paths ()
-  "Returns a list of header search paths for the current buffer."
-  (let ((cmd-args irony-compile-flags)
-        arg include-dirs)
-    (while cmd-args
-      (setq arg (car cmd-args))
+(defun irony-header-search-paths-from-flags (compile-flags &optional work-dir)
+  "If WORK-DIR is given, relative path are expanded to be
+relative to WORK-DIR.
+
+Note: WORK-DIR will not be used if the flag
+\"-working-directory=<directory>\" is set in compile flags."
+  (setq work-dir (or (irony-extract-working-dir-flag compile-flags)
+		     work-dir))
+  (let (arg include-dirs)
+    (while compile-flags
+      (setq arg (car compile-flags))
       (cond
        ((string= "-I" arg)
-        (add-to-list 'include-dirs (nth 1 cmd-args) t)
-        (setq cmd-args (cdr cmd-args))) ;skip next arg
+        (add-to-list 'include-dirs (nth 1 compile-flags) t)
+        (setq compile-flags (cdr compile-flags))) ;skip next arg
        ((string-prefix-p "-I" arg)
         (add-to-list 'include-dirs (substring arg 2) t)))
-      (setq cmd-args (cdr cmd-args)))
-    (if irony-compile-flags-work-dir
+      (setq compile-flags (cdr compile-flags)))
+    (if work-dir
 	(mapcar (lambda (path)
-		  (expand-file-name path irony-compile-flags-work-dir))
+		  (expand-file-name path work-dir))
 		(delete-dups include-dirs))
       (delete-dups include-dirs))))
+
+(defun irony-header-search-paths ()
+  "Returns a list of header search paths for the current buffer."
+  (irony-header-search-paths-from-flags irony-compile-flags
+					irony-compile-flags-work-dir))
 
 (defun irony-language-option-flag ()
   "Find the language for filename based on the major mode. (the
