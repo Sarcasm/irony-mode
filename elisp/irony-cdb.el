@@ -303,6 +303,8 @@ subsist."
   (let ((file (cdr (assq 'file entry)))
         (work-dir (cdr (assq 'directory entry)))
         (cmd (irony-split-command-line (cdr (assq 'command entry)))))
+    (when work-dir
+      (setq work-dir (file-truename work-dir)))
     (when (and cmd
                (member (file-name-nondirectory (car cmd))
                        irony-cdb-known-binaries))

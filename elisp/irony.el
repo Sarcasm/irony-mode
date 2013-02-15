@@ -411,11 +411,12 @@ Note: WORK-DIR will not be used if the flag
        ((string-prefix-p "-I" arg)
         (add-to-list 'include-dirs (substring arg 2) t)))
       (setq compile-flags (cdr compile-flags)))
-    (if work-dir
-	(mapcar (lambda (path)
-		  (expand-file-name path work-dir))
-		(delete-dups include-dirs))
-      (delete-dups include-dirs))))
+    (let ((res (delete-dups (if work-dir
+                                (mapcar (lambda (path)
+                                          (expand-file-name path work-dir))
+                                        include-dirs)
+                              include-dirs))))
+      res)))
 
 (defun irony-header-search-paths ()
   "Returns a list of header search paths for the current buffer."
