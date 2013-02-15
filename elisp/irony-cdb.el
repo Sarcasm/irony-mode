@@ -162,7 +162,8 @@ To be used by `irony-cdb-menu'."
 (defun irony-cdb-menu-make-item-str (item)
   (let ((keys (plist-get item :keys))
         (desc (plist-get item :desc))
-	(disabled (plist-get item :disabled)))
+	(disabled (plist-get item :disabled))
+	(info (plist-get item :info)))
     (when (> (length keys) 3)
       (error "too many shortcut keys for one menu item"))
     (when (> (length desc) 70)
@@ -176,13 +177,15 @@ To be used by `irony-cdb-menu'."
 		   (format "[%s]"
 			   (mapconcat 'identity
 				      (mapcar (lambda (k)
-						 (char-to-string (car k)))
+                                                (char-to-string (car k)))
 					      keys)
 				      "/"))
 		   desc)))
-      (if disabled
-	  (propertize item-str 'face 'shadow)
-	item-str))))
+      (when disabled
+        (setq item-str (propertize item-str 'face 'shadow)))
+      (when info
+        (setq item-str (propertize item-str 'help-echo info)))
+      item-str)))
 
 (defun irony-cdb-menu-all-keys (items)
   "Return all keys and the associated action in a list."
@@ -211,7 +214,7 @@ To be used by `irony-cdb-menu'."
           (let ((pop-up-windows t))
             (display-buffer buffer t))
           (fit-window-to-buffer (get-buffer-window buffer))
-          (setq k (read-char-choice "Compilation DB: "
+          (setq k (read-char-choice "Compilation DB choice: "
                                     (cons ?q (mapcar 'car keys)))))))
     (message "") ;; clear `read-char-choice' prompt
     (unless (eq ?q k)
@@ -507,6 +510,7 @@ If not given CC-FILE will be defaulted to
 (defun irony-cdb-clang-complete-item ()
   (let ((cc-file (irony-cdb-find-clang-complete))
         (limit 64)
+        (item (list :short-desc ".clang_complete"))
         keys cc-file-str)
     (when cc-file
       (setq cc-file-str (irony-cdb-shorten-path cc-file))
@@ -514,13 +518,17 @@ If not given CC-FILE will be defaulted to
         (setq cc-file-str (concat "..." (substring cc-file-str
                                                    (- (- limit 3))))))
       (add-to-list 'keys (list ?l 'irony-cdb-load-clang-complete cc-file) t))
-    (list
-     :keys (or keys (list '(?l nil))) ;ugly, but show the key even if disabled
-     :short-desc ".clang_complete"
-     :disabled (eq cc-file nil)
-     :desc (concat "Load " (if cc-file-str
-			       cc-file-str
-			     ".clang_complete")))))
+    (if keys
+        (progn
+          (plist-put item :desc (concat "Load " cc-file-str))
+          (plist-put item :keys keys))
+      (plist-put item :desc "Load .clang_complete")
+      ;; ugly, but show the key even if disabled
+      (plist-put item :keys (list '(?l nil)))
+      (plist-put item :disabled t)
+      (plist-put item :info
+                 "Create a .clang_complete in any subdirectory."))
+    item))
 
 (provide 'irony-cdb)
 
