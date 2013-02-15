@@ -191,7 +191,6 @@ mode."
   (cond (irony-mode                     ;start irony mode
          (unless irony-mode-enabled
            (setq irony-mode-enabled t)
-           (message "Starting Irony-Mode...")
            ;; if not in a known mode, warn the user
            (unless (memq major-mode irony-known-modes)
              (display-warning 'irony "Irony mode is aimed to work \
