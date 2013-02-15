@@ -157,16 +157,22 @@ cancelled."
 (defconst irony-server-eot "\nEOT\n"
   "The string to send to the server to finish a transmission.")
 
-(defvar irony-num-requests 0
-  "The number of current request to the irony process made. When
-the value reach 0 it means the temporary file can be deleted.")
-(make-variable-buffer-local 'irony-num-requests)
+(make-variable-buffer-local
+ (defvar irony-num-requests 0
+   "The number of current request to the irony process made. When
+the value reach 0 it means the temporary file can be deleted."))
 
-(defvar irony-flags-cache nil
-  "Calculating the flags for a buffer can be costly, so after the
-  first time we use this variable as value for flags.")
-(make-variable-buffer-local 'irony-flags-cache)
+(make-variable-buffer-local
+ (defvar irony-flags-cache nil
+   "Calculating the flags for a buffer can be costly, so after the
+  first time we use this variable as value for flags."))
 
+(make-variable-buffer-local
+ (defvar irony-mode-enabled nil
+   "Prevent double loading of irony-mode ({c,c++}-hooks are run
+   twice apparently)."))
+
+;;;###autoload
 (define-minor-mode irony-mode
   ;; FIXME: describe the mode here
   ;; Check if turning off the mode with -1 works.
@@ -182,16 +188,20 @@ mode."
     )
   :group 'irony
 
-  (when irony-mode             ;start irony mode
-    ;; if not in a known mode, warn the user
-    (unless (memq major-mode irony-known-modes)
-      (display-warning 'irony
-                       "Irony mode is aimed to work with a major \
-mode present in `irony-known-modes'.."))
-    ;; FIXME: if the process is not found, turn off `irony-mode'.
-    (irony-start-process-maybe)
-    (irony-compilation-db-setup)
-    (irony-compile-check)))
+  (cond (irony-mode                     ;start irony mode
+         (unless irony-mode-enabled
+           (setq irony-mode-enabled t)
+           (message "Starting Irony-Mode...")
+           ;; if not in a known mode, warn the user
+           (unless (memq major-mode irony-known-modes)
+             (display-warning 'irony "Irony mode is aimed to work \
+with a major mode present in `irony-known-modes'."))
+           ;; FIXME: if the process is not found, turn off `irony-mode'.
+           (irony-start-process-maybe)
+           (irony-compilation-db-setup)
+           (irony-compile-check)))
+        (t
+         (setq irony-mode-enabled nil))))
 
 (defun irony-cancel-process ()
   "Stop the irony process. `irony-cancel-process-hook' are
