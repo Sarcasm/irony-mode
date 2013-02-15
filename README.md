@@ -51,12 +51,10 @@ Recommended packages and versions:
 | [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                      |
 | [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
 | [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                               |
-| [eproject][eproject-ref]          | (unknown) | not necessary | can be useful if you already have eproject installed                                          |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
 [yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
-[eproject-ref]:  https://github.com/jrockway/eproject           "Project"
 
 [el-get](https://github.com/dimitri/el-get) help a lot for package
 management in Emacs. You can take a look at
@@ -80,31 +78,28 @@ Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto
 completion feature.
 
 If you want the completion to work on a project you will probably need
-give some information:
+give some information about the flags necessary to compile a file.
 
-There is one method at the moment but some others are on the way:
+The best way to achieve that is probably to use the
+[Compilation Database](#Compilation Database) plugin.
 
-Create a `.dir-locals.el` file in your project containing something
-like:
+You can also set the flags manually by creating a `.dir-locals.el`
+file in your project containing something like:
 
 ```el
 ((c++-mode
-      (irony-header-directories-root . "/path/to/project/root")
-      (irony-header-directories . ("utils" "some/include/path"))))
+      (irony-compile-flags-work-dir . "/path/to/project/root")
+      (irony-compile-flags          . ("-Iutils"
+                                       "-Isome/include/path"))))
 ```
 
-You can take a look at the documentation of the following variables:
-`irony-header-directories`, `irony-header-directories-root`,
-`irony-config-commands` and `irony-extra-flags`. You can also use the
-`customize` inside Emacs to set variables.
+You can take a look at the documentation of the variables
+`irony-compile-flags` and `irony-compile-flags-work-dir`. You can also
+use the `customize` inside Emacs to set these variables.
 
-Some other methods are on the way:
+**Note:** If you want to force the reload of the flags on the server,
+you can use the command `M-x irony-reload-flags`.
 
-1. `CMake` (and more generally `compile_commands.json`) integration.
-
-2. A `.clang_complete` file like in the
-  [clang_complete](http://www.vim.org/scripts/script.php?script_id=3302)
-  Vim plugin.
 
 # Plugins
 
@@ -112,13 +107,14 @@ To enable one plugin call `(irony-enable 'plugin-name)`, to enable
 more than one plugin at once call the same function with a list
 `(irony-enable '(plugin-1 plugin-2))`.
 
-## ac
+
+## Auto Complete
 
 Code completion with auto-complete.
 
 Requires:
-* auto-complete
-* yasnippet (optionnal)
+* [auto-complete][ac-ref]
+* [yasnippet][yasnippet-ref] (optionnal)
 
 The configuration might look like this:
 
@@ -128,7 +124,8 @@ The configuration might look like this:
 (require 'irony)
 
 ;; the ac plugin will be activated in each buffer using irony-mode
-(irony-enable 'ac)
+(irony-enable 'ac)             ; hit C-RET to trigger completion
+(irony-enable 'compilation-db) ; hit `C-c C-b' to open build menu
 
 (defun my-enable-ac-and-yas ()
   ;; if not set before (auto-complete-mode 1), overlays persist after
@@ -142,34 +139,59 @@ The configuration might look like this:
 (add-hook 'c-mode-hook 'irony-mode)
 ```
 
-## eproject
+
+## Compilation Database
+
+In order to work correctly, `irony-mode` needs to know the compile
+flags. This plugin allow aims to provide *as automatic as possible*
+compile flags discovery, with minimum user input.
+
+It works great with the following tools:
+
+- [CMake][cmake-ref] >= 2.8.5
+
+- [Bear][bear-ref] - Bear is a tool that can generate a
+  `compile_commands.json` file by "monitoring" the build of a project.
+  The typical usage for a `make` based project will be `bear -- make
+  -B`.
+
+- [.clang_complete][clang_complete-doc-ref] - Just a file at the root
+  of your project containing the flags. This is compatible with the
+  with plugin [Rip-Rip/clang_complete][clang_complete-vim-ref]. If you
+  want to generates the `.clang_complete` file I suggest you to look
+  here: [cc_args.py documentation][cc_args-py-doc-ref].
+
+
+The
+[JSON Compilation Database Format Specification][clang-compile-db-ref]
+page might reference some new tools in the future supporting the
+`compile_commands.json` format (such as `cmake` and `Bear` described
+above). `irony-mode` support that file format and hopefully it should
+work *out-of-the-box* for such tool.
+
+
+**TODO: PUT A SIMPLE GIF DEMO HERE**
+
 
 Usage:
 
-```el
-(irony-enable 'eproject)
-```
+This is not really a plugin but something built-in irony-mode core, as
+such it doesn't require any activation code. Just hit `C-c C-b` to
+display the build configuration menu.
 
-When working on a project you can create a file called `.eproject` at
-the root with the following content:
+The menu should be self explanatory, if it's not the case open an
+issue please.
 
-```el
-:includes '("." "server" "lib" "lib/SimpleJSON/src")
-:extra-flags '("-std=c++11")
-:config-commands
-:irrelevant-files '("tests/")
-```
 
-All the variables are optional:
-
-* `:includes`: relative path are relative to the eproject root (the
-  directory containing the `.eproject` file)
-* `:config-commands`: if you have to execute some commands to get the
-  flags (such as `pkg-config --cflags gtk+-2.0`).
-* `:extra-flags`: Some extra flag (e.g: "-DNDEBUG", "-std=c++11", ...)
-
+[cmake-ref]: http://www.cmake.org "CMake"
+[bear-ref]: https://github.com/rizsotto/Bear "Bear"
+[clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
+[clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L45 ".clang_complete"
+[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
+[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L271 "cc_args.py documentation"
 
 # FAQ
+
 
 ## It's slow, why?
 
@@ -181,6 +203,7 @@ This result in a slower parsing.
 This only affect old versions of Clang (< 3.2), it is suggested to
 update your libclang installation if you want to take advantage of the
 optimisations.
+
 
 ## I got an error due to 'stdarg.h', how to solve this?
 
@@ -198,13 +221,10 @@ You can use the following configuration:
 
 ```el
 ;; The Clang installation missed the system include directory
-;; "/usr/lib/clang/3.2/include/", man clang said we can use the
-;; environment variable CPATH.
-(let ((old-cpath (getenv "CPATH")))
-  (when (file-exists-p "/usr/lib/clang/3.2/include/")
-    (setenv "CPATH" (if old-cpath
-                        (concat old-cpath ":" "/usr/lib/clang/3.2/include/")
-                      "/usr/lib/clang/3.2/include/"))))
+;; "/usr/lib/clang/3.2/include/"
+(when (file-exists-p "/usr/lib/clang/3.2/include/")
+  (setq irony-libclang-additional-flags
+        '("-isystem" "/usr/lib/clang/3.2/include/")))
 ```
 
 This is issue is a known problem:
@@ -218,6 +238,7 @@ This is issue is a known problem:
 > executable with CompilerInvocation::GetResourcesPath(Argv0,
 > MainAddr), but using just the libraries, it can't automatically find
 > it.
+
 
 ## libclang.so: cannot open shared object file...
 
@@ -234,6 +255,7 @@ To solve this issue it is possible to build `irony-server` with the
 following command:
 
     cmake -DUSE_RPATH=ON ..
+
 
 ## auto-complete acts strangely, it tries to complete inside string literals
 

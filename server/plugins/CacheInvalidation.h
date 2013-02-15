@@ -1,4 +1,4 @@
-/**
+/**-*-C++-*-
  * \file   CacheInvalidation.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Fri Jan 11 18:01:07 2013
@@ -27,15 +27,15 @@ private:
 
 public:
   CacheInvalidation(TUManager & tuManager);
-  ~CacheInvalidation();
+  virtual ~CacheInvalidation();
 
   /**
    * \brief Execute a cache invalidation request for the given file.
    *
    * \sa IPlugin
    */
-  std::string handleRequest(const JSONObjectWrapper & data,
-                            std::string &             buf);
+  virtual std::string handleRequest(const JSONObjectWrapper & data,
+                                    std::string &             buf);
 };
 
 #endif /* !CACHEINVALIDATION_H_ */

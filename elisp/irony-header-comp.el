@@ -27,6 +27,9 @@
 
 (require 'irony)
 
+(eval-when-compile
+  (require 'cl))
+
 (defcustom irony-header-comp-compiler-args
   '("-v" "-E" "/dev/null")
   "The lang option will be automatically added (-x c++ / -x c)."
@@ -74,7 +77,7 @@ Please use `irony-get-compiler-header-directories'."
   (when irony-compiler-executable
     (with-temp-buffer
       (apply 'call-process irony-compiler-executable nil t nil
-             (cons lang-flag irony-header-comp-compiler-args))
+             (append lang-flag irony-header-comp-compiler-args))
       (goto-char (point-min))
       (let (directories
             (start "#include \"...\" search starts here:")
@@ -158,28 +161,35 @@ files and directories."
                                 irony-header-comp-allowed-extensions))
             collect file))))
 
-(defun irony-header-comp-complete-at (pos)
+;; FIXME: POS ignored/useless but given
+(defun irony-header-comp-complete-at (&optional pos)
   "Return the list of headers and directories available at
 POS (the current position if not given). Headers extension is
 filtered according to `irony-header-comp-allowed-extensions'."
   (let ((cwd (irony-current-directory))
         (header-directories (irony-get-compiler-header-directories)))
-    (append
-     (irony-header-comp-list-dir cwd
-                                 irony-header-comp-subdir
-                                 t)
-     (loop for dir in header-directories
-           append (irony-header-comp-list-dir dir irony-header-comp-subdir) into completions
-           finally return completions)
-     (loop for dir in (irony-include-directories)
-           with done = (append '(cwd) header-directories)
-           unless (member dir done)
-             append (irony-header-comp-list-dir dir
-                                                irony-header-comp-subdir
-                                                t)
-             into completions
-           finally
-             return (delete-dups completions)))))
+    (delete-dups
+     (append
+      (irony-header-comp-list-dir cwd
+                                  irony-header-comp-subdir
+                                  t)
+      (loop for dir in header-directories
+            append (irony-header-comp-list-dir dir irony-header-comp-subdir) into completions
+            finally return completions)
+      (loop for dir in (irony-header-search-paths)
+            with done = (append '(cwd) header-directories)
+            unless (member dir done)
+            append (irony-header-comp-list-dir dir
+                                               irony-header-comp-subdir
+                                               t)
+            into completions
+            finally
+            return completions)))))
 
 (provide 'irony-header-comp)
+
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
+
 ;;; irony-header-comp.el ends here

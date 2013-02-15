@@ -48,14 +48,18 @@ endif()
 
 # Add some extra flags during C++ compilation (targets GCC and Clang
 # compatible flags).
-include(CheckCXXCompilerFlag)
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
-  foreach (flag "-Wextra" "-Wall" "-Wshadow")
-    check_cxx_compiler_flag ("${flag}" FLAG_EXIST)
-    if (FLAG_EXIST)
-      set (CMAKE_CXX_FLAGS "${flag} ${CMAKE_CXX_FLAGS}")
+  include(CheckCXXCompilerFlag)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -Wshadow")
+  
+  # the flags -fcolor-diagnostics is for Ninja build, to get colored
+  # output from Clang.
+  if (${CMAKE_GENERATOR} MATCHES "Ninja")
+    check_cxx_compiler_flag("-fcolor-diagnostics" HAS_FCOLOR_DIAGNOSTICS_FLAG)
+    if (HAS_FCOLOR_DIAGNOSTICS_FLAG)
+      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
     endif()
-  endforeach (flag)
+  endif ()
 endif ()
 
 set (IRONY_UTILS_INCLUDES

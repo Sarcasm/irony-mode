@@ -30,6 +30,8 @@ add_executable (irony-server
   plugins/SyntaxChecker.h
   plugins/CacheInvalidation.h
   plugins/CacheInvalidation.cpp
+  plugins/CompileChecker.cpp
+  plugins/CompileChecker.h
   )
 
 add_dependencies (irony-server

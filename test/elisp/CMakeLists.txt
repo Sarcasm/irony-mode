@@ -25,4 +25,5 @@ else()
   endfunction()
 endif()
 
-ert_test(irony-el tests.el)
+ert_test(irony-el test-irony.el)
+ert_test(irony-cdb-el test-irony-cdb.el)

@@ -1,9 +1,12 @@
-/**
+/**-*-C++-*-
  * \file   ClangString.h
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Wed Feb  6 17:48:40 2013
  *
  * \brief  Wrapper class around CXStrings.
+ *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  *
  */
 
