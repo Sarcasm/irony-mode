@@ -306,11 +306,13 @@ subsist."
   (let ((file (cdr (assq 'file entry)))
         (work-dir (cdr (assq 'directory entry)))
         (cmd (irony-split-command-line (cdr (assq 'command entry)))))
-    (when work-dir
-      (setq work-dir (file-truename work-dir)))
     (when (and cmd
                (member (file-name-nondirectory (car cmd))
-                       irony-cdb-known-binaries))
+                       irony-cdb-known-binaries)
+               (member (file-name-extension file) ;get rid of assembly files
+                       irony-known-source-extensions))
+      (when work-dir
+        (setq work-dir (file-truename work-dir)))
       (let* ((compile-flags (irony-cdb-gen-clang-args (cdr cmd)))
 	     (value (cons compile-flags
 			  (unless (irony-extract-working-dir-flag
