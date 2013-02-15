@@ -45,7 +45,7 @@ public:
    * \return
    */
   CodeCompletion(TUManager & tuManager, bool detailedCompletions);
-  ~CodeCompletion();
+  virtual ~CodeCompletion();
 
   /**
    * \brief Execute a completion request.

@@ -1,4 +1,4 @@
-;;; irony/compilation-db.el --- `irony-mode` CMake integration
+;;; irony-cdb.el --- `irony-mode` compilation database
 
 ;; Copyright (C) 2012-2013  Guillaume Papin
 
@@ -19,9 +19,6 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
-;; Usage:
-;;     (irony-enable 'compilation-db)
 
 ;;; Code:
 
@@ -178,7 +175,7 @@ To be used by `irony-cdb-menu'."
 	   (format "%-7s %s"
 		   (format "[%s]"
 			   (mapconcat 'identity
-				      (mapcar '(lambda (k)
+				      (mapcar (lambda (k)
 						 (char-to-string (car k)))
 					      keys)
 				      "/"))
@@ -280,16 +277,6 @@ for this path."
      ;; then try to look for a .clang_complete that has already been
      ;; loaded once
      (irony-cdb-try-load-clang-complete))))
-
-(defun irony-compilation-db-enable ()
-  "Enable cmake settings for `irony-mode'."
-  (interactive)
-  (add-hook 'irony-mode-hook 'irony-compilation-db-setup))
-
-(defun irony-compilation-db-disable ()
-  "Disable cmake settings for `irony-mode'."
-  (interactive)
-  (remove-hook 'irony-mode-hook 'irony-compilation-db-setup))
 
 
 ;; compile-commands.json handling
@@ -533,10 +520,6 @@ If not given CC-FILE will be defaulted to
 			       cc-file-str
 			     ".clang_complete")))))
 
-(provide 'irony/compilation-db)
+(provide 'irony-cdb)
 
-;; Local variables:
-;; generated-autoload-load-name: "irony/compilation-db"
-;; End:
-
-;;; irony/compilation-db.el ends here
+;;; irony-cdb.el ends here

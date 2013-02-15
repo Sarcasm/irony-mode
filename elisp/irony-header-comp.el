@@ -27,6 +27,9 @@
 
 (require 'irony)
 
+(eval-when-compile
+  (require 'cl))
+
 (defcustom irony-header-comp-compiler-args
   '("-v" "-E" "/dev/null")
   "The lang option will be automatically added (-x c++ / -x c)."
@@ -184,4 +187,9 @@ filtered according to `irony-header-comp-allowed-extensions'."
             return completions)))))
 
 (provide 'irony-header-comp)
+
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
+
 ;;; irony-header-comp.el ends here

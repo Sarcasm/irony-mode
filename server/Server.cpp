@@ -23,10 +23,11 @@
 #include "util/arraysize.hpp"
 #include "str/wstring_to_string.h"
 
-// List of plugins
+// list of plugins
 #include "plugins/CodeCompletion.h"
 #include "plugins/SyntaxChecker.h"
 #include "plugins/CacheInvalidation.h"
+#include "plugins/CompileChecker.h"
 
 namespace {
 /// An empty line with EOT
@@ -41,11 +42,12 @@ const std::map<std::string, IPlugin *> generateBundlePlugins(TUManager & tuManag
       std::make_pair("complete",        new CodeCompletion(tuManager, true)),
       std::make_pair("complete-simple", new CodeCompletion(tuManager, false)),
       std::make_pair("reload-flags",    new CacheInvalidation(tuManager)),
-      std::make_pair("syntax-check",    new SyntaxChecker(tuManager))
+      std::make_pair("syntax-check",    new SyntaxChecker(tuManager)),
+      std::make_pair("compile-check",   new CompileChecker(tuManager))
     };
   return std::map<std::string, IPlugin *>(plugins, plugins + arraysize(plugins));
 }
-} // !namespace
+} // unnamed namespace
 
 Server::Server()
   : tuManager_()                // order matters
@@ -104,23 +106,23 @@ void Server::parseJSONAndProceed(const std::string & buf)
 {
   JSONObjectWrapper json(JSON::Parse(buf.c_str()));
 
-  if (json)
-    {
-      bool                    valid   = true;
-      const std::string       request = json.check(L"request", valid);
-      const JSONObjectWrapper data(json.check(L"data", valid));
+  if (json) {
+    bool                    valid   = true;
+    const std::string       request = json.check(L"request", valid);
+    const JSONObjectWrapper data(json.check(L"data", valid));
 
-      if (valid)
-        {
-          handleRequest(request, json, data);
-        }
-      else
-        {
-          std::clog << "-- 8< --- invalid request received -----------\n"
-                    << buf
-                    << "\n------------- 8< -----------------------------\n";
-        }
+    if (valid) {
+      handleRequest(request, json, data);
+    } else {
+      std::clog << "-- 8< --- invalid request received -------------\n"
+                << buf
+                << "\n------------- 8< -----------------------------\n";
     }
+  } else {
+    std::clog << "-- 8< --- invalid JSON received ----------------\n"
+              << buf
+              << "\n------------- 8< -----------------------------\n";
+  }
 }
 
 void Server::handleRequest(const std::string &       request,
@@ -133,18 +135,18 @@ void Server::handleRequest(const std::string &       request,
   bool                hasBuffer = true;
   const std::string & buffer    = json.check(L"buffer", hasBuffer);
 
-  if (hasBuffer)
+  if (hasBuffer) {
     intro.append(":buffer \"").append(buffer).append("\" ");
+  }
 
-  if (IPlugin *current = plugins_[request])
-    {
-      // Try to minimise the cost of buf += / buf.append() done by the
-      // handleRequest call.
-      buf.reserve(SEXP_BUF_INITIAL_SIZE);
+  if (IPlugin *current = plugins_[request]) {
+    // Try to minimise the cost of buf += / buf.append() done by the
+    // handleRequest call.
+    buf.reserve(SEXP_BUF_INITIAL_SIZE);
 
-      // Fill \c buf with the request answer.
-      type = current->handleRequest(data, buf);
-    }
+    // fill \c buf with the request answer.
+    type = current->handleRequest(data, buf);
+  }
 
   std::cout << intro << ":type " << type << " " << buf << ")\n;;EOT" << std::endl;
 }

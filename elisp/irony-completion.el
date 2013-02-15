@@ -30,6 +30,10 @@
 
 (require 'irony)
 
+(eval-when-compile
+  (require 'cc-defs)                    ;for `c-save-buffer-state'
+  (require 'cl))
+
 ;;
 ;; Public, customizable variables
 ;;

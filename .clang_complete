@@ -3,3 +3,4 @@
 -Wextra
 -Ilib
 -Ilib/SimpleJSON/src
+-Iserver

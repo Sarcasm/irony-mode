@@ -175,11 +175,9 @@ work *out-of-the-box* for such tool.
 
 Usage:
 
-```el
-(irony-enable 'compilation-db)
-```
-
-Hit `C-c C-b` to display the build configuration menu.
+This is not really a plugin but something built-in irony-mode core, as
+such it doesn't require any activation code. Just hit `C-c C-b` to
+display the build configuration menu.
 
 The menu should be self explanatory, if it's not the case open an
 issue please.

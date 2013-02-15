@@ -1,4 +1,4 @@
-((nil . ((indent-tabs-mode . t)))
+((nil . ((indent-tabs-mode . nil)))
  (c++-mode .
            ((c-basic-offset . 2)
             (c-file-style . "gnu")

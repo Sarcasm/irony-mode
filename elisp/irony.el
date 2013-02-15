@@ -38,8 +38,9 @@
 
 (require 'json)
 
+(autoload 'irony-compilation-db-setup "irony-cdb")
+
 (eval-when-compile
-  (require 'cc-defs)                    ;for `c-save-buffer-state'
   (require 'cl))
 
 ;;
@@ -144,7 +145,8 @@ cancelled."
 (defvar irony-process nil
   "The current irony-server process.")
 
-(defvar irony-request-mapping '((:status-code . irony-handle-status-code))
+(defvar irony-request-mapping '((:status-code   . irony-handle-status-code)
+                                (:compile-check . irony-handle-compile-check))
   "Alist of known request types associated to their handler. New
   server plugins must add their handlers in this list.")
 
@@ -187,18 +189,18 @@ mode."
                        "Irony mode is aimed to work with a major \
 mode present in `irony-known-modes'.."))
     ;; FIXME: if the process is not found, turn off `irony-mode'.
-    (irony-start-process-maybe)))
+    (irony-start-process-maybe)
+    (irony-compilation-db-setup)
+    (irony-compile-check)))
 
 (defun irony-cancel-process ()
-  "Stop the irony process. `irony-cancel-process-hooks' are
+  "Stop the irony process. `irony-cancel-process-hook' are
 called when the process is cancelled."
   (if (not irony-process)
       (message "No irony process running...")
     (delete-process irony-process)
     (setq irony-process nil)
-    ;; TODO: remove this comment, but why did I call that here???
-    ;; (run-hooks 'find-file-hook)
-    ))
+    (run-hooks 'irony-cancel-process-hook)))
 
 (defun irony-restart-process ()
   "Restart the irony process."
@@ -478,6 +480,39 @@ from the irony process, such as for the command that reload the
 cached flags on a file."
   (unless (eq (plist-get data :value) :success)
     (message "error: irony-handle-status-code")))
+
+(defun irony-handle-compile-check (data)
+  (let ((stats (plist-get data :stats)))
+    (unless (eq stats t)
+      (let ((num-errors (+ (or (plist-get stats :fatal-errors) 0)
+                           (or (plist-get stats :errors) 0)))
+            (num-warnings (or (plist-get stats :warnings) 0))
+            (help-msg (substitute-command-keys
+                       "Type `\\[irony-cdb-menu]' to configure project"))
+            stats-strings)
+        (unless stats
+          (setq num-errors 1))
+        (when (> num-warnings 0)
+          (push (concat (number-to-string num-warnings)
+                        " warning"
+                        (unless (eq num-warnings 1) ;; plural
+                          "s"))
+                stats-strings))
+        (when (> num-errors 0)
+          (push (concat (number-to-string num-errors)
+                        " error"
+                        (unless (eq num-errors 1) ;; plural
+                          "s"))
+                stats-strings))
+        (message "[%s] %s" (mapconcat 'identity stats-strings " | ")
+                 help-msg)))))
+
+(defun irony-compile-check (&optional buffer)
+  (interactive)
+  (let ((request-data (list (cons :file (irony-temp-filename))
+                            (cons :flags (irony-get-libclang-flags)))))
+    (irony-send-request :compile-check request-data
+                        (or buffer (current-buffer)))))
 
 ;; TODO:
 ;; Interactive with completion (see `completion-read')

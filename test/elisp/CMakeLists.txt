@@ -26,5 +26,4 @@ else()
 endif()
 
 ert_test(irony-el test-irony.el)
-
-add_subdirectory (irony)
+ert_test(irony-cdb-el test-irony-cdb.el)

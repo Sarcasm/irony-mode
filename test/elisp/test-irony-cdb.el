@@ -1,8 +1,8 @@
 (load (concat (file-name-directory (or load-file-name
                                        buffer-file-name))
-              "../test-config"))
+              "test-config"))
 
-(irony-enable 'compilation-db)
+(require 'irony-cdb)
 
 (require 'json)
 

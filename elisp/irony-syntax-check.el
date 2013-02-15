@@ -62,7 +62,7 @@
   "Return a list of diagnostics found during the parsing of the
 BUFFER translation unit."
   (let ((request-data (list (cons :file (irony-temp-filename))
-                            (cons :flags (irony-get-flags)))))
+                            (cons :flags (irony-get-libclang-flags)))))
     (setq irony-last-syntax-check nil)
     (irony-send-request :syntax-check request-data (or buffer (current-buffer))))
   (irony-wait-request-answer 'irony-last-syntax-check))

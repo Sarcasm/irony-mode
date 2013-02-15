@@ -32,7 +32,7 @@ private:
 
 public:
   SyntaxChecker(TUManager & tuManager);
-  ~SyntaxChecker();
+  virtual ~SyntaxChecker();
 
   /**
    * \brief Execute a "check syntax" request.
