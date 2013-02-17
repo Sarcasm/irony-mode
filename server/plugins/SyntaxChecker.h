@@ -40,22 +40,21 @@ public:
    * \see \c IPlugin.
    *
    * \param data
-   * \param buf         A string describing parsing errors.
+   * \param [out] out    A stream to print parsing errors.
    */
   virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::string &             buf);
+                                    std::ostream &            out);
 
 private:
   /**
    * \brief Format the Clang diagnostic \p diagnostic into an Emacs
-   *        Lisp object written in \p buf.
+   *        Lisp object written in \p out.
    *
    * \param diagnostic  The diagnostic to format.
-   * \param [out] buf   The buffer where the diagnostic should be
-   *                    written.
+   * \param [out] out   The stream where the diagnostic should be written.
    */
   void formatDiagnostic(const CXDiagnostic & diagnostic,
-                        std::string &        buf);
+                        std::ostream &       out);
 
   /**
    * \brief Format the source location \p location into an Emacs Lisp
@@ -73,12 +72,11 @@ private:
    * string will be \c nil.
    *
    * \param location    The location to format.
-   * \param [out] buf   The string buffer where the location should be
-   *                    added.
+   * \param [out] out   The stream where the location should be added.
    *
    */
   void formatSourceLocation(const CXSourceLocation & location,
-                            std::string &            buf);
+                            std::ostream &           out);
 
   /**
    * \brief Format a range, a range is a cons of 2 sources locations.
@@ -88,10 +86,10 @@ private:
    * \endcode
    *
    * \param range       The range to format.
-   * \param [out] buf   Where the range should be written.
+   * \param [out] out   Where the range should be written.
    */
   void formatSourceRange(const CXSourceRange & range,
-                         std::string &         buf);
+                         std::ostream &        out);
 
   /**
    * \brief Format diagnostic fix-it hints. Fix-its hints is a list of
@@ -104,10 +102,10 @@ private:
    * \endcode
    *
    * \param fixIt       The range to format.
-   * \param [out] buf   Where the range should be written.
+   * \param [out] out   Where the range should be written.
    */
   void formatFitItHints(const CXDiagnostic & diagnostic,
-                        std::string &        buf);
+                        std::ostream &       out);
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_SYNTAXCHECKER_H_ */

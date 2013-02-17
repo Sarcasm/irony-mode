@@ -67,7 +67,7 @@ public:
    * \param buf
    */
   virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::string &             buf);
+                                    std::ostream &            out);
 
 private:
   TUManager & tuManager_;

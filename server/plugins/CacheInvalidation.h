@@ -35,7 +35,7 @@ public:
    * \sa IPlugin
    */
   virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::string &             buf);
+                                    std::ostream &            out);
 };
 
 #endif /* !CACHEINVALIDATION_H_ */

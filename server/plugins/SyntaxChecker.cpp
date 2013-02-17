@@ -16,7 +16,6 @@
 #include <cassert>
 
 #include "ClangString.h"
-#include "str/to_string.hpp"
 
 SyntaxChecker::SyntaxChecker(TUManager & tuManager)
   : tuManager_(tuManager)
@@ -26,13 +25,13 @@ SyntaxChecker::~SyntaxChecker()
 { }
 
 std::string SyntaxChecker::handleRequest(const JSONObjectWrapper & data,
-                                         std::string &             buf)
+                                         std::ostream &            out)
 {
   bool                             valid = true;
   const std::string &              file  = data.check(L"file", valid);
   const std::vector<std::string> & flags = data.get(L"flags");
 
-  buf += ":diagnostics (";
+  out << ":diagnostics (";
 
   if (! valid)
     {
@@ -57,54 +56,54 @@ std::string SyntaxChecker::handleRequest(const JSONObjectWrapper & data,
 
           // Close previous opened parenthesis
           if (severity != CXDiagnostic_Note && i != firstDiagnostic)
-            buf += "))";
+            out << "))";
 
-          buf += "\n(";
-          formatDiagnostic(diagnostic, buf);
+          out << "\n(";
+          formatDiagnostic(diagnostic, out);
 
           if (severity == CXDiagnostic_Note)
-            buf += ")";
+            out << ")";
           else
-            buf += " :notes (";
+            out << " :notes (";
         }
 
       // close the last diagnostic if any
       if (firstDiagnostic < numDiagnostic)
-        buf += "))";
+        out << "))";
     }
 
-  buf += ")";
+  out << ")";
   return ":syntax-checking";
 }
 
 void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
-                                     std::string &        buf)
+                                     std::ostream &       out)
 {
   //
   // Severity
   //
-  buf += ":severity ";
+  out << ":severity ";
   switch (clang_getDiagnosticSeverity(diagnostic)) {
-  case CXDiagnostic_Ignored: buf += ":ignored"; break;
-  case CXDiagnostic_Note:    buf += ":note";    break;
-  case CXDiagnostic_Warning: buf += ":warning"; break;
-  case CXDiagnostic_Error:   buf += ":error";   break;
-  case CXDiagnostic_Fatal:   buf += ":fatal";   break;
+  case CXDiagnostic_Ignored: out << ":ignored"; break;
+  case CXDiagnostic_Note:    out << ":note";    break;
+  case CXDiagnostic_Warning: out << ":warning"; break;
+  case CXDiagnostic_Error:   out << ":error";   break;
+  case CXDiagnostic_Fatal:   out << ":fatal";   break;
   }
 
   //
   // Location
   //
-  buf += " :location ";
-  formatSourceLocation(clang_getDiagnosticLocation(diagnostic), buf);
+  out << " :location ";
+  formatSourceLocation(clang_getDiagnosticLocation(diagnostic), out);
 
   //
   // Diagnostic text
   //
   ClangString diagnosticStr(clang_getDiagnosticSpelling(diagnostic),
                             ClangString::AddQuotes);
-  buf += " :diagnostic ";
-  buf += diagnosticStr.asString();
+  out << " :diagnostic ";
+  out << diagnosticStr.asString();
 
   //
   // Compiler flags that produce or remove the diagnostic
@@ -115,9 +114,12 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   CXString disable;
   CXString option = clang_getDiagnosticOption(diagnostic, &disable);
 
-  buf += " :flags ";
-  buf.append("(\"").append(clang_getCString(option))
-    .append("\" . \"").append(clang_getCString(disable)).append("\")");
+  out << " :flags ";
+  out << "(\""
+      << clang_getCString(option)
+      << "\" . \""
+      << clang_getCString(disable)
+      << "\")";
 
   clang_disposeString(option);
   clang_disposeString(disable);
@@ -130,29 +132,29 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   //
   unsigned numRanges = clang_getDiagnosticNumRanges(diagnostic);
 
-  buf += " :ranges (";
+  out << " :ranges (";
   for (unsigned i = 0; i < numRanges; ++i) {
     const CXSourceRange & range = clang_getDiagnosticRange(diagnostic, i);
 
     assert(! clang_Range_isNull(range));
-    formatSourceRange(range, buf);
+    formatSourceRange(range, out);
   }
-  buf += ")";
+  out << ")";
 
   //
   // Fix-it hints
   //
-  buf += " :fix-its (";
-  formatFitItHints(diagnostic, buf);
-  buf += ")";
+  out << " :fix-its (";
+  formatFitItHints(diagnostic, out);
+  out << ")";
 }
 
 void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
-                                         std::string &            buf)
+                                         std::ostream &           out)
 {
   if (clang_equalLocations(location, clang_getNullLocation()))
     {
-      buf += " nil ";
+      out << " nil ";
       return ;
     }
 
@@ -172,31 +174,32 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
 
   if (const char *filenameStr = clang_getCString(filename)) {
     // ("filename" offset (line . column))
-    buf.append("(\"").append(filenameStr)           // filename
-      .append("\" ").append(str::to_string(offset)) // offset
-      .append(" (").append(str::to_string(line))    // line
-      .append(" . ").append(str::to_string(column)).append("))"); // column
+      out << "(\"" << filenameStr    // filename
+          << "\" " << offset         // offset
+          << " ("  << line           // line
+          << " . " << column         // column
+          << "))";
   } else {
     // XXX: Absence of a filename is not interesting for the client
     // and is considered equivalent to a null location.
-    buf += " nil ";
+    out << " nil ";
   }
 
   clang_disposeString(filename);
 }
 
 void SyntaxChecker::formatSourceRange(const CXSourceRange & range,
-                                      std::string &         buf)
+                                      std::ostream &        out)
 {
-  buf += "(";
-  formatSourceLocation(clang_getRangeStart(range), buf);
-  buf += " . ";
-  formatSourceLocation(clang_getRangeEnd(range), buf);
-  buf += ")";
+  out << "(";
+  formatSourceLocation(clang_getRangeStart(range), out);
+  out << " . ";
+  formatSourceLocation(clang_getRangeEnd(range), out);
+  out << ")";
 }
 
 void SyntaxChecker::formatFitItHints(const CXDiagnostic & diagnostic,
-                                     std::string &        buf)
+                                     std::ostream &       out)
 {
   unsigned numFixIts = clang_getDiagnosticNumFixIts(diagnostic);
 
@@ -206,9 +209,11 @@ void SyntaxChecker::formatFitItHints(const CXDiagnostic & diagnostic,
       CXString      fixItHint = clang_getDiagnosticFixIt(diagnostic, i,
                                                          &replacementRange);
 
-      buf.append("(\"").append(clang_getCString(fixItHint)).append("\" . ");
-      formatSourceRange(replacementRange, buf);
-      buf += ")";
+      out << "(\""
+          << clang_getCString(fixItHint)
+          << "\" . ";
+      formatSourceRange(replacementRange, out);
+      out << ")";
 
       clang_disposeString(fixItHint);
     }

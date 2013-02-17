@@ -13,6 +13,7 @@
 #ifndef IRONY_MODE_SERVER_IPLUGIN_H_
 #define IRONY_MODE_SERVER_IPLUGIN_H_
 
+#include <ostream>
 #include <string>
 
 #include "TUManager.h"
@@ -48,7 +49,7 @@ public:
    * \return The answer "type" to the request.
    */
   virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::string &             buf) = 0;
+                                    std::ostream &            out) = 0;
 
   virtual ~IPlugin();
 };

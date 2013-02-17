@@ -14,8 +14,6 @@
 
 #include <iostream>
 
-#include "str/to_string.hpp"
-
 CompileChecker::CompileChecker(TUManager & tuManager)
   : tuManager_(tuManager)
 { }
@@ -24,7 +22,7 @@ CompileChecker::~CompileChecker()
 { }
 
 std::string CompileChecker::handleRequest(const JSONObjectWrapper & data,
-                                          std::string &             buf)
+                                          std::ostream &            out)
 {
   bool                             valid = true;
   const std::string &              file  = data.check(L"file", valid);
@@ -34,7 +32,7 @@ std::string CompileChecker::handleRequest(const JSONObjectWrapper & data,
     std::clog << "invalid/incomplete data for compile-check." << std::endl;
   }
 
-  buf += ":stats ";
+  out << ":stats ";
 
   if (CXTranslationUnit tu = tuManager_.parse(file, flags)) {
     unsigned numDiag  = clang_getNumDiagnostics(tu);
@@ -56,22 +54,22 @@ std::string CompileChecker::handleRequest(const JSONObjectWrapper & data,
     }
 
     if (fatals == 0 && errors == 0 && warnings == 0) {
-      buf += "t";               // file ok
+      out << "t";               // file ok
     } else {
-      buf += "(";
+      out << "(";
       if (fatals != 0) {
-        buf.append(":fatal-errors ").append(str::to_string<int>(fatals));
+        out << ":fatal-errors " << fatals;
       }
       if (errors != 0) {
-        buf.append(" :errors ").append(str::to_string<int>(errors));
+        out << " :errors " << errors;
       }
       if (warnings != 0) {
-        buf.append(" :warnings ").append(str::to_string<int>(warnings));
+        out << " :warnings " << warnings;
       }
-      buf += ")";
+      out << ")";
     }
   } else {
-    buf += "nil";               // couldn't create a translation unit'
+    out << "nil";               // couldn't create a translation unit'
   }
 
   return ":compile-check";
