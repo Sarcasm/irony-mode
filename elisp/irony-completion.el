@@ -131,8 +131,8 @@ should use `irony-get-completion-point-anywhere'."
               (syntax (if (boundp 'c-syntactic-context)
                           c-syntactic-context
                         (c-save-buffer-state nil (c-guess-basic-syntax)))))
-         (if (or (assoc 'member-init-intro (c-guess-basic-syntax))
-                 (assoc 'member-init-cont (c-guess-basic-syntax)))
+         (if (or (assoc 'member-init-intro syntax)
+                 (assoc 'member-init-cont syntax))
              ;; Check if were are in an argument list
              ;; without this when we have:
              ;;  A::A() : foo(bar, []

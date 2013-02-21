@@ -46,11 +46,11 @@ additional configuration.
 
 Recommended packages and versions:
 
-| Package                           | Version   | Status        | Comment                                                                                       |
-| --------------------------------- | --------- | ------------- | --------------------------------------------------------------------------------------------- |
-| [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                      |
-| [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete, able to display detailed completions such as overloaded functions |
-| [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                               |
+| Package                           | Version   | Status        | Comment                                                                                                 |
+| --------------------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------------- |
+| [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                                |
+| [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete AND popup, able to display detailed completions such as overloaded functions |
+| [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                                         |
 
 [ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
@@ -87,10 +87,13 @@ You can also set the flags manually by creating a `.dir-locals.el`
 file in your project containing something like:
 
 ```el
-((c++-mode
-      (irony-compile-flags-work-dir . "/path/to/project/root")
-      (irony-compile-flags          . ("-Iutils"
-                                       "-Isome/include/path"))))
+((c++-mode .
+           ((irony-compile-flags-work-dir . "/path/to/project/root")
+            (irony-compile-flags          . ("-Wshadow"
+                                             "-Wall"
+                                             "-Wextra"
+                                             "-Ilib"
+                                             "-Iserver")))))
 ```
 
 You can take a look at the documentation of the variables
@@ -139,6 +142,19 @@ The configuration might look like this:
 (add-hook 'c-mode-hook 'irony-mode)
 ```
 
+**Note:** If my fork of `auto-complete` is used you should be careful
+to not have another installation of `auto-complete` or `popup` since
+both of them are present in my fork.
+
+You can eval these lines in the **\*scratch\*** buffer:
+
+```el
+(let ((requirements (or (require 'auto-complete nil t)
+                        (require 'popup nil t))))
+  (message "You should remove both auto-complete and popup before using my fork of auto-complete"))
+```
+
+Hit `C-x C-e` at the end of the expression to evaluate.
 
 ## Compilation Database
 
