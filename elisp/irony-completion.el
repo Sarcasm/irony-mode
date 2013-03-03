@@ -1,6 +1,6 @@
 ;;; irony-completion.el --- irony-mode completion specific definitions
 
-;; Copyright (C) 2012  Guillaume Papin
+;; Copyright (C) 2012-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, irony-mode
@@ -21,10 +21,7 @@
 ;;; Commentary:
 
 ;; Handle the search of completion points, the triggering of the
-;; completion when needed, the "parsing" of completion results.
-;;
-;; The completion can be auto feature is automated but can also be
-;; triggered by the user.
+;; completion when needed and the "parsing" of completion results.
 
 ;;; Code:
 
@@ -46,7 +43,7 @@ likely) completions."
   :require 'irony
   :group 'irony)
 
-;;
+
 ;; Privates variables
 ;;
 
@@ -54,7 +51,7 @@ likely) completions."
   "If non nil contain the last completion answer received by the
   server (internal variable).")
 
-;;
+
 ;; Register completion callback(s) in the `irony-request-mapping'
 ;; alist.
 ;;
@@ -65,7 +62,7 @@ likely) completions."
 ;;;###autoload
 (add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion-simple))
 
-;;
+
 ;; Functions
 ;;
 (defun irony-handle-completion (data)
@@ -102,10 +99,24 @@ either :detailed or :simple."
                   (not (memq kind irony-blacklist-kind)))
         collect result))
 
-(defun irony-get-completion-point ()
-  "Return the point where the completion should start from the
-current point. If no completion can be used in the current
-context return NIL.
+(defun irony-completion-stats-at-point ()
+  "Return a cons of (context-pos . completion-pos).
+
+completion-pos is the point where the typed text starts on a
+completion while context-pos is the position that decides of the
+kind of completion has to be performed. I don't think it's clear
+at all, here is an example:
+
+
+    1. std::string s(\"hey\");
+    2.
+    3. s.size();
+    4. s.   size();
+
+For #3: s.[CONTEXT-POS][COMPLETION-POS]size
+For #4: s.[CONTEXT-POS]   [COMPLETION-POS]size
+
+Nil is returned if there is no completion context found.
 
 Note: This function try to return the point only in case where it
 seems to be interesting and not too slow to show the completion
@@ -116,35 +127,39 @@ should use `irony-get-completion-point-anywhere'."
    ;; - Object member access: '.'
    ;; - Pointer member access: '->'
    ;; - Scope operator: '::'
-   (if (re-search-backward "\\(?:\\.\\|->\\|::\\)\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (let ((point (match-beginning 1)))
-         ;; fix floating number literals (the prefix tried to complete
-         ;; the following "3.[COMPLETE]")
-         (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
-           point)))
+   (when (re-search-backward "\\(\\.\\|->\\|::\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+     (let ((res (cons (match-end 1) (match-beginning 2))))
+       ;; fix floating number literals (the prefix tried to complete
+       ;; the following "3.[COMPLETE]")
+       (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
+         res)))
    ;; Initialization list (use the syntactic informations partially
    ;; stolen from `c-show-syntactic-information')
    ;; A::A() : [complete], [complete]
-   (if (re-search-backward "[,:]\\s-*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (let* ((point (match-beginning 1))
-              (c-parsing-error nil)
-              (syntax (if (boundp 'c-syntactic-context)
-                          c-syntactic-context
-                        (c-save-buffer-state nil (c-guess-basic-syntax)))))
-         (if (or (assoc 'member-init-intro syntax)
-                 (assoc 'member-init-cont syntax))
-             ;; Check if were are in an argument list
-             ;; without this when we have:
-             ;;  A::A() : foo(bar, []
-             ;; the completion is triggered.
-             (if (eq (car (syntax-ppss)) 0) ;see [[info:elisp#Parser State]]
-                 point))))
+   (when (re-search-backward "\\([,:]\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+     (let* ((res (cons (match-end 1) (match-beginning 2)))
+            (c-parsing-error nil)
+            (syntax (if (boundp 'c-syntactic-context)
+                        c-syntactic-context
+                      (c-save-buffer-state nil (c-guess-basic-syntax)))))
+       (if (or (assoc 'member-init-intro syntax)
+               (assoc 'member-init-cont syntax))
+           ;; Check if were are in an argument list
+           ;; without this when we have:
+           ;;  A::A() : foo(bar, []
+           ;; the completion is triggered.
+           (when (eq (car (syntax-ppss)) 0) ;see [[info:elisp#Parser State]]
+             res))))
    ;; switch/case statements, complete after the case
-   (if (re-search-backward "[ \n\t\v\r\f;{]case\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-       (match-beginning 1))
+   (when (re-search-backward "\\Sw\\(case\\)\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+     ;; FIXME: Why a match is given after the colon?
+     ;;
+     ;;            case blah:[POINT-STILL-INDICATES-CASE-COMPLETION]
+     ;;
+     (cons (match-end 1) (match-beginning 2)))
    ;; preprocessor #define, #include, ...
-   (if (re-search-backward "^\\s-*#\\s-*\\([[:alpha:]]*\\)\\=" nil t)
-       (match-beginning 1))))
+   (when (re-search-backward "^\\s-*\\(#\\)\\s-*\\([[:alpha:]]*\\)\\=" nil t)
+     (cons (match-end 1) (match-beginning 2)))))
 
 (defun irony-get-completion-point-anywhere ()
   "Return the completion point for the current context, contrary
@@ -153,20 +168,6 @@ to `irony-get-completion' a point will be returned every times."
    (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
        (match-beginning 1))
    (point)))
-
-
-;; -- Working... --
-;;
-;; (defcustom irony-completion-async-function nil
-;;   "Function to call when new completion results are received. The
-;; function will be called with the point of completion, and the
-;; list of completion strings available (NO filtering is made to
-;; remove completion with non matching prefix)."
-;;   :type 'function
-;;   :require 'irony
-;;   :group 'irony)
-;;
-;; (setq irony-completion-async-function 'irony-trigger-completion-handler)
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here
