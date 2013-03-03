@@ -38,8 +38,21 @@
 (defcustom irony-priority-limit 74
   "The Clang priority threshold to keep a candidate in the
 completion list. Smaller values indicate higher-priority (more
-likely) completions."
+ likely) completions."
   :type 'integer
+  :require 'irony
+  :group 'irony)
+
+(defcustom irony-completion-trigger-commands '(self-insert-command
+                                               newline-and-indent
+                                               c-context-line-break)
+  "List of commands used to trigger a look for smart/semantic
+completion.
+
+There are actually some hard-coded regexp as well in
+`irony-completion-trigger-command-p`, if it causes any trouble
+please report a bug."
+  :type '(repeat function)
   :require 'irony
   :group 'irony)
 
@@ -50,6 +63,9 @@ likely) completions."
 (defvar irony-last-completion nil
   "If non nil contain the last completion answer received by the
   server (internal variable).")
+
+(defvar irony-completion-marker (make-marker)
+  "cons of MARKER . kind")
 
 
 ;; Register completion callback(s) in the `irony-request-mapping'
@@ -62,9 +78,51 @@ likely) completions."
 ;;;###autoload
 (add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion-simple))
 
+;;;###autoload
+(add-hook 'irony-mode-hook 'irony-setup-completion)
+
 
 ;; Functions
 ;;
+(defun irony-setup-completion ()
+  "Initialize completion module for irony-mode."
+  (add-hook 'post-command-hook 'irony-completion-post-command nil t))
+
+(defun irony-completion-marker-position ()
+  (when (eq (marker-buffer irony-completion-marker) (current-buffer))
+    (marker-position irony-completion-marker)))
+
+(defun irony-completion-trigger-command-p (command)
+  "Return non-nil if `COMMAND' is a trigger command. Stolen from
+`auto-complete` package."
+  (and (symbolp command)
+       (or (memq command irony-completion-trigger-commands)
+           (string-match-p "^c-electric-" (symbol-name command)))))
+
+(defun irony-completion-post-command ()
+  (when (irony-completion-trigger-command-p this-command)
+    (save-excursion
+      (let* ((stats (irony-completion-stats-at-point))
+             (ctx-pos (car stats))
+             (comp-point (cdr stats)))
+        (cond
+         (ctx-pos
+          (if (eq ctx-pos (irony-completion-marker-position))
+              (message "still old point")
+            (set-marker irony-completion-marker ctx-pos)
+            (message "new point")))
+         (t
+          (message "no point")
+          ;; (if (and (eq (marker-buffer irony-completion-marker) (current-buffer))
+          ;;          (not (marker-position irony-completion-marker))
+          ;;     (message "still no point")
+          ;;   (message "no point anymore")
+          ;; (eq (marker-buffer irony-completion-marker) (current-buffer))
+          ;;      (not (marker-position irony-completion-marker) ctx-pos)))
+          ;; (message "new point"))
+          (set-marker irony-completion-marker ctx-pos)
+          ))))))
+
 (defun irony-handle-completion (data)
   "Handle a completion request from the irony process,
 actually because the code completion is not 'asynchronous' this
