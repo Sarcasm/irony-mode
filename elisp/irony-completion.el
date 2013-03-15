@@ -56,16 +56,34 @@ please report a bug."
   :require 'irony
   :group 'irony)
 
-
-;; Privates variables
-;;
+(defcustom irony-on-completion-hook nil
+  "Function called when new completion data are available.
 
-(defvar irony-last-completion nil
-  "If non nil contain the last completion answer received by the
-  server (internal variable).")
+TODO:
+Completion results are available by the function starting with
+`irony-completion-*'."
+  :type '(repeat function)
+  :require 'irony
+  :group 'irony)
 
-(defvar irony-completion-marker (make-marker)
-  "cons of MARKER . kind")
+(defcustom irony-complete-typed-text-only nil
+  "Do not complete arguments, parenthesis or anything else than
+the typed text.
+
+Typed text is often an identifier. So for a function
+
+   void foo(int a, int b = 42)
+
+only 'foo' will be returned by the irony server. Without this
+option every information such as optional parameters, return
+type, etc will be returned and processed by the completions
+plugins.
+
+This can eventually lead to performance improvement but more
+limited usefulness."
+  :type 'boolean
+  :require 'irony
+  :group 'irony)
 
 
 ;; Register completion callback(s) in the `irony-request-mapping'
@@ -76,10 +94,25 @@ please report a bug."
 (add-to-list 'irony-request-mapping '(:completion . irony-handle-completion))
 
 ;;;###autoload
-(add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion-simple))
+(add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion))
 
 ;;;###autoload
 (add-hook 'irony-mode-hook 'irony-setup-completion)
+
+
+
+;; Privates variables
+;;
+
+(defvar irony-completion-marker (make-marker))
+
+(defvar irony-completion-last-marker (make-marker))
+
+(defvar irony-completion-request-running-count 0)
+
+(defvar irony-last-completion nil
+  "Cons of (COMPLETION-DATA . MARKER)")
+
 
 
 ;; Functions
@@ -88,74 +121,40 @@ please report a bug."
   "Initialize completion module for irony-mode."
   (add-hook 'post-command-hook 'irony-completion-post-command nil t))
 
-(defun irony-completion-marker-position ()
-  (when (eq (marker-buffer irony-completion-marker) (current-buffer))
-    (marker-position irony-completion-marker)))
-
 (defun irony-completion-trigger-command-p (command)
-  "Return non-nil if `COMMAND' is a trigger command. Stolen from
-`auto-complete` package."
+  "Return non-nil if `COMMAND' is a trigger command.
+
+Stolen from `auto-complete` package."
   (and (symbolp command)
        (or (memq command irony-completion-trigger-commands)
            (string-match-p "^c-electric-" (symbol-name command)))))
 
-(defun irony-completion-post-command ()
-  (when (irony-completion-trigger-command-p this-command)
-    (save-excursion
-      (let* ((stats (irony-completion-stats-at-point))
-             (ctx-pos (car stats))
-             (comp-point (cdr stats)))
-        (cond
-         (ctx-pos
-          (if (eq ctx-pos (irony-completion-marker-position))
-              (message "still old point")
-            (set-marker irony-completion-marker ctx-pos)
-            (message "new point")))
-         (t
-          (message "no point")
-          ;; (if (and (eq (marker-buffer irony-completion-marker) (current-buffer))
-          ;;          (not (marker-position irony-completion-marker))
-          ;;     (message "still no point")
-          ;;   (message "no point anymore")
-          ;; (eq (marker-buffer irony-completion-marker) (current-buffer))
-          ;;      (not (marker-position irony-completion-marker) ctx-pos)))
-          ;; (message "new point"))
-          (set-marker irony-completion-marker ctx-pos)
-          ))))))
+(defun irony-completion-marker-position ()
+  (when (eq (marker-buffer irony-completion-marker) (current-buffer))
+    (marker-position irony-completion-marker)))
 
-(defun irony-handle-completion (data)
-  "Handle a completion request from the irony process,
-actually because the code completion is not 'asynchronous' this
-function only set the variable `irony-last-completion'."
-  (setq irony-last-completion (cons :detailed data)))
-
-(defun irony-handle-completion-simple (data)
-  "See `irony-handle-completion'."
-  (setq irony-last-completion (cons :simple data)))
-
-(defun irony-complete (kind &optional pos)
-  "Return a list of completions available at POS (the current
-position if not given). The completion KIND can be
-either :detailed or :simple."
+(defun irony-request-completion (&optional pos)
   (let* ((location (irony-point-location (or pos (point))))
          (request-data (list (cons :file (irony-temp-filename))
                              (cons :flags (irony-get-libclang-flags))
                              (cons :line (car location))
                              (cons :column (cdr location)))))
-    (setq irony-last-completion nil)
-    (irony-send-request (if (eq kind :detailed)
-                            :complete
-                          :complete-simple)
+    (irony-send-request (if irony-complete-typed-text-only
+                            :complete-simple
+                          :complete)
                         request-data
-                        (current-buffer)))
-  (loop with answer = (cdr (irony-wait-request-answer 'irony-last-completion))
-        for completion-cell in (plist-get answer :results)
-        for kind = (car completion-cell)
-        for result = (cdr completion-cell)
-        for priority = (or (plist-get result :priority) irony-priority-limit)
-        when (and (< priority irony-priority-limit)
-                  (not (memq kind irony-blacklist-kind)))
-        collect result))
+                        (current-buffer))))
+
+(defun irony-completion-post-command ()
+  (when (irony-completion-trigger-command-p this-command)
+    (save-excursion
+      (let* ((stats (irony-completion-stats-at-point))
+             (ctx-pos (car stats)))
+        (unless (eq ctx-pos (irony-completion-marker-position))
+          (incf irony-completion-request-running-count)
+          (set-marker irony-completion-last-marker ctx-pos)
+          (irony-request-completion (cdr stats)))
+        (set-marker irony-completion-marker ctx-pos)))))
 
 (defun irony-completion-stats-at-point ()
   "Return a cons of (context-pos . completion-pos).
@@ -226,6 +225,55 @@ to `irony-get-completion' a point will be returned every times."
    (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
        (match-beginning 1))
    (point)))
+
+(defun irony-handle-completion (data)
+  (decf irony-completion-request-running-count)
+  ;; ignore requests when there is some still pending b/c the
+  ;; completion context is already "expired".
+  (when (irony-last-completion-available-p)
+    (setq irony-last-completion (cons data irony-completion-last-marker))
+    (run-hooks 'irony-on-completion-hook)))
+
+
+;;
+;; Irony completion results "API"
+;; Functions useful for completion handlers.
+;;
+
+(defun irony-last-completion-data ()
+  (car irony-last-completion))
+
+(defun irony-last-completion-available-p ()
+  (zerop irony-completion-request-running-count))
+
+(defun irony-last-completion-position ()
+  (let ((marker (cdr irony-last-completion)))
+    (when (and marker
+               (eq (marker-buffer marker) (current-buffer)))
+      (marker-position marker))))
+
+(defun irony-get-last-completion-point ()
+  "Return the beginning of the completion for the latest completion.
+
+Return nil if no completion point is available, for example if
+the latest completion is not valid anymore for the current cursor
+position."
+  (when (irony-last-completion-available-p)
+    (let* ((stats (irony-completion-stats-at-point))
+           (ctx-pos (car stats))
+           (comp-point (cdr stats)))
+      (when (eq ctx-pos (irony-last-completion-position))
+          comp-point))))
+
+(defun irony-last-completion-results ()
+  (loop with answer = (irony-last-completion-data)
+        for completion-cell in (plist-get answer :results)
+        for kind = (car completion-cell)
+        for result = (cdr completion-cell)
+        for priority = (or (plist-get result :priority) irony-priority-limit)
+        when (and (< priority irony-priority-limit)
+                  (not (memq kind irony-blacklist-kind)))
+        collect result))
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here

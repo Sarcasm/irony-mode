@@ -57,21 +57,6 @@ detailed completion."
   :group 'irony
   :group 'auto-complete)
 
-;; XXX: Not sure how to make this option for the moment. I think AC
-;;      caches the sources and it might be a bad idea to change the
-;;      definition of a source dynamically.
-;;
-;; (defcustom irony-ac-prefer-simple-results nil
-;;   "Non-nil means that, even if detailed completion is available
-;;   the plugin should stick to simple candidates display.
-;;
-;; Note: ATM it is not possible to change this value dynamically, it
-;; should be set before the plugin is loaded."
-;;   :type '(choice (const :tag "Yes" t)
-;;                  (const :tag "No" nil))
-;;   :group 'irony
-;;   :group 'auto-complete)
-
 (defface ac-irony-candidate-face
   '((((class color) (min-colors 88))
      :background "LightSteelBlue1" :foreground "dark slate gray")
@@ -120,23 +105,29 @@ Will be set to nil if no snippet expansion function is found.")
     (:vertical-space   . "\n"))
   "Alist of symbol names and their string representation.")
 
-(defconst ac-source-irony-base
-  '((candidates     . (irony-ac-candidates ac-point))
-    (requires       . 0)
+;; (defconst ac-source-irony-base
+;;   '((candidates     . irony-ac-candidates)
+;;     (requires       . -1)
+;;     (candidate-face . ac-irony-candidate-face)
+;;     (selection-face . ac-irony-selection-face)
+;;     (action         . irony-ac-action)
+;;     (limit          . nil)
+;;     (cache))
+;;   "Auto-complete source for `irony-mode'.")
+
+;; (defvar ac-source-irony (cons '(prefix . irony-ac-prefix)
+;;                               ac-source-irony-base)
+;;   "Auto-complete source for `irony-mode'.")
+
+(defvar ac-source-irony
+  '((prefix         . irony-ac-prefix)
+    (candidates     . irony-ac-candidates)
+    (requires       . -1)
     (candidate-face . ac-irony-candidate-face)
     (selection-face . ac-irony-selection-face)
     (action         . irony-ac-action)
     (limit          . nil)
-    (cache))
-  "Auto-complete source for `irony-mode'.")
-
-(defvar ac-source-irony (cons '(prefix . irony-ac-completion-point)
-                              ac-source-irony-base)
-  "Auto-complete source for `irony-mode'.")
-
-(defvar ac-source-irony-anywhere (cons '(prefix . irony-ac-completion-point-anywhere)
-                                       ac-source-irony-base)
-  "Auto-complete source for `irony-mode'.")
+    (cache)))
 
 (defun irony-ac-support-detailed-display-p ()
   "Return non-nil if the completion system can (and should)
@@ -149,8 +140,12 @@ Will be set to nil if no snippet expansion function is found.")
   "Hook to run for `auto-complete-mode' when `irony-mode' is
 activated."
   (interactive)
-  (add-to-list 'ac-sources 'ac-source-irony)
-  (define-key irony-mode-map [(control return)] 'ac-complete-irony))
+  (add-hook 'irony-on-completion-hook 'irony-ac-complete)
+  ;; (define-key irony-mode-map [(control return)] 'ac-complete-irony)
+  )
+
+(defun irony-ac-complete ()
+  (auto-complete '(ac-source-irony)))
 
 (defun irony-ac-yas-disabled-p ()
   "If the current yasnippet version offers a minor-mode, check if
@@ -194,8 +189,7 @@ See also `irony-ac-expand-yas-2'."
   "Enable `auto-complete-mode' handling of `irony-mode'
 completion results."
   (when (irony-ac-support-detailed-display-p)
-    (add-to-list 'ac-source-irony '(allow-dups) t)
-    (add-to-list 'ac-source-irony-anywhere '(allow-dups) t))
+    (add-to-list 'ac-source-irony '(allow-dups) t))
   ;; find the snippet expand function
   (when (and (not irony-ac-expand-snippet-function)
              (require 'yasnippet nil t))
@@ -227,22 +221,11 @@ completion results."
 completion results."
   (remove-hook 'irony-mode-hook 'irony-ac-setup))
 
-(defun ac-complete-irony ()
-  "Display available completions on demand."
-  (interactive)
-  (auto-complete '(ac-source-irony-anywhere)))
-
-(defun irony-ac-simple-candidates (pos)
-  "Generate a list of candidates identifier."
-  (delete-dups (mapcar (lambda (result)
-                         (plist-get result :result))
-                       (irony-complete :simple pos))))
-
-(defun irony-ac-detailed-candidates (pos)
+(defun irony-ac-detailed-candidates ()
   "Generate detailed candidates."
   (loop with window-width = (- (window-width) (popup-current-physical-column))
         with show-priority = irony-ac-show-priority
-        for result-plist in (irony-complete :detailed pos)
+        for result-plist in (irony-last-completion-results)
         for result = (plist-get result-plist :result)
         for priority = (if show-priority (plist-get result-plist :priority))
         if (plist-get result-plist :optional)
@@ -253,15 +236,21 @@ completion results."
         into candidates
         finally return candidates))
 
-(defun irony-ac-candidates (pos)
-  "Generate candidates for `auto-complete' (a list of strings).
-POS is the position of the beginning of the completion in the
-current buffer."
-  (if (irony-header-comp-inside-include-stmt-p)
-      (irony-header-comp-complete-at pos)
-    (if (irony-ac-support-detailed-display-p)
-        (irony-ac-detailed-candidates pos)
-      (irony-ac-simple-candidates pos))))
+(defun irony-ac-candidates ()
+  (cond
+   (irony-complete-typed-text-only
+    ;; TODO:
+    )
+
+   (t
+      (irony-ac-detailed-candidates))
+
+   ;; (if (irony-header-comp-inside-include-stmt-p)
+   ;;     (irony-header-comp-complete-at pos)
+   ;;   (if (irony-ac-support-detailed-display-p)
+   ;;       (irony-ac-detailed-candidates pos)
+   ;;     (irony-ac-simple-candidates pos))))
+   ))
 
 (defun irony-ac-new-item (result window-width &optional priority)
   "Return a new item of a result element. RESULT has the
@@ -344,7 +333,7 @@ are expanded."
 
 (defun irony-ac-dynamic-snippet (completion-result)
   "Return a cons of the for (SNIPPET-STR . HAS-PLACEHOLDER-P)
-where SNIPPET-STR is a string of the form:
+where SNIPPET-STR is a string as follow:
 
  - \"()\"
  - \"(${1:int x}, ${2:int y})$0\"
@@ -407,21 +396,18 @@ character (double quote or angle-bracket) if needed."
 
 (defun irony-ac-action ()
   "Action to execute after a completion is done."
-  (if (irony-header-comp-inside-include-stmt-p)
-      (irony-ac-header-comp-action)
-    (when (irony-ac-support-detailed-display-p)
-      (irony-ac-action-detailed))))
+  ;; (if (irony-header-comp-inside-include-stmt-p)
+  ;;     (irony-ac-header-comp-action)
+  (when (irony-ac-support-detailed-display-p)
+    (irony-ac-action-detailed)));; )
 
-(defun irony-ac-completion-point ()
+(defun irony-ac-prefix ()
   "Return the point of completion either for a header or a
 standard identifier."
-  (or (irony-header-comp-point)
-      (irony-get-completion-point)))
+  (irony-get-last-completion-point))
 
-(defun irony-ac-completion-point-anywhere ()
-  "See `irony-ac-completion-point-anywhere'."
-  (or (irony-header-comp-point)
-      (irony-get-completion-point-anywhere)))
+  ;; (or (irony-header-comp-point)
+  ;;     (irony-get-completion-point)))
 
 (provide 'irony/ac)
 
