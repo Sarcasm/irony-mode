@@ -141,11 +141,17 @@ Will be set to nil if no snippet expansion function is found.")
 activated."
   (interactive)
   (add-hook 'irony-on-completion-hook 'irony-ac-complete)
-  ;; (define-key irony-mode-map [(control return)] 'ac-complete-irony)
-  )
+  (add-to-list 'ac-sources 'ac-source-irony)
+  (define-key irony-mode-map [(control return)] 'ac-complete-irony))
+
+(defun ac-complete-irony ()
+  (interactive)
+  ;; TODO: Add non-automatically triggered completion
+  (auto-complete 'ac-source-irony))
 
 (defun irony-ac-complete ()
-  (auto-complete '(ac-source-irony)))
+  (ac-update t)
+  (ac-start))
 
 (defun irony-ac-yas-disabled-p ()
   "If the current yasnippet version offers a minor-mode, check if
