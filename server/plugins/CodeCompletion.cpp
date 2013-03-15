@@ -264,13 +264,12 @@ void CodeCompletion::formatCompletionString(CXCompletionString & completionStrin
           if (chunkKind != CXCompletionChunk_TypedText)
             continue ;
 
-          CXString text = clang_getCompletionChunkText(completionString, i);
+          ClangString text(clang_getCompletionChunkText(completionString, i),
+                           ClangString::Escape);
 
-          out << "\"";
-          if (const char *ctext = clang_getCString(text))
-            out << ctext;
-          out << "\"";
-          clang_disposeString(text);
+          if (! text.isNull()) {
+            out << text.asString();
+          }
           break ;               // skip the when found
         }
 
