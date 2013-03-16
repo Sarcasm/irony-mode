@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'irony)
+(require 'irony-header-comp)
 
 (eval-when-compile
   (require 'cc-defs)                    ;for `c-save-buffer-state'
@@ -145,19 +146,29 @@ Stolen from `auto-complete` package."
                         request-data
                         (current-buffer))))
 
+(defun irony-request-header-comp ()
+  (irony-handle-completion (irony-header-comp-complete-at)))
+
 (defun irony-completion-post-command ()
   (when (irony-completion-trigger-command-p this-command)
-    (save-excursion
-      (let* ((stats (irony-completion-stats-at-point))
-             (ctx-pos (car stats)))
-        (unless (eq ctx-pos (irony-completion-marker-position))
-          (incf irony-completion-request-running-count)
-          (set-marker irony-completion-last-marker ctx-pos)
-          (irony-request-completion (cdr stats)))
-        (set-marker irony-completion-marker ctx-pos)))))
+    (irony-trigger-completion-maybe)))
+
+(defun irony-trigger-completion-maybe ()
+  (save-excursion
+    (let* ((stats (irony-completion-stats-at-point))
+           (ctx-pos (car stats)))
+      (unless (eq ctx-pos (irony-completion-marker-position))
+        (incf irony-completion-request-running-count)
+        (set-marker irony-completion-last-marker ctx-pos)
+        (if (nth 2 stats)             ;header-comp-p -> t
+            (run-with-timer 0.1 nil 'irony-request-header-comp)
+          (irony-request-completion (nth 1 stats))))
+      (set-marker irony-completion-marker ctx-pos))))
 
 (defun irony-completion-stats-at-point ()
-  "Return a cons of (context-pos . completion-pos).
+  "Return a list such as:
+
+    (context-pos completion-pos header-completion-p)
 
 completion-pos is the point where the typed text starts on a
 completion while context-pos is the position that decides of the
@@ -185,7 +196,7 @@ should use `irony-get-completion-point-anywhere'."
    ;; - Pointer member access: '->'
    ;; - Scope operator: '::'
    (when (re-search-backward "\\(\\.\\|->\\|::\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-     (let ((res (cons (match-end 1) (match-beginning 2))))
+     (let ((res (list (match-end 1) (match-beginning 2))))
        ;; fix floating number literals (the prefix tried to complete
        ;; the following "3.[COMPLETE]")
        (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
@@ -194,7 +205,7 @@ should use `irony-get-completion-point-anywhere'."
    ;; stolen from `c-show-syntactic-information')
    ;; A::A() : [complete], [complete]
    (when (re-search-backward "\\([,:]\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-     (let* ((res (cons (match-end 1) (match-beginning 2)))
+     (let* ((res (list (match-end 1) (match-beginning 2)))
             (c-parsing-error nil)
             (syntax (if (boundp 'c-syntactic-context)
                         c-syntactic-context
@@ -213,10 +224,13 @@ should use `irony-get-completion-point-anywhere'."
      ;;
      ;;            case blah:[POINT-STILL-INDICATES-CASE-COMPLETION]
      ;;
-     (cons (match-end 1) (match-beginning 2)))
+     (list (match-end 1) (match-beginning 2)))
    ;; preprocessor #define, #include, ...
    (when (re-search-backward "^\\s-*\\(#\\)\\s-*\\([[:alpha:]]*\\)\\=" nil t)
-     (cons (match-end 1) (match-beginning 2)))))
+     (list (match-end 1) (match-beginning 2)))
+   (let ((header-comp-point (irony-header-comp-point)))
+     (when header-comp-point
+       (list header-comp-point header-comp-point t)))))
 
 (defun irony-get-completion-point-anywhere ()
   "Return the completion point for the current context, contrary
@@ -261,19 +275,21 @@ position."
   (when (irony-last-completion-available-p)
     (let* ((stats (irony-completion-stats-at-point))
            (ctx-pos (car stats))
-           (comp-point (cdr stats)))
+           (comp-point (nth 1 stats)))
       (when (eq ctx-pos (irony-last-completion-position))
           comp-point))))
 
 (defun irony-last-completion-results ()
-  (loop with answer = (irony-last-completion-data)
-        for completion-cell in (plist-get answer :results)
-        for kind = (car completion-cell)
-        for result = (cdr completion-cell)
-        for priority = (or (plist-get result :priority) irony-priority-limit)
-        when (and (< priority irony-priority-limit)
-                  (not (memq kind irony-blacklist-kind)))
-        collect result))
+  (if (stringp (car (irony-last-completion-data)))
+      (irony-last-completion-data)
+    (loop with answer = (irony-last-completion-data)
+          for completion-cell in (plist-get answer :results)
+          for kind = (car completion-cell)
+          for result = (cdr completion-cell)
+          for priority = (or (plist-get result :priority) irony-priority-limit)
+          when (and (< priority irony-priority-limit)
+                    (not (memq kind irony-blacklist-kind)))
+          collect result)))
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here

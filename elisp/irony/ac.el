@@ -42,7 +42,6 @@
 ;;; Code:
 
 (require 'irony-completion)
-(require 'irony-header-comp)
 (require 'auto-complete)
 (require 'popup)
 
@@ -227,36 +226,34 @@ completion results."
 completion results."
   (remove-hook 'irony-mode-hook 'irony-ac-setup))
 
-(defun irony-ac-detailed-candidates ()
-  "Generate detailed candidates."
-  (loop with window-width = (- (window-width) (popup-current-physical-column))
-        with show-priority = irony-ac-show-priority
-        for result-plist in (irony-last-completion-results)
-        for result = (plist-get result-plist :result)
-        for priority = (if show-priority (plist-get result-plist :priority))
-        if (plist-get result-plist :optional)
-        append (mapcar (lambda (r) (irony-ac-new-item r window-width priority))
-                       (irony-ac-expand-optionals result))
-        into candidates
-        else collect (irony-ac-new-item result window-width priority)
-        into candidates
-        finally return candidates))
-
 (defun irony-ac-candidates ()
-  (cond
-   (irony-complete-typed-text-only
-    ;; TODO:
-    )
-
-   (t
-      (irony-ac-detailed-candidates))
-
-   ;; (if (irony-header-comp-inside-include-stmt-p)
-   ;;     (irony-header-comp-complete-at pos)
-   ;;   (if (irony-ac-support-detailed-display-p)
-   ;;       (irony-ac-detailed-candidates pos)
-   ;;     (irony-ac-simple-candidates pos))))
-   ))
+  "Generate detailed candidates."
+  (let ((window-width (- (window-width) (popup-current-physical-column)))
+        (show-priority irony-ac-show-priority)
+        candidates)
+    (dolist (result (irony-last-completion-results) candidates)
+      (cond
+       ((listp result)
+        (let ((r (plist-get result :result))
+              (priority (if show-priority (plist-get result :priority))))
+          (if (and (irony-ac-support-detailed-display-p)
+                   (plist-get result :optional))
+              (mapc (lambda (opt-r)
+                      (setq candidates (cons
+                                        (irony-ac-new-item opt-r window-width priority)
+                                        candidates)))
+                    ;; XXX: nreverse shouldn't be necessary, it just
+                    ;;      seems to produced more please results
+                    ;;      like in the order:
+                    ;;          foo(int a)
+                    ;;          foo(int a, int b)
+                    ;;          ...
+                    (nreverse (irony-ac-expand-optionals r)))
+            (setq candidates (cons
+                              (irony-ac-new-item r window-width priority)
+                              candidates)))))
+       ((stringp result)
+        (setq candidates (cons result candidates)))))))
 
 (defun irony-ac-new-item (result window-width &optional priority)
   "Return a new item of a result element. RESULT has the
@@ -266,7 +263,8 @@ the element that need to be completed):
        ((:result-type  . \"bool\")
         (:typed-text   . \"getFoo\")
         (:symbol       . :left-paren)
-        (:symbol       . :right-paren))
+        (:symbol       . :right-paren)
+        (:informative  . \" const\"))
 
 The WINDOW-WITH is for the case the candidate string is too long,
 the summary is truncated in order to not span on multiple lines."
@@ -284,7 +282,7 @@ the summary is truncated in order to not span on multiple lines."
                               ((eq identifier :symbol)
                                (unless (eq value :vertical-space) ;view should be one-line
                                  (cdr (assq value irony-ac-symbol-to-str-alist))))
-                              (t
+                              ((not (eq identifier :optional))
                                value))))))) ;!dolist
     ;; Set the summary, reduce is size of summary if view + summary
     ;; are longer than the window-width and the summary is too long
@@ -390,7 +388,7 @@ character (double quote or angle-bracket) if needed."
   ;; do not add closing '>' or '"' when the completed item was a
   ;; directory.
   (if (string-match-p "/$" (cdr ac-last-completion))
-      (ac-start)
+      (irony-trigger-completion-maybe)
     (let ((ch (char-after)))
       (when (not (or (eq ch ?\")
                      (eq ch ?>)))
@@ -402,10 +400,10 @@ character (double quote or angle-bracket) if needed."
 
 (defun irony-ac-action ()
   "Action to execute after a completion is done."
-  ;; (if (irony-header-comp-inside-include-stmt-p)
-  ;;     (irony-ac-header-comp-action)
-  (when (irony-ac-support-detailed-display-p)
-    (irony-ac-action-detailed)));; )
+  (if (irony-header-comp-inside-include-stmt-p)
+      (irony-ac-header-comp-action)
+    (when (irony-ac-support-detailed-display-p)
+      (irony-ac-action-detailed))))
 
 (defun irony-ac-prefix ()
   "Return the point of completion either for a header or a

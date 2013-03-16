@@ -34,7 +34,7 @@
   '("-v" "-E" "/dev/null")
   "The lang option will be automatically added (-x c++ / -x c)."
   :group 'irony
-  :type 'file)
+  :type '(choice (repeat string)))
 
 (defcustom irony-header-comp-allowed-extensions
   '("h" "hh"

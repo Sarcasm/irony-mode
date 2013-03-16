@@ -62,7 +62,7 @@ and more."
   "Location of the compiler executable. Use Clang by default,
 otherwise try GCC."
   :group 'irony
-  :type 'file)
+  :type '(file :must-match t))
 
 (defcustom irony-compile-flags nil
   "List of compiler flags to compile the current buffer.
