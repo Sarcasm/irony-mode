@@ -402,7 +402,8 @@ character (double quote or angle-bracket) if needed."
   "Action to execute after a completion is done."
   (if (irony-header-comp-inside-include-stmt-p)
       (irony-ac-header-comp-action)
-    (when (irony-ac-support-detailed-display-p)
+    (when (and (not irony-complete-typed-text-only)
+               (irony-ac-support-detailed-display-p))
       (irony-ac-action-detailed))))
 
 (defun irony-ac-prefix ()

@@ -92,10 +92,11 @@ limited usefulness."
 ;;
 
 ;;;###autoload
-(add-to-list 'irony-request-mapping '(:completion . irony-handle-completion))
+(add-to-list 'irony-request-mapping '(:completion . irony-handle-server-completion))
 
 ;;;###autoload
-(add-to-list 'irony-request-mapping '(:completion-simple . irony-handle-completion))
+(add-to-list 'irony-request-mapping
+             '(:completion-simple . irony-handle-server-completion))
 
 ;;;###autoload
 (add-hook 'irony-mode-hook 'irony-setup-completion)
@@ -145,9 +146,6 @@ Stolen from `auto-complete` package."
                           :complete)
                         request-data
                         (current-buffer))))
-
-(defun irony-request-header-comp ()
-  (irony-handle-completion (irony-header-comp-complete-at)))
 
 (defun irony-completion-post-command ()
   (when (irony-completion-trigger-command-p this-command)
@@ -248,6 +246,13 @@ to `irony-get-completion' a point will be returned every times."
     (setq irony-last-completion (cons data irony-completion-last-marker))
     (run-hooks 'irony-on-completion-hook)))
 
+(defun irony-handle-server-completion (data)
+  (irony-handle-completion (plist-get data :results)))
+
+(defun irony-request-header-comp ()
+  (irony-handle-completion (irony-header-comp-complete-at)))
+
+
 
 ;;
 ;; Irony completion results "API"
@@ -282,8 +287,7 @@ position."
 (defun irony-last-completion-results ()
   (if (stringp (car (irony-last-completion-data)))
       (irony-last-completion-data)
-    (loop with answer = (irony-last-completion-data)
-          for completion-cell in (plist-get answer :results)
+    (loop with completion-cell = (irony-last-completion-data)
           for kind = (car completion-cell)
           for result = (cdr completion-cell)
           for priority = (or (plist-get result :priority) irony-priority-limit)

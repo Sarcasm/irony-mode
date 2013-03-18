@@ -27,11 +27,6 @@
 class CodeCompletion : public IPlugin,
                        public util::NonCopyable
 {
-private:
-  TUManager &           tuManager_;
-  TUManager::SettingsID settingsID_;
-  bool                  detailedCompletions_;
-
 public:
   /**
    * \brief Create a completion plugin.
@@ -85,6 +80,15 @@ private:
                 unsigned            column,
                 std::ostream &      out);
 
+  void printDetailedResult(CXCodeCompleteResults *completions, std::ostream & out);
+
+  /**
+   * \brief Log the diagnostics found during completion.
+   *
+   * \param completions
+   */
+  void handleDiagnostics(CXCodeCompleteResults *completions) const;
+
   /**
    * \brief Format a cursor kind to a keyword symbol.
    *
@@ -133,6 +137,11 @@ private:
   void appendConsCellResult(const std::string & keyword,
                             const std::string & value,
                             std::ostream &      out);
+
+private:
+  TUManager &           tuManager_;
+  TUManager::SettingsID settingsID_;
+  bool                  detailedCompletions_;
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

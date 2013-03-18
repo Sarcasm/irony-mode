@@ -12,8 +12,10 @@
 
 #include "CodeCompletion.h"
 
-#include <iostream>
 #include <cstddef>
+#include <iostream>
+#include <iterator>
+#include <set>
 #include <string>
 
 #include "util/arraysize.hpp"
@@ -56,53 +58,56 @@ std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
   else if (CXTranslationUnit tu = tuManager_.parse(file, flags))
     {
       // TODO: enhance ? actually the function return false on error,
-      // we can display the error to the user maybe ?
-      complete(tu, file, line, column, out);
+      //       we can display the error to the user maybe ?
+      (void) complete(tu, file, line, column, out);
     }
 
   out << ")";
   return (detailedCompletions_ ? ":completion" : ":completion-simple");
 }
 
-bool CodeCompletion::complete(CXTranslationUnit & tu,
-                              const std::string & filename,
-                              unsigned            line,
-                              unsigned            column,
-                              std::ostream &      out)
+namespace
 {
-  CXCodeCompleteResults   *completionResults
-    = clang_codeCompleteAt(tu,
-                           filename.c_str(),
-                           line,
-                           column,
-                           0, 0,
-                           clang_defaultCodeCompleteOptions() |
-                           CXCodeComplete_IncludeCodePatterns);
+std::string findTypedTextChunk(const CXCompletionString & completionString)
+{
+  unsigned chunksSize = clang_getNumCompletionChunks(completionString);
 
-  if (! completionResults)
-    {
-      // FIXME: really an error or just no results ?
-      return false;
-    }
+  for (unsigned i = 0; i < chunksSize; ++i) {
+    if (clang_getCompletionChunkKind(completionString, i) == CXCompletionChunk_TypedText)
+      {
+        ClangString text(clang_getCompletionChunkText(completionString,
+                                                      i), ClangString::Escape);
 
-  // log errors
-  if (unsigned numErrors = clang_codeCompleteGetNumDiagnostics(completionResults))
-    {
-      std::clog << numErrors << " errors found during completion." << std::endl;
-      for (unsigned i = 0; i < numErrors; i++) {
-        CXDiagnostic diagnostic = clang_codeCompleteGetDiagnostic(completionResults, i);
-        CXString s = clang_formatDiagnostic(diagnostic,
-                                            clang_defaultDiagnosticDisplayOptions());
-
-        std::clog << clang_getCString(s) << std::endl;
-        clang_disposeString(s);
-        clang_disposeDiagnostic(diagnostic);
+        return text.asString();
       }
-    }
+  }
 
-  for (unsigned i = 0; i != completionResults->NumResults; ++i)
+  return "";
+}
+}
+
+void printSimpleResult(CXCodeCompleteResults *completions, std::ostream & out)
+{
+  std::set<std::string> candidates;
+
+  for (unsigned i = 0; i != completions->NumResults; ++i)
     {
-      CXCompletionResult result = completionResults->Results[i];
+      CXCompletionResult result = completions->Results[i];
+
+      *candidates.insert(findTypedTextChunk(result.CompletionString)).first;
+    }
+  candidates.erase("");
+
+  std::ostream_iterator<std::string> outIt(out, " ");
+  std::copy(candidates.begin(), candidates.end(), outIt);
+}
+
+void CodeCompletion::printDetailedResult(CXCodeCompleteResults *completions,
+                                         std::ostream & out)
+{
+  for (unsigned i = 0; i != completions->NumResults; ++i)
+    {
+      CXCompletionResult result = completions->Results[i];
 
       out << "\n";
       out << "(";
@@ -111,10 +116,55 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
       formatCompletionString(result.CompletionString, out);
       out << ")";
     }
+}
 
-  clang_disposeCodeCompleteResults(completionResults);
+bool CodeCompletion::complete(CXTranslationUnit & tu,
+                              const std::string & filename,
+                              unsigned            line,
+                              unsigned            column,
+                              std::ostream &      out)
+{
+  if (CXCodeCompleteResults *completions =
+      clang_codeCompleteAt(tu,
+                           filename.c_str(),
+                           line,
+                           column,
+                           0, 0,
+                           clang_defaultCodeCompleteOptions() |
+                           CXCodeComplete_IncludeCodePatterns))
+    {
+      handleDiagnostics(completions);
 
-  return true;
+      if (detailedCompletions_) {
+        printDetailedResult(completions, out);
+      } else {
+        printSimpleResult(completions, out);
+      }
+
+      clang_disposeCodeCompleteResults(completions);
+
+      return true;
+    }
+
+  // FIXME: really an error or just no results ?
+  return false;
+}
+
+void CodeCompletion::handleDiagnostics(CXCodeCompleteResults *completions) const
+{
+  if (unsigned numErrors = clang_codeCompleteGetNumDiagnostics(completions))
+    {
+      std::clog << numErrors << " errors found during completion." << std::endl;
+      for (unsigned i = 0; i < numErrors; i++) {
+        CXDiagnostic diagnostic = clang_codeCompleteGetDiagnostic(completions, i);
+        CXString s = clang_formatDiagnostic(diagnostic,
+                                            clang_defaultDiagnosticDisplayOptions());
+
+        std::clog << clang_getCString(s) << std::endl;
+        clang_disposeString(s);
+        clang_disposeDiagnostic(diagnostic);
+      }
+    }
 }
 
 namespace {
