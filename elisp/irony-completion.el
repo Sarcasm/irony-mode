@@ -287,7 +287,7 @@ position."
 (defun irony-last-completion-results ()
   (if (stringp (car (irony-last-completion-data)))
       (irony-last-completion-data)
-    (loop with completion-cell = (irony-last-completion-data)
+    (loop for completion-cell in (irony-last-completion-data)
           for kind = (car completion-cell)
           for result = (cdr completion-cell)
           for priority = (or (plist-get result :priority) irony-priority-limit)
