@@ -112,6 +112,8 @@ limited usefulness."
 
 (defvar irony-completion-request-running-count 0)
 
+(defvar irony-completion-user-triggered nil)
+
 (defvar irony-last-completion nil
   "Cons of (COMPLETION-DATA . MARKER)")
 
@@ -152,16 +154,42 @@ Stolen from `auto-complete` package."
     (irony-trigger-completion-maybe)))
 
 (defun irony-trigger-completion-maybe ()
-  (save-excursion
-    (let* ((stats (irony-completion-stats-at-point))
-           (ctx-pos (car stats)))
-      (unless (eq ctx-pos (irony-completion-marker-position))
+  "Return nil if no completion context has been found.
+
+Note: It doesn't mean a completion has been requested to the
+irony-server since it might already be in cache. Check the
+`irony-completion-request-running-count' to know if there are
+some requests still pending."
+  (let* ((stats (irony-completion-stats-at-point))
+         (ctx-pos (car stats))
+         (comp-pos (nth 1 stats)))
+    (unless (eq ctx-pos (irony-completion-marker-position))
+      (incf irony-completion-request-running-count)
+      (setq irony-completion-user-triggered nil)
+      (set-marker irony-completion-last-marker ctx-pos)
+      (if (nth 2 stats)             ;header-comp-p -> t
+          (run-with-timer 0.2 nil 'irony-request-header-comp)
+        (irony-request-completion comp-pos)))
+    (set-marker irony-completion-marker ctx-pos)
+    ctx-pos))
+
+(defun irony-trigger-completion ()
+  "Request completion at point."
+  (if (irony-trigger-completion-maybe)
+      (when (irony-last-completion-available-p)
+        (run-with-timer 0.2 nil 'run-hooks 'irony-on-completion-hook))
+    (let ((comp-point (irony-get-completion-point-anywhere)))
+      ;; if user triggered completion and completion point hasn't
+      ;; change, just return the results, otherwise make a completion
+      ;; request.
+      (if (and irony-completion-user-triggered
+               (eq comp-point (irony-last-completion-position)))
+          (when (irony-last-completion-available-p)
+            (run-with-timer 0.2 nil 'run-hooks 'irony-on-completion-hook))
         (incf irony-completion-request-running-count)
-        (set-marker irony-completion-last-marker ctx-pos)
-        (if (nth 2 stats)             ;header-comp-p -> t
-            (run-with-timer 0.1 nil 'irony-request-header-comp)
-          (irony-request-completion (nth 1 stats))))
-      (set-marker irony-completion-marker ctx-pos))))
+        (setq irony-completion-user-triggered t)
+        (set-marker irony-completion-last-marker comp-point)
+        (irony-request-completion comp-point)))))
 
 (defun irony-completion-stats-at-point ()
   "Return a list such as:
@@ -188,55 +216,57 @@ Note: This function try to return the point only in case where it
 seems to be interesting and not too slow to show the completion
 under point. If you want to have the completion *explicitly* you
 should use `irony-get-completion-point-anywhere'."
-  ;; Try different possibilities...
-  (or
-   ;; - Object member access: '.'
-   ;; - Pointer member access: '->'
-   ;; - Scope operator: '::'
-   (when (re-search-backward "\\(\\.\\|->\\|::\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-     (let ((res (list (match-end 1) (match-beginning 2))))
-       ;; fix floating number literals (the prefix tried to complete
-       ;; the following "3.[COMPLETE]")
-       (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
-         res)))
-   ;; Initialization list (use the syntactic informations partially
-   ;; stolen from `c-show-syntactic-information')
-   ;; A::A() : [complete], [complete]
-   (when (re-search-backward "\\([,:]\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-     (let* ((res (list (match-end 1) (match-beginning 2)))
-            (c-parsing-error nil)
-            (syntax (if (boundp 'c-syntactic-context)
-                        c-syntactic-context
-                      (c-save-buffer-state nil (c-guess-basic-syntax)))))
-       (if (or (assoc 'member-init-intro syntax)
-               (assoc 'member-init-cont syntax))
-           ;; Check if were are in an argument list
-           ;; without this when we have:
-           ;;  A::A() : foo(bar, []
-           ;; the completion is triggered.
-           (when (eq (car (syntax-ppss)) 0) ;see [[info:elisp#Parser State]]
-             res))))
-   ;; switch/case statements, complete after the case
-   (when (re-search-backward "\\Sw\\(case\\)\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
-     ;; FIXME: Why a match is given after the colon?
-     ;;
-     ;;            case blah:[POINT-STILL-INDICATES-CASE-COMPLETION]
-     ;;
-     (list (match-end 1) (match-beginning 2)))
-   ;; preprocessor #define, #include, ...
-   (when (re-search-backward "^\\s-*\\(#\\)\\s-*\\([[:alpha:]]*\\)\\=" nil t)
-     (list (match-end 1) (match-beginning 2)))
-   (let ((header-comp-point (irony-header-comp-point)))
-     (when header-comp-point
-       (list header-comp-point header-comp-point t)))))
+  (save-excursion
+    ;; Try different possibilities...
+    (or
+     ;; - Object member access: '.'
+     ;; - Pointer member access: '->'
+     ;; - Scope operator: '::'
+     (when (re-search-backward "\\(\\.\\|->\\|::\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+       (let ((res (list (match-end 1) (match-beginning 2))))
+         ;; fix floating number literals (the prefix tried to complete
+         ;; the following "3.[COMPLETE]")
+         (unless (re-search-backward "[^_a-zA-Z0-9][[:digit:]]+\\.[[:digit:]]*\\=" nil t)
+           res)))
+     ;; Initialization list (use the syntactic informations partially
+     ;; stolen from `c-show-syntactic-information')
+     ;; A::A() : [complete], [complete]
+     (when (re-search-backward "\\([,:]\\)[ \t\n\r]*\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+       (let* ((res (list (match-end 1) (match-beginning 2)))
+              (c-parsing-error nil)
+              (syntax (if (boundp 'c-syntactic-context)
+                          c-syntactic-context
+                        (c-save-buffer-state nil (c-guess-basic-syntax)))))
+         (if (or (assoc 'member-init-intro syntax)
+                 (assoc 'member-init-cont syntax))
+             ;; Check if were are in an argument list
+             ;; without this when we have:
+             ;;  A::A() : foo(bar, []
+             ;; the completion is triggered.
+             (when (eq (car (syntax-ppss)) 0) ;see [[info:elisp#Parser State]]
+               res))))
+     ;; switch/case statements, complete after the case
+     (when (re-search-backward "\\Sw\\(case\\)\\s-+\\(\\(?:[_a-zA-Z][_a-zA-Z0-9]*\\)?\\)\\=" nil t)
+       ;; FIXME: Why a match is given after the colon?
+       ;;
+       ;;            case blah:[POINT-STILL-INDICATES-CASE-COMPLETION]
+       ;;
+       (list (match-end 1) (match-beginning 2)))
+     ;; preprocessor #define, #include, ...
+     (when (re-search-backward "^\\s-*\\(#\\)\\s-*\\([[:alpha:]]*\\)\\=" nil t)
+       (list (match-end 1) (match-beginning 2)))
+     (let ((header-comp-point (irony-header-comp-point)))
+       (when header-comp-point
+         (list header-comp-point header-comp-point t))))))
 
 (defun irony-get-completion-point-anywhere ()
   "Return the completion point for the current context, contrary
 to `irony-get-completion' a point will be returned every times."
-  (or
-   (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
-       (match-beginning 1))
-   (point)))
+  (save-excursion
+    (or
+     (if (re-search-backward "[^_a-zA-Z0-9]\\([_a-zA-Z][_a-zA-Z0-9]*\\)\\=" nil t)
+         (match-beginning 1))
+     (point))))
 
 (defun irony-handle-completion (data)
   (decf irony-completion-request-running-count)
@@ -278,11 +308,15 @@ Return nil if no completion point is available, for example if
 the latest completion is not valid anymore for the current cursor
 position."
   (when (irony-last-completion-available-p)
-    (let* ((stats (irony-completion-stats-at-point))
-           (ctx-pos (car stats))
-           (comp-point (nth 1 stats)))
-      (when (eq ctx-pos (irony-last-completion-position))
-          comp-point))))
+    (if irony-completion-user-triggered
+        (let ((comp-point (irony-get-completion-point-anywhere)))
+          (when (eq comp-point (irony-last-completion-position))
+            comp-point))
+      (let* ((stats (irony-completion-stats-at-point))
+             (ctx-pos (car stats))
+             (comp-point (nth 1 stats)))
+        (when (eq ctx-pos (irony-last-completion-position))
+          comp-point)))))
 
 (defun irony-last-completion-results ()
   (if (stringp (car (irony-last-completion-data)))

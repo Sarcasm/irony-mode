@@ -145,8 +145,7 @@ activated."
 
 (defun ac-complete-irony ()
   (interactive)
-  ;; TODO: Add non-automatically triggered completion
-  (auto-complete 'ac-source-irony))
+  (irony-trigger-completion))
 
 (defun irony-ac-complete ()
   (ac-update t)
