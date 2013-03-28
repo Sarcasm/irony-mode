@@ -90,15 +90,6 @@ private:
   void handleDiagnostics(CXCodeCompleteResults *completions) const;
 
   /**
-   * \brief Format a cursor kind to a keyword symbol.
-   *
-   * \param cursorKind
-   * \param [out] out   The stream where the keyword symbol should be
-   *                    added.
-   */
-  void formatCompletionCursorKind(CXCursorKind cursorKind, std::ostream & out);
-
-  /**
    * \brief Format the completion string \p completionString into the
    *        \p out stream in an Emacs Lisp structure.
    *
