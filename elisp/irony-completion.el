@@ -299,6 +299,15 @@ character (double quote or angle-bracket) if needed."
                         ">"
                       "\""))))))))
 
+(defun irony-comp-main-chunk-p (element)
+  "Return t if ELEMENT is either the typed text or the current
+  parameter.
+
+The name is shit, I know..."
+  (if (consp element)
+      (eq (car element) 'p)
+    (stringp element)))
+
 (defun irony-comp-dynamic-snippet (candidate-data)
   "Return a cons of the for (SNIPPET-STR . HAS-PLACEHOLDER-P)
 where SNIPPET-STR is a string as follow:
@@ -312,19 +321,19 @@ with the $0 string to the represent the final position after
 expansion."
   (let ((dynamic-snippet "")
         (num-placeholders 0))
-    ;; skip after the typed text
-    (while (not (stringp (car candidate-data)))
+    ;; find the typed text or current parameter
+    (while (and candidate-data
+                (not (irony-comp-main-chunk-p (car candidate-data))))
       (setq candidate-data (cdr candidate-data)))
     ;; build snippet
-    (dolist (e candidate-data)
+    (dolist (e (cdr candidate-data))
       (if (characterp e)
           (setq dynamic-snippet (concat dynamic-snippet (list e)
                                         (when (eq e ?,) ;prettify commas
                                           " ")))
         (when (consp e)
           (cond
-           ((or (eq (car e) 't)
-                (eq (car e) 'p))    ;TODO: find a way to test this one
+           ((eq (car e) 't)
             (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
 
            ((eq (car e) 'ph)

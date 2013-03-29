@@ -167,14 +167,12 @@ Here is 4 differents RESULT to get an idea of the representation:
     (((r . \"bool\") \"uncaught_exception\" ?( ?)) (p . 50))
     ((\"std\" (t . \"::\")) (p . 75))
 
-Note that a string, the typed text is mandatory, this is the
-element/identifier that need to be completed.
-
 The WINDOW-WITH is for the case the candidate string is too long,
 the summary is truncated in order to not span on multiple lines.
 "
-  (let ((view "")
-        typed-text result-type summary)
+  (let ((typed-text "")
+        (view "")
+        result-type summary)
     (dolist (e result)
       (cond
        ((stringp e)

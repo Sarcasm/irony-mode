@@ -117,15 +117,18 @@ std::string findTypedTextChunk(const CXCompletionString & completionString)
   unsigned chunksSize = clang_getNumCompletionChunks(completionString);
 
   for (unsigned i = 0; i < chunksSize; ++i) {
-    if (clang_getCompletionChunkKind(completionString, i) == CXCompletionChunk_TypedText)
-      {
-        ClangString text(clang_getCompletionChunkText(completionString,
-                                                      i), ClangString::Escape);
+    ClangCompletionChunk chunk(completionString, i);
 
-        return text.asString();
-      }
+    if (chunk.kind() == CXCompletionChunk_TypedText) {
+      ClangString text(clang_getCompletionChunkText(completionString,
+                                                    i), ClangString::Escape);
+
+      return text.asString();
+    }
   }
 
+  // Note: it makes sense that no typed is found, for example in
+  // presence of 'CXCompletionChunk_CurrentParameter'.
   return "";
 }
 }
