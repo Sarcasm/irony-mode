@@ -283,13 +283,12 @@ to `irony-get-completion' a point will be returned every times."
 (defun irony-request-header-comp ()
   (irony-handle-completion (irony-header-comp-complete-at)))
 
-(defun irony-header-comp-action (candidate-data)
+(defun irony-header-comp-action ()
   "After the completion is complete, add the closing
 character (double quote or angle-bracket) if needed."
   ;; do not add closing '>' or '"' when the completed item was a
   ;; directory.
-  (if (string-match-p "/$" candidate-data)
-      (irony-trigger-completion-maybe)
+  (unless (eq (char-before) ?/)
     (let ((ch (char-after)))
       (when (not (or (eq ch ?\")
                      (eq ch ?>)))
@@ -403,7 +402,8 @@ returned by `irony-last-completion-results'."
             (when (irony-snippet-available-p)
               (irony-snippet-expand (car dyn-snip)))
           ;; no placeholder, just insert the string
-          (insert (car dyn-snip)))))))
+          (insert (car dyn-snip))))))
+  (irony-trigger-completion-maybe))
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here
