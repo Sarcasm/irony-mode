@@ -87,37 +87,6 @@ detailed completion."
 
 Will be set to nil if no snippet expansion function is found.")
 
-(defconst irony-ac-symbol-to-str-alist
-  '((:left-paren       . "(")
-    (:right-paren      . ")")
-    (:left-bracket     . "[")
-    (:right-bracket    . "]")
-    (:left-brace       . "{")
-    (:right-brace      . "}")
-    (:left-angle       . "<")
-    (:right-angle      . ">")
-    (:comma            . ", ")          ;prettier like this
-    (:colon            . ":")
-    (:semi-colon       . ";")
-    (:equal            . "=")
-    (:horizontal-space . " ")
-    (:vertical-space   . "\n"))
-  "Alist of symbol names and their string representation.")
-
-;; (defconst ac-source-irony-base
-;;   '((candidates     . irony-ac-candidates)
-;;     (requires       . -1)
-;;     (candidate-face . ac-irony-candidate-face)
-;;     (selection-face . ac-irony-selection-face)
-;;     (action         . irony-ac-action)
-;;     (limit          . nil)
-;;     (cache))
-;;   "Auto-complete source for `irony-mode'.")
-
-;; (defvar ac-source-irony (cons '(prefix . irony-ac-prefix)
-;;                               ac-source-irony-base)
-;;   "Auto-complete source for `irony-mode'.")
-
 (defvar ac-source-irony
   '((prefix         . irony-ac-prefix)
     (candidates     . irony-ac-candidates)
@@ -233,10 +202,10 @@ completion results."
     (dolist (result (irony-last-completion-results) candidates)
       (cond
        ((listp result)
-        (let ((r (plist-get result :result))
-              (priority (if show-priority (plist-get result :priority))))
+        (let ((r (car result))
+              (priority (if show-priority (cdr (assq 'p (cdr result))))))
           (if (and (irony-ac-support-detailed-display-p)
-                   (plist-get result :optional))
+                   (cdr (assq 'opt (cdr result))))
               (mapc (lambda (opt-r)
                       (setq candidates (cons
                                         (irony-ac-new-item opt-r window-width priority)
@@ -255,34 +224,42 @@ completion results."
         (setq candidates (cons result candidates)))))))
 
 (defun irony-ac-new-item (result window-width &optional priority)
-  "Return a new item of a result element. RESULT has the
-following form (:typed-text is mandatory to each item, this is
-the element that need to be completed):
+  "Return a new item of a result element.
 
-       ((:result-type  . \"bool\")
-        (:typed-text   . \"getFoo\")
-        (:symbol       . :left-paren)
-        (:symbol       . :right-paren)
-        (:informative  . \" const\"))
+Here is 4 differents RESULT to get an idea of the representation:
+
+    ((\"ptrdiff_t\") (p . 50))
+    ((\"basic_ios\" ?< (ph . \"typename _CharT\")
+                         (opt ?, (ph . \"typename_Traits\"))
+                       ?>)  (p . 50) (opt . t))
+    (((r . \"bool\") \"uncaught_exception\" ?( ?)) (p . 50))
+    ((\"std\" (t . \"::\")) (p . 75))
+
+Note that a string, the typed text is mandatory, this is the
+element/identifier that need to be completed.
 
 The WINDOW-WITH is for the case the candidate string is too long,
-the summary is truncated in order to not span on multiple lines."
-  (let (typed-text result-type summary
-                   (view ""))
-    (dolist (cell result)
-      (let ((identifier (car cell))
-            (value (cdr cell)))
-        (when (eq identifier :typed-text)
-          (setq typed-text value))
-        (if (eq identifier :result-type)
-            (setq result-type value)
-          (setq view (concat view
-                             (cond
-                              ((eq identifier :symbol)
-                               (unless (eq value :vertical-space) ;view should be one-line
-                                 (cdr (assq value irony-ac-symbol-to-str-alist))))
-                              ((not (eq identifier :optional))
-                               value))))))) ;!dolist
+the summary is truncated in order to not span on multiple lines.
+"
+  (let ((view "")
+        typed-text result-type summary)
+    (dolist (e result)
+      (cond
+       ((stringp e)
+        (setq typed-text e
+              view (concat view typed-text)))
+
+       ((consp e)
+        (if (eq (car e) 'r)
+            (setq result-type (cdr e))
+          (when (memq (car e) '(ph t i p))
+            (setq view (concat view (cdr e))))))
+
+       ((characterp e)
+        (unless (eq e ?\n)              ;VIEW should be one line only
+          (setq view (concat view (list e)
+                             (when (eq e ?,)
+                               " "))))))) ;prettify commas
     ;; Set the summary, reduce is size of summary if view + summary
     ;; are longer than the window-width and the summary is too long
     ;; (view is automatically truncated by the popup library).
@@ -307,24 +284,23 @@ the summary is truncated in order to not span on multiple lines."
     (popup-make-item typed-text :view view :value result :summary summary)))
 
 (defun irony-ac-expand-optionals (data)
-  "Expand a DATA into a list of results, where optional chunks
-are expanded."
   (let ((results (list nil)))
     (dolist (cell data)
       (cond
-       ((eq (car cell) :optional)
+       ((and (consp cell)
+             (eq (car cell) 'opt))
         (let (new-results)
-          (dolist (opt-chunks (irony-ac-expand-optionals (plist-get (cdr cell) :result)))
-            (let* ((res (copy-tree results)) ;FIXME: copy alist ?
-                   (new-elems (mapcar (lambda (r)
-                                        (nconc (nreverse opt-chunks) r))
-                                      res)))
+          (dolist (opt-chunks (irony-ac-expand-optionals (cdr cell)))
+            (let ((new-elems (mapcar (lambda (r)
+                                       (nconc (nreverse opt-chunks) r))
+                                     (copy-tree results))))
               (if new-results
                   (nconc new-results new-elems)
                 (setq new-results new-elems))))
           (if results
               (nconc results new-results)
             (setq results new-results))))
+
        (t
         ;; Add the cell to each results
         (setq results (mapcar (lambda (res)
@@ -352,23 +328,27 @@ format."
         (dynamic-snippet "")
         (num-placeholders 0))
     ;; skip after the typed text
-    (while (not (eq (caar result) :typed-text))
+    (while (not (stringp (car result)))
       (setq result (cdr result)))
     ;; build snippet
-    (dolist (cell result)
-      (let ((identifier (car cell))
-            (value (cdr cell)))
-        (setq dynamic-snippet
-              (concat dynamic-snippet
-                      (cond
-                       ((eq identifier :symbol)
-                        (cdr (assq value irony-ac-symbol-to-str-alist)))
-                       ((or (eq identifier :place-holder)
-                            (eq identifier :current-place-holder)) ;FIXME: "can't test"
-                        (setq num-placeholders (1+ num-placeholders))
-                        (format "${%d:%s}" num-placeholders value))
-                       ((eq identifier :text)
-                        value))))))     ;!dolist
+    (dolist (e result)
+      (if (characterp e)
+          (setq dynamic-snippet (concat dynamic-snippet (list e)
+                                        (when (eq e ?,) ;prettify commas
+                                          " ")))
+        (when (consp e)
+          (cond
+           ((or (eq (car e) 't)
+                (eq (car e) 'p))    ;TODO: find a way to test this one
+            (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
+
+           ((eq (car e) 'ph)
+            (incf num-placeholders)
+            (setq dynamic-snippet
+                  (concat dynamic-snippet
+                          (format "${%d:%s}" num-placeholders (cdr e)))))))))
+    (unless (zerop num-placeholders)
+      (setq dynamic-snippet (concat dynamic-snippet "$0")))
     (cons dynamic-snippet
           (> num-placeholders 0))))
 

@@ -284,7 +284,6 @@ to `irony-get-completion' a point will be returned every times."
 
 
 
-;;
 ;; Irony completion results "API"
 ;; Functions useful for completion handlers.
 ;;
@@ -322,8 +321,9 @@ position."
   (if (stringp (car (irony-last-completion-data)))
       (irony-last-completion-data)
     (loop for result in (irony-last-completion-data)
-          for priority = (or (plist-get result :priority) irony-priority-limit)
-          when (< priority irony-priority-limit)
+          for priority = (cdr (assq 'p (cdr result)))
+          unless (and priority
+                      (> priority irony-priority-limit))
           collect result)))
 
 (provide 'irony-completion)

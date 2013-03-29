@@ -80,6 +80,37 @@ private:
                 unsigned            column,
                 std::ostream &      out);
 
+  /**
+   * \brief Print results with detailed information, such as result
+   *        type, priority, optionals, ...
+   *
+   * A result look like this (start with a list, and the cdr is an
+   * assoc list):
+   *
+\verbatim
+;; (result-list (p . PRIORITY-NUMBER) [(opt . t)])
+(("ptrdiff_t") (p . 50))
+(("basic_ios" ?< (ph . "typename _CharT") (opt ?, (ph . "typename_Traits")) ?>)  (p . 50) (opt . t))
+(((r . "bool") "uncaught_exception" ?( ?)) (p . 50))
+(("std" (t . "::")) (p . 75))
+\endverbatim
+   *
+   * \note: The typed text will always be the only element of type
+   *        string in the result list (stringp -> t).
+   *        - (r . "bool") 'r for result-type
+   *        - (ph . "value") for place holders.
+   *        - (t . "::") 't for text to be inserted
+   *        - (i . " const") 'i for information, such as constness of
+   *          a function but that doesn't need to be inserted
+   *        - `?c` for characters, such as comma, brakets, ...
+   *        - `(opt *result-list)` to start an optional chunk. Note
+   *          that optional chunks do not require typed-text but
+   *          allows inner opt.
+   *        - (p . "int a") for the current parameter of a function.
+   *
+   * If (opt . t) is given, it means that the result contains optional
+   * fragments that may be expanded.
+   */
   void printDetailedResult(CXCodeCompleteResults *completions, std::ostream & out);
 
   /**
@@ -95,39 +126,12 @@ private:
    *
    * \param completionString
    * \param [out] out
+   * \param [out] hasOptional   Set to \c true if this result contains
+   *                            any optional chunk.
    */
-  void formatCompletionString(CXCompletionString & completionString,
-                              std::ostream &       out);
-
-  /**
-   * \brief Format if possible the given kind to a lisp keyword
-   *        symbol.
-   *
-   * \param kind         The kind to format.
-   * \param [out] out    The stream to append the text.
-   *
-   * \return \c true if the formatting to a keyword symbol was
-   *         possible, otherwise \c false.
-   */
-  bool tryFormattingKeywordSymbol(CXCompletionChunkKind kind,
-                                  std::ostream &        out);
-
-  /**
-   * \brief Add a result cons cell.
-   *
-   * The following cons is inserted in \p out.
-   * \verbatim
-   *  (:keyword . "value") ;needQuote = true
-   *  (:keyword . value)   ;needQuote = false
-   * \endverbatim
-   *
-   * \param keyword
-   * \param value
-   * \param [out] out      The stream where the text shoulb be added.
-   */
-  void appendConsCellResult(const std::string & keyword,
-                            const std::string & value,
-                            std::ostream &      out);
+  void formatCompletionString(CXCompletionString  completionString,
+                              std::ostream &      out,
+                              bool               *hasOptional = 0);
 
 private:
   TUManager &           tuManager_;

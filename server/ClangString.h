@@ -37,10 +37,6 @@ public:
     // note: Quote will be added as necessary: toto\"ohoh -> "toto\"ohoh"
     AddQuotes = (0x02 | Escape)
   };
-private:
-  CXString    cxstring_;
-  const char *cstr_;
-  unsigned    flags_;
 
 public:
   ClangString(const CXString & cxstring,
@@ -54,6 +50,15 @@ public:
    * empty string.
    */
   std::string asString() const;
+
+private:
+  ClangString(const ClangString &);
+  ClangString & operator=(const ClangString &);
+
+private:
+  CXString    cxstring_;
+  const char *cstr_;
+  unsigned    flags_;
 };
 
 #endif /* !IRONY_MODE_SERVER_CLANGSTRING_H_ */

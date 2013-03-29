@@ -22,6 +22,50 @@
 
 #include "ClangString.h"
 
+namespace {
+
+class ClangCompletionChunk
+{
+public:
+  ClangCompletionChunk(CXCompletionString completionString,
+                       unsigned           chunkNumber)
+    : completionString_(completionString)
+    , chunkNumber_(chunkNumber)
+  { }
+
+  CXCompletionChunkKind kind() const
+  {
+    return clang_getCompletionChunkKind(completionString_, chunkNumber_);
+  }
+
+  std::string escapedContent() const
+  {
+    return ClangString(text(), ClangString::Escape).asString();
+  }
+
+  CXCompletionString completionString() const
+  {
+    return clang_getCompletionChunkCompletionString(completionString_,
+                                                    chunkNumber_);
+  }
+
+private:
+  ClangCompletionChunk(const ClangCompletionChunk &);
+  ClangCompletionChunk & operator=(const ClangCompletionChunk &);
+
+  CXString text() const
+  {
+    return clang_getCompletionChunkText(completionString_, chunkNumber_);
+  }
+
+private:
+  const CXCompletionString completionString_;
+  const unsigned           chunkNumber_;
+};
+
+
+} // unnamed namespace
+
 CodeCompletion::CodeCompletion(TUManager & tuManager,
                                bool        detailedCompletions)
   : tuManager_(tuManager)
@@ -102,21 +146,6 @@ void printSimpleResult(CXCodeCompleteResults *completions, std::ostream & out)
   std::copy(candidates.begin(), candidates.end(), outIt);
 }
 
-void CodeCompletion::printDetailedResult(CXCodeCompleteResults *completions,
-                                         std::ostream & out)
-{
-  for (unsigned i = 0; i != completions->NumResults; ++i)
-    {
-      CXCompletionResult result = completions->Results[i];
-
-      out << "\n(:priority "
-          << clang_getCompletionPriority(result.CompletionString)
-          << " ";
-      formatCompletionString(result.CompletionString, out);
-      out << ")";
-    }
-}
-
 bool CodeCompletion::complete(CXTranslationUnit & tu,
                               const std::string & filename,
                               unsigned            line,
@@ -153,7 +182,8 @@ void CodeCompletion::handleDiagnostics(CXCodeCompleteResults *completions) const
 {
   if (unsigned numErrors = clang_codeCompleteGetNumDiagnostics(completions))
     {
-      std::clog << numErrors << " errors found during completion." << std::endl;
+      std::clog << numErrors << " errors/warnings found during completion.\n";
+      // TODO: do not log warnings, only errors?
       for (unsigned i = 0; i < numErrors; i++) {
         CXDiagnostic diagnostic = clang_codeCompleteGetDiagnostic(completions, i);
         CXString s = clang_formatDiagnostic(diagnostic,
@@ -166,107 +196,87 @@ void CodeCompletion::handleDiagnostics(CXCodeCompleteResults *completions) const
     }
 }
 
+void CodeCompletion::printDetailedResult(CXCodeCompleteResults *completions,
+                                         std::ostream &         out)
+{
+  for (unsigned i = 0; i != completions->NumResults; ++i)
+    {
+      CXCompletionResult result = completions->Results[i];
+      bool hasOptional = false;
+
+      out << "\n(";
+      formatCompletionString(result.CompletionString, out, &hasOptional);
+      if (hasOptional) {
+        out << " (opt . t)";
+      }
+      out << " (p . " << clang_getCompletionPriority(result.CompletionString)
+          << "))";
+    }
+}
+
 namespace {
 
-const char *tryTextKindIdentifier(CXCompletionChunkKind chunkKind)
+inline void chunkContentCell(const char                   *key,
+                             const ClangCompletionChunk &  chunk,
+                             std::ostream &                out)
 {
-  switch (chunkKind)
-    {
-    case CXCompletionChunk_TypedText:   return ":typed-text";
-    case CXCompletionChunk_Text:        return ":text";
-    case CXCompletionChunk_Informative: return ":informative";
-    case CXCompletionChunk_ResultType:  return ":result-type";
-    case CXCompletionChunk_Placeholder: return ":place-holder";
-    default:                            return 0;
-    }
+  out << " (" << key << " . " << chunk.escapedContent() << ")";
 }
 
-} // anonymous namespace
+} // unnamed namespace
 
-void CodeCompletion::appendConsCellResult(const std::string & keyword,
-                                          const std::string & value,
-                                          std::ostream &      out)
+void CodeCompletion::formatCompletionString(CXCompletionString completionString,
+                                            std::ostream &     out,
+                                            bool              *hasOptional)
 {
-    out << "(" << keyword << " . " << value << ")";
-}
+  out << "(";
 
-void CodeCompletion::formatCompletionString(CXCompletionString & completionString,
-                                            std::ostream &       out)
-{
-  bool hasOptional = false;
+  if (hasOptional) {
+    *hasOptional = false;
+  }
 
-  out << " :result (";
+  for (unsigned i = 0, max = clang_getNumCompletionChunks(completionString); i < max; ++i) {
+    ClangCompletionChunk chunk(completionString, i);
 
-  for (unsigned i = 0, max = clang_getNumCompletionChunks(completionString);
-       i < max;
-       ++i)
-    {
-      CXCompletionChunkKind chunkKind = clang_getCompletionChunkKind(completionString, i);
+    switch (chunk.kind()) {
 
-      if (const char *keyword = tryTextKindIdentifier(chunkKind))
-        {
-          ClangString text(clang_getCompletionChunkText(completionString, i),
-                           ClangString::Escape);
+    case CXCompletionChunk_TypedText:
+      out << " " << chunk.escapedContent(); break ;
 
-          if (! text.isNull()) {
-            appendConsCellResult(keyword, text.asString(), out);
-          }
-          continue ;            // kind was a 'chunk text'
-        }
+    case CXCompletionChunk_ResultType:       chunkContentCell("r",  chunk, out); break ;
+    case CXCompletionChunk_Placeholder:      chunkContentCell("ph", chunk, out); break ;
+    case CXCompletionChunk_Text:             chunkContentCell("t",  chunk, out); break ;
+    case CXCompletionChunk_Informative:      chunkContentCell("i",  chunk, out); break ;
+    case CXCompletionChunk_CurrentParameter: chunkContentCell("p",  chunk, out); break ;
 
-      if (tryFormattingKeywordSymbol(chunkKind, out))
-        continue ;         // kind was convertible to a keyword symbol
+    case CXCompletionChunk_LeftParen:       out << " ?(";  break ;
+    case CXCompletionChunk_RightParen:      out << " ?)";  break ;
+    case CXCompletionChunk_LeftBracket:     out << " ?[";  break ;
+    case CXCompletionChunk_RightBracket:    out << " ?]";  break ;
+    case CXCompletionChunk_LeftBrace:       out << " ?{";  break ;
+    case CXCompletionChunk_RightBrace:      out << " ?}";  break ;
+    case CXCompletionChunk_LeftAngle:       out << " ?<";  break ;
+    case CXCompletionChunk_RightAngle:      out << " ?>";  break ;
+    case CXCompletionChunk_Comma:           out << " ?,";  break ;
+    case CXCompletionChunk_Colon:           out << " ?:";  break ;
+    case CXCompletionChunk_SemiColon:       out << " ?;";  break ;
+    case CXCompletionChunk_Equal:           out << " ?=";  break ;
+    case CXCompletionChunk_HorizontalSpace: out << " ? ";  break ;
+    case CXCompletionChunk_VerticalSpace:   out << " ?\n"; break ;
 
-      if (chunkKind == CXCompletionChunk_Optional) // optional, recursive call
-        {
-          CXCompletionString optionalString =
-            clang_getCompletionChunkCompletionString(completionString, i);
+    case CXCompletionChunk_Optional:
+      if (hasOptional) {
+        *hasOptional = true;
+      }
+      out << "(opt . ";
+      formatCompletionString(chunk.completionString(), out);
+      out << ")";
+      break ;
 
-          hasOptional = true;
-          out << "(:optional . \n\t(";
-          formatCompletionString(optionalString, out);
-          out << "))";
-        }
+    default:
+      break ;
     }
+  }
 
   out << ")";
-  if (hasOptional)
-    out << " :optional t";
-}
-
-namespace {
-static const struct kindsToLispForm_t // arraysize() can't work with
-// anonymous structures.
-{
-  CXCompletionChunkKind kind;
-  const std::string     lispForm;
-} kindsToLispForm[] =
-  {
-    {CXCompletionChunk_LeftParen,           ":left-paren"},         // '('
-    {CXCompletionChunk_RightParen,          ":right-paren"},        // ')'
-    {CXCompletionChunk_LeftBracket,         ":left-bracket"},       // '['
-    {CXCompletionChunk_RightBracket,        ":right-bracket"},      // ']'
-    {CXCompletionChunk_LeftBrace,           ":left-brace"},         // '{'
-    {CXCompletionChunk_RightBrace,          ":right-brace"},        // '}'
-    {CXCompletionChunk_LeftAngle,           ":left-angle"},         // '<'
-    {CXCompletionChunk_RightAngle,          ":right-angle"},        // '>'
-    {CXCompletionChunk_Comma,               ":comma"},              // ','
-    {CXCompletionChunk_Colon,               ":colon"},              // ':'
-    {CXCompletionChunk_SemiColon,           ":semi-colon"},         // ';'
-    {CXCompletionChunk_Equal,               ":equal"},              // '='
-    {CXCompletionChunk_HorizontalSpace,     ":horizontal-space"},   // ' '
-    {CXCompletionChunk_VerticalSpace,       ":vertical-space"}      // '\n'
-  };
-}
-
-bool CodeCompletion::tryFormattingKeywordSymbol(CXCompletionChunkKind kind,
-                                                std::ostream &        out)
-{
-  for (std::size_t i = 0; i < arraysize(kindsToLispForm); ++i)
-    if (kindsToLispForm[i].kind == kind)
-      {
-        appendConsCellResult(":symbol", kindsToLispForm[i].lispForm, out);
-        return true;
-      }
-  return false;
 }
