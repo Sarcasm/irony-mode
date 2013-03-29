@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'irony)
+(require 'irony-snippet)
 (require 'irony-header-comp)
 
 (eval-when-compile
@@ -282,6 +283,59 @@ to `irony-get-completion' a point will be returned every times."
 (defun irony-request-header-comp ()
   (irony-handle-completion (irony-header-comp-complete-at)))
 
+(defun irony-header-comp-action (candidate-data)
+  "After the completion is complete, add the closing
+character (double quote or angle-bracket) if needed."
+  ;; do not add closing '>' or '"' when the completed item was a
+  ;; directory.
+  (if (string-match-p "/$" candidate-data)
+      (irony-trigger-completion-maybe)
+    (let ((ch (char-after)))
+      (when (not (or (eq ch ?\")
+                     (eq ch ?>)))
+        (let ((line (buffer-substring-no-properties (point-at-bol) (point))))
+          (when (string-match "#\\s-*include\\s-+\\([<\"]\\)" line)
+            (insert (if (eq (string-to-char (match-string 1 line)) ?<)
+                        ">"
+                      "\""))))))))
+
+(defun irony-comp-dynamic-snippet (candidate-data)
+  "Return a cons of the for (SNIPPET-STR . HAS-PLACEHOLDER-P)
+where SNIPPET-STR is a string as follow:
+
+ - \"()\"
+ - \"(${1:int x}, ${2:int y})$0\"
+
+if HAS-PLACEHOLDER-P is nil then it's not a snippet and doesn't
+need special expansion, otherwise it's a snippet and it will end
+with the $0 string to the represent the final position after
+expansion."
+  (let ((dynamic-snippet "")
+        (num-placeholders 0))
+    ;; skip after the typed text
+    (while (not (stringp (car candidate-data)))
+      (setq candidate-data (cdr candidate-data)))
+    ;; build snippet
+    (dolist (e candidate-data)
+      (if (characterp e)
+          (setq dynamic-snippet (concat dynamic-snippet (list e)
+                                        (when (eq e ?,) ;prettify commas
+                                          " ")))
+        (when (consp e)
+          (cond
+           ((or (eq (car e) 't)
+                (eq (car e) 'p))    ;TODO: find a way to test this one
+            (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
+
+           ((eq (car e) 'ph)
+            (incf num-placeholders)
+            (setq dynamic-snippet
+                  (concat dynamic-snippet
+                          (format "${%d:%s}" num-placeholders (cdr e)))))))))
+    (unless (zerop num-placeholders)
+      (setq dynamic-snippet (concat dynamic-snippet "$0")))
+    (cons dynamic-snippet
+          (> num-placeholders 0))))
 
 
 ;; Irony completion results "API"
@@ -325,6 +379,22 @@ position."
           unless (and priority
                       (> priority irony-priority-limit))
           collect result)))
+
+(defun irony-post-completion-action (&optional candidate-data)
+  "Post-completion action to execute.
+
+CANDIDATE-DATA if provided contains informations about the
+candidate that was expanded, in the format of a car of an element
+returned by `irony-last-completion-results'."
+  (if (irony-header-comp-inside-include-stmt-p)
+      (irony-header-comp-action)
+    (unless (stringp candidate-data)
+      (let ((dyn-snip (irony-comp-dynamic-snippet candidate-data)))
+        (if (cdr dyn-snip)              ;has placeholder(s)?
+            (when (irony-snippet-available-p)
+              (irony-snippet-expand (car dyn-snip)))
+          ;; no placeholder, just insert the string
+          (insert (car dyn-snip)))))))
 
 (provide 'irony-completion)
 ;;; irony-completion.el ends here

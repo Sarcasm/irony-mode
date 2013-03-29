@@ -29,9 +29,6 @@
 ;;   choose the correct function directly when possible. ATM of this
 ;;   writting the only known possible way to get this is to use a
 ;;   special fork of auto-complete as specified in the README.md.
-;; - if yasnippet is installed on the system, snippet expansion is
-;;   performed after the completion a completion has been entered by
-;;   the user.
 
 ;;; Usage:
 ;;      (irony-enable 'ac)
@@ -78,15 +75,6 @@ detailed completion."
 ;; Internal variables
 ;;
 
-(defvar irony-ac-expand-snippet-function nil
-  "Function to expand a snippet at a given point (by default to
-  the current position).
-
-  e.g: (defun my-expand-snippet (snippet-str &optional pos)
-         (do-stuff (or pos (point)))
-
-Will be set to nil if no snippet expansion function is found.")
-
 (defvar ac-source-irony
   '((prefix         . irony-ac-prefix)
     (candidates     . irony-ac-candidates)
@@ -120,67 +108,11 @@ activated."
   (ac-update t)
   (ac-start))
 
-(defun irony-ac-yas-disabled-p ()
-  "If the current yasnippet version offers a minor-mode, check if
-this mode is disable by returning t, otherwise returns nil and
-it's partially safe to assume that yasnippet expansion can be
-used."
-  ;; XXX: work only when yasnippet is enabled, otherwise
-  ;;      some variables use for the snippet expansion are
-  ;;      not set and it causes some errors.
-  (if (boundp 'yas-minor-mode)
-      (not yas-minor-mode)
-    (if (boundp 'yas/minor-mode)
-        (not yas/minor-mode))))
-
-(defun irony-ac-expand-yas-1 (snippet-str &optional pos)
-  "Expand snippets for YASnippet version <= 0.6.0c."
-  (unless (irony-ac-yas-disabled-p)
-    (yas/expand-snippet (or pos (point))
-                        (or pos (point))
-                        snippet-str)))
-
-(defun irony-ac-expand-yas-2 (snippet-str &optional pos)
-  "Expand snippets for YASnippet version < 0.8.
-
-See also `irony-ac-expand-yas-1'."
-  (unless (irony-ac-yas-disabled-p)
-    (when pos
-        (goto-char pos))
-    (yas/expand-snippet snippet-str)))
-
-(defun irony-ac-expand-yas-3 (snippet-str &optional pos)
-  "Expand snippets for YASnippet version >= 0.8.
-
-See also `irony-ac-expand-yas-2'."
-  (unless (irony-ac-yas-disabled-p)
-    (when pos
-        (goto-char pos))
-    (yas-expand-snippet snippet-str)))
-
 (defun irony-ac-enable ()
   "Enable `auto-complete-mode' handling of `irony-mode'
 completion results."
   (when (irony-ac-support-detailed-display-p)
     (add-to-list 'ac-source-irony '(allow-dups) t))
-  ;; find the snippet expand function
-  (when (and (not irony-ac-expand-snippet-function)
-             (require 'yasnippet nil t))
-    (let ((yas-version (or (and (boundp 'yas--version) yas--version)
-                           (and (boundp 'yas/version) yas/version)))) ;for old versions
-      (when (stringp yas-version)
-        (setq yas-version (replace-regexp-in-string "(\\|)" "" yas-version))
-        (setq irony-ac-expand-snippet-function
-              (cond ((version<= yas-version "0.6.0c")
-                     'irony-ac-expand-yas-1)
-                    ;; `version<' thinks "0.8beta" < "0.8", we want to
-                    ;; consider anything starting with "0.8" as "0.8"
-                    ;; and more.
-                    ((and (version< yas-version "0.8")
-                          (not (string-prefix-p "0.8" yas-version)))
-                     'irony-ac-expand-yas-2)
-                    (t
-                     'irony-ac-expand-yas-3))))))
   ;; Enable ac even if we are in a C string. Allow the completion to
   ;; work for the following case:
   ;;
@@ -310,80 +242,12 @@ the summary is truncated in order to not span on multiple lines.
               (nreverse res))
             results)))
 
-(defun irony-ac-dynamic-snippet (completion-result)
-  "Return a cons of the for (SNIPPET-STR . HAS-PLACEHOLDER-P)
-where SNIPPET-STR is a string as follow:
-
- - \"()\"
- - \"(${1:int x}, ${2:int y})$0\"
-
-if HAS-PLACEHOLDER-P is nil then it's not a snippet and doesn't
-need special expansion, otherwise it's a snippet and it will end
-with the $0 string to the represent the final position after
-expansion.
-
-See `irony-ac-new-item' for a description of COMPLETION-RESULT
-format."
-  (let ((result (popup-item-value completion-result))
-        (dynamic-snippet "")
-        (num-placeholders 0))
-    ;; skip after the typed text
-    (while (not (stringp (car result)))
-      (setq result (cdr result)))
-    ;; build snippet
-    (dolist (e result)
-      (if (characterp e)
-          (setq dynamic-snippet (concat dynamic-snippet (list e)
-                                        (when (eq e ?,) ;prettify commas
-                                          " ")))
-        (when (consp e)
-          (cond
-           ((or (eq (car e) 't)
-                (eq (car e) 'p))    ;TODO: find a way to test this one
-            (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
-
-           ((eq (car e) 'ph)
-            (incf num-placeholders)
-            (setq dynamic-snippet
-                  (concat dynamic-snippet
-                          (format "${%d:%s}" num-placeholders (cdr e)))))))))
-    (unless (zerop num-placeholders)
-      (setq dynamic-snippet (concat dynamic-snippet "$0")))
-    (cons dynamic-snippet
-          (> num-placeholders 0))))
-
-(defun irony-ac-action-detailed ()
-  "Action to execute after a detailed completion is done."
-  (let ((dyn-snip (irony-ac-dynamic-snippet (cdr ac-last-completion))))
-    (if (cdr dyn-snip)                ;has placeholder(s)?
-        (when irony-ac-expand-snippet-function
-          (funcall irony-ac-expand-snippet-function (car dyn-snip)))
-      ;; no placeholder, just insert the string
-      (insert (car dyn-snip)))))
-
-(defun irony-ac-header-comp-action ()
-  "After the completion is complete, add the closing
-character (double quote or angle-bracket) if needed."
-  ;; do not add closing '>' or '"' when the completed item was a
-  ;; directory.
-  (if (string-match-p "/$" (cdr ac-last-completion))
-      (irony-trigger-completion-maybe)
-    (let ((ch (char-after)))
-      (when (not (or (eq ch ?\")
-                     (eq ch ?>)))
-        (let ((line (buffer-substring-no-properties (point-at-bol) (point))))
-          (when (string-match "#\\s-*include\\s-+\\([<\"]\\)" line)
-            (insert (if (eq (string-to-char (match-string 1 line)) ?<)
-                        ">"
-                      "\""))))))))
-
 (defun irony-ac-action ()
   "Action to execute after a completion is done."
-  (if (irony-header-comp-inside-include-stmt-p)
-      (irony-ac-header-comp-action)
-    (when (and (not irony-complete-typed-text-only)
-               (irony-ac-support-detailed-display-p))
-      (irony-ac-action-detailed))))
+  (let ((last-comp (cdr ac-last-completion)))
+    (irony-post-completion-action (when last-comp
+                                    (or (popup-item-value last-comp)
+                                        last-comp)))))
 
 (defun irony-ac-prefix ()
   "Return the point of completion either for a header or a
