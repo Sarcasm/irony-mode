@@ -126,34 +126,50 @@ completion results."
 completion results."
   (remove-hook 'irony-mode-hook 'irony-ac-setup))
 
-(defun irony-ac-candidates ()
-  "Generate detailed candidates."
+(defun irony-ac-detailed-candidates (results)
   (let ((window-width (- (window-width) (popup-current-physical-column)))
         (show-priority irony-ac-show-priority)
         candidates)
-    (dolist (result (irony-last-completion-results) candidates)
-      (cond
-       ((listp result)
-        (let ((r (car result))
-              (priority (if show-priority (cdr (assq 'p (cdr result))))))
-          (if (and (irony-ac-support-detailed-display-p)
-                   (cdr (assq 'opt (cdr result))))
-              (mapc (lambda (opt-r)
-                      (setq candidates (cons
-                                        (irony-ac-new-item opt-r window-width priority)
-                                        candidates)))
-                    ;; XXX: nreverse shouldn't be necessary, it just
-                    ;;      seems to produced more please results
-                    ;;      like in the order:
-                    ;;          foo(int a)
-                    ;;          foo(int a, int b)
-                    ;;          ...
-                    (nreverse (irony-ac-expand-optionals r)))
-            (setq candidates (cons
-                              (irony-ac-new-item r window-width priority)
-                              candidates)))))
-       ((stringp result)
-        (setq candidates (cons result candidates)))))))
+    (dolist (result results candidates)
+      (let ((r (car result))
+            (priority (if show-priority (cdr (assq 'p (cdr result))))))
+        (if (cdr (assq 'opt (cdr result)))
+            (mapc (lambda (opt-r)
+                    (setq candidates (cons
+                                      (irony-ac-new-item opt-r window-width priority)
+                                      candidates)))
+                  ;; XXX: nreverse shouldn't be necessary, it just
+                  ;;      seems to produced more please results
+                  ;;      like in the order:
+                  ;;          foo(int a)
+                  ;;          foo(int a, int b)
+                  ;;          ...
+                  (nreverse (irony-ac-expand-optionals r)))
+          (setq candidates (cons
+                            (irony-ac-new-item r window-width priority)
+                            candidates)))))))
+
+(defun irony-ac-simplified-candidates (results)
+  (let (candidates)
+    (dolist (result results candidates)
+      (setq result (car result))    ;only care about the result chunks
+      (while (not (stringp (car result)))
+        (setq result (cdr result)))
+      (unless (not result)
+        ;; TODO: do not insert duplicates
+        (setq candidates (cons (car result) candidates))))))
+
+(defun irony-ac-candidates ()
+  "Generate detailed candidates."
+  (let ((results (irony-last-completion-results)))
+    (cond
+     ((stringp (car results))
+      results)
+
+     ((consp (car results))
+      (if (irony-ac-support-detailed-display-p)
+          (irony-ac-detailed-candidates results)
+        (irony-ac-simplified-candidates results))))))
 
 (defun irony-ac-new-item (result window-width &optional priority)
   "Return a new item of a result element.
