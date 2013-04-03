@@ -14,28 +14,26 @@
 
 #include <cstddef>
 #include <iostream>
-#include <iterator>
-#include <set>
 #include <string>
+#include <stdexcept>
+#include <algorithm>
 
 #include "util/arraysize.hpp"
 
 #include "ClangString.h"
 
-namespace {
-
-class ClangCompletionChunk
+class CompletionChunk
 {
 public:
-  ClangCompletionChunk(CXCompletionString completionString,
-                       unsigned           chunkNumber)
+  explicit CompletionChunk(CXCompletionString completionString)
     : completionString_(completionString)
-    , chunkNumber_(chunkNumber)
+    , numChunks_(clang_getNumCompletionChunks(completionString_))
+    , chunkIdx_(0)
   { }
 
   CXCompletionChunkKind kind() const
   {
-    return clang_getCompletionChunkKind(completionString_, chunkNumber_);
+    return clang_getCompletionChunkKind(completionString_, chunkIdx_);
   }
 
   std::string escapedContent() const
@@ -43,28 +41,117 @@ public:
     return ClangString(text(), ClangString::Escape).asString();
   }
 
-  CXCompletionString completionString() const
+  CompletionChunk optionalChunks() const
   {
-    return clang_getCompletionChunkCompletionString(completionString_,
-                                                    chunkNumber_);
+    CXCompletionString completionString =
+      clang_getCompletionChunkCompletionString(completionString_, chunkIdx_);
+
+    return CompletionChunk(completionString);
+  }
+
+  bool hasNext() const
+  {
+    return chunkIdx_ < numChunks_;
+  }
+
+  void next()
+  {
+    if (! hasNext()) {
+      throw std::out_of_range("out of range completion chunk");
+    }
+
+    chunkIdx_++;
   }
 
 private:
-  ClangCompletionChunk(const ClangCompletionChunk &);
-  ClangCompletionChunk & operator=(const ClangCompletionChunk &);
-
   CXString text() const
   {
-    return clang_getCompletionChunkText(completionString_, chunkNumber_);
+    return clang_getCompletionChunkText(completionString_, chunkIdx_);
   }
 
 private:
-  const CXCompletionString completionString_;
-  const unsigned           chunkNumber_;
+  CXCompletionString completionString_;
+  unsigned int       numChunks_;
+  unsigned           chunkIdx_;
 };
 
+class Candidate
+{
+public:
+  explicit Candidate(const CXCompletionResult & completionResult)
+    : completionResult_(completionResult)
+    , priority_(-1)
+    , typedText_()
+  { }
 
-} // unnamed namespace
+  Candidate()
+    : completionResult_()
+    , priority_(-1)
+    , typedText_()
+  { }
+
+  int priority() const
+  {
+    if (priority_ == -1) {
+      priority_ = clang_getCompletionPriority(completionResult_.CompletionString);
+    }
+    return priority_;
+  }
+
+  const std::string & getTypedText() const
+  {
+    if (typedText_.empty()) {
+      for (CompletionChunk chunk = firstChunk(); chunk.hasNext(); chunk.next()) {
+
+        if (chunk.kind() == CXCompletionChunk_TypedText) {
+          typedText_ = chunk.escapedContent();
+          break ;
+        }
+
+      }
+    }
+
+    return typedText_;
+  }
+
+  CompletionChunk firstChunk() const
+  {
+    return CompletionChunk(completionResult_.CompletionString);
+  }
+
+  void setCompletionResult(const CXCompletionResult & completionResult)
+  {
+    completionResult_ = completionResult;
+    priority_         = -1;
+  }
+
+  bool operator<(const Candidate & rhs) const
+  {
+    const std::string & a = getTypedText();
+    const std::string & b = rhs.getTypedText();
+
+    for (std::string::size_type i = 0, e = std::min(a.length(), b.length());
+         i != e; ++i) {
+      const char low_a = std::tolower(a[i]);
+      const char low_b = std::tolower(b[i]);
+
+      // compare lower first
+      if (low_a != low_b)
+        return low_a < low_b;
+    }
+
+    if (a.length() == b.length()) {
+      // compare case sensitive so similar cases are ordered together
+      return std::string::traits_type::compare(a.data(), b.data(), a.length()) < 0;
+    }
+    return a.length() < b.length();
+  }
+
+private:
+  CXCompletionResult  completionResult_;
+  mutable int         priority_;
+  mutable std::string typedText_;
+};
 
 CodeCompletion::CodeCompletion(TUManager & tuManager,
                                bool        detailedCompletions)
@@ -110,43 +197,25 @@ std::string CodeCompletion::handleRequest(const JSONObjectWrapper & data,
   return (detailedCompletions_ ? ":completion" : ":completion-simple");
 }
 
-namespace
+void printSimpleResults(const CompletionResults & completions, std::ostream & out)
 {
-std::string findTypedTextChunk(const CXCompletionString & completionString)
-{
-  unsigned chunksSize = clang_getNumCompletionChunks(completionString);
+  for (CompletionResults::const_iterator it = completions.begin(),
+         end = completions.end(),
+         previous = completions.end();
+       it != end;
+       previous = it++) {
+    const std::string & typedText(it->getTypedText());
 
-  for (unsigned i = 0; i < chunksSize; ++i) {
-    ClangCompletionChunk chunk(completionString, i);
+    if (! typedText.empty()) {
 
-    if (chunk.kind() == CXCompletionChunk_TypedText) {
-      ClangString text(clang_getCompletionChunkText(completionString,
-                                                    i), ClangString::Escape);
-
-      return text.asString();
+      // XXX: Since results are sorted we avoid duplicates by looking at
+      //      the previous value.
+      if (previous == end ||
+          previous->getTypedText() != typedText) {
+        out << typedText << " ";
+      }
     }
   }
-
-  // Note: it makes sense that no typed is found, for example in
-  // presence of 'CXCompletionChunk_CurrentParameter'.
-  return "";
-}
-}
-
-void printSimpleResult(CXCodeCompleteResults *completions, std::ostream & out)
-{
-  std::set<std::string> candidates;
-
-  for (unsigned i = 0; i != completions->NumResults; ++i)
-    {
-      CXCompletionResult result = completions->Results[i];
-
-      *candidates.insert(findTypedTextChunk(result.CompletionString)).first;
-    }
-  candidates.erase("");
-
-  std::ostream_iterator<std::string> outIt(out, " ");
-  std::copy(candidates.begin(), candidates.end(), outIt);
 }
 
 bool CodeCompletion::complete(CXTranslationUnit & tu,
@@ -162,20 +231,27 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
                            column,
                            0, 0,
                            clang_defaultCodeCompleteOptions() |
-                           CXCodeComplete_IncludeCodePatterns))
-    {
-      handleDiagnostics(completions);
+                           CXCodeComplete_IncludeCodePatterns)) {
+    handleDiagnostics(completions);
 
-      if (detailedCompletions_) {
-        printDetailedResult(completions, out);
-      } else {
-        printSimpleResult(completions, out);
-      }
+    CompletionResults candidates(completions->NumResults);
 
-      clang_disposeCodeCompleteResults(completions);
-
-      return true;
+    for (unsigned i = 0; i != candidates.size(); ++i) {
+      candidates[i].setCompletionResult(completions->Results[i]);
     }
+
+    std::sort(candidates.begin(), candidates.end());
+
+    if (detailedCompletions_) {
+      printDetailedResults(candidates, out);
+    } else {
+      printSimpleResults(candidates, out);
+    }
+
+    clang_disposeCodeCompleteResults(completions);
+
+    return true;
+  }
 
   // FIXME: really an error or just no results ?
   return false;
@@ -199,38 +275,19 @@ void CodeCompletion::handleDiagnostics(CXCodeCompleteResults *completions) const
     }
 }
 
-void CodeCompletion::printDetailedResult(CXCodeCompleteResults *completions,
-                                         std::ostream &         out)
-{
-  for (unsigned i = 0; i != completions->NumResults; ++i)
-    {
-      CXCompletionResult result = completions->Results[i];
-      bool hasOptional = false;
-
-      out << "\n(";
-      formatCompletionString(result.CompletionString, out, &hasOptional);
-      if (hasOptional) {
-        out << " (opt . t)";
-      }
-      out << " (p . " << clang_getCompletionPriority(result.CompletionString)
-          << "))";
-    }
-}
-
 namespace {
 
 inline void chunkContentCell(const char                   *key,
-                             const ClangCompletionChunk &  chunk,
+                             const CompletionChunk &  chunk,
                              std::ostream &                out)
 {
   out << " (" << key << " . " << chunk.escapedContent() << ")";
 }
 
-} // unnamed namespace
 
-void CodeCompletion::formatCompletionString(CXCompletionString completionString,
-                                            std::ostream &     out,
-                                            bool              *hasOptional)
+void formatCompletionChunks(const CompletionChunk & start,
+                            std::ostream &          out,
+                            bool                   *hasOptional = 0)
 {
   out << "(";
 
@@ -238,9 +295,7 @@ void CodeCompletion::formatCompletionString(CXCompletionString completionString,
     *hasOptional = false;
   }
 
-  for (unsigned i = 0, max = clang_getNumCompletionChunks(completionString); i < max; ++i) {
-    ClangCompletionChunk chunk(completionString, i);
-
+  for (CompletionChunk chunk(start); chunk.hasNext(); chunk.next()) {
     switch (chunk.kind()) {
 
     case CXCompletionChunk_TypedText:
@@ -272,7 +327,7 @@ void CodeCompletion::formatCompletionString(CXCompletionString completionString,
         *hasOptional = true;
       }
       out << "(opt . ";
-      formatCompletionString(chunk.completionString(), out);
+      formatCompletionChunks(chunk.optionalChunks(), out);
       out << ")";
       break ;
 
@@ -282,4 +337,22 @@ void CodeCompletion::formatCompletionString(CXCompletionString completionString,
   }
 
   out << ")";
+}
+
+} // unnamed namespace
+
+void CodeCompletion::printDetailedResults(const CompletionResults & completions,
+                                         std::ostream &            out)
+{
+  for (CompletionResults::const_iterator it = completions.begin(),
+         end = completions.end(); it != end; ++it) {
+    bool hasOptional = false;
+
+    out << "\n(";
+    formatCompletionChunks(it->firstChunk(), out, &hasOptional);
+    if (hasOptional) {
+      out << " (opt . t)";
+    }
+    out << " (p . " << it->priority() << "))";
+  }
 }

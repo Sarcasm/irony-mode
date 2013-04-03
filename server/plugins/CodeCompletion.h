@@ -17,8 +17,12 @@
 
 #include <clang-c/Index.h>
 #include <string>
+#include <vector>
 
 #include "util/NonCopyable.h"
+
+class Candidate;
+typedef std::vector<Candidate> CompletionResults;
 
 /**
  * \brief A completion plugin, using the libclang completion features.
@@ -111,7 +115,8 @@ private:
    * If (opt . t) is given, it means that the result contains optional
    * fragments that may be expanded.
    */
-  void printDetailedResult(CXCodeCompleteResults *completions, std::ostream & out);
+  void printDetailedResults(const CompletionResults & completions,
+                            std::ostream &            out);
 
   /**
    * \brief Log the diagnostics found during completion.
@@ -119,19 +124,6 @@ private:
    * \param completions
    */
   void handleDiagnostics(CXCodeCompleteResults *completions) const;
-
-  /**
-   * \brief Format the completion string \p completionString into the
-   *        \p out stream in an Emacs Lisp structure.
-   *
-   * \param completionString
-   * \param [out] out
-   * \param [out] hasOptional   Set to \c true if this result contains
-   *                            any optional chunk.
-   */
-  void formatCompletionString(CXCompletionString  completionString,
-                              std::ostream &      out,
-                              bool               *hasOptional = 0);
 
 private:
   TUManager &           tuManager_;
