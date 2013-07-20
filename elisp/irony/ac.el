@@ -150,8 +150,9 @@ completion results."
                             candidates)))))))
 
 (defun irony-ac-make-simplified-candidate (result)
+  (setq result (car result))         ;ignore priority
   ;; first move the pointer to the typed-text
-  (let ((typed-text (car result))
+  (let ((typed-text result)
         result-type)
     ;; find typed-text (and result optionaly)
     (while (not (stringp (car typed-text)))
