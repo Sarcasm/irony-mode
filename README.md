@@ -124,11 +124,10 @@ The configuration might look like this:
 ```el
 (require 'auto-complete)
 (require 'yasnippet)
-(require 'irony)
+(require 'irony) ;Note: hit `C-c C-b' to open build menu
 
 ;; the ac plugin will be activated in each buffer using irony-mode
 (irony-enable 'ac)             ; hit C-RET to trigger completion
-(irony-enable 'compilation-db) ; hit `C-c C-b' to open build menu
 
 (defun my-enable-ac-and-yas ()
   ;; if not set before (auto-complete-mode 1), overlays persist after
