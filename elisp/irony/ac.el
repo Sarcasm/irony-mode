@@ -149,15 +149,23 @@ completion results."
                             (irony-ac-new-item r window-width priority)
                             candidates)))))))
 
+(defun irony-ac-make-simplified-candidate (result)
+  ;; first move the pointer to the typed-text
+  (let ((typed-text (car result))
+        result-type)
+    ;; find typed-text (and result optionaly)
+    (while (not (stringp (car typed-text)))
+      (let ((elem (car typed-text)))
+        (when (and (consp elem) (eq (car elem) 'r))
+          (setq result-type (cdr elem))))
+      (setq typed-text (cdr typed-text)))
+    ;; make the item
+    (when typed-text
+      (setq result-type (if result-type (format "[%s]" result-type)))
+      (popup-make-item (car typed-text) :value result :summary result-type))))
+
 (defun irony-ac-simplified-candidates (results)
-  (let (candidates)
-    (dolist (result results candidates)
-      (setq result (car result))    ;only care about the result chunks
-      (while (not (stringp (car result)))
-        (setq result (cdr result)))
-      (unless (not result)
-        ;; TODO: do not insert duplicates
-        (setq candidates (cons (car result) candidates))))))
+  (mapcar 'irony-ac-make-simplified-candidate results))
 
 (defun irony-ac-candidates ()
   "Generate detailed candidates."
@@ -267,9 +275,6 @@ the summary is truncated in order to not span on multiple lines.
   "Return the point of completion either for a header or a
 standard identifier."
   (irony-get-last-completion-point))
-
-  ;; (or (irony-header-comp-point)
-  ;;     (irony-get-completion-point)))
 
 (provide 'irony/ac)
 
