@@ -184,9 +184,7 @@ page might reference some new tools in the future supporting the
 above). `irony-mode` support that file format and hopefully it should
 work *out-of-the-box* for such tool.
 
-
-**TODO: PUT A SIMPLE GIF DEMO HERE**
-
+![Compilation DB demo](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/cdb.gif)
 
 Usage:
 
