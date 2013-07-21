@@ -132,11 +132,12 @@ completion results."
         candidates)
     (dolist (result results candidates)
       (let ((r (car result))
-            (priority (if show-priority (cdr (assq 'p (cdr result))))))
+            (priority (if show-priority (cdr (assq 'p (cdr result)))))
+            (brief (cdr (assq 'b (cdr result)))))
         (if (cdr (assq 'opt (cdr result)))
             (mapc (lambda (opt-r)
                     (setq candidates (cons
-                                      (irony-ac-new-item opt-r window-width priority)
+                                      (irony-ac-new-item opt-r window-width priority brief)
                                       candidates)))
                   ;; XXX: nreverse shouldn't be necessary, it just
                   ;;      seems to produced more please results
@@ -146,14 +147,15 @@ completion results."
                   ;;          ...
                   (nreverse (irony-ac-expand-optionals r)))
           (setq candidates (cons
-                            (irony-ac-new-item r window-width priority)
+                            (irony-ac-new-item r window-width priority brief)
                             candidates)))))))
 
 (defun irony-ac-make-simplified-candidate (result)
-  (setq result (car result))         ;ignore priority
   ;; first move the pointer to the typed-text
-  (let ((typed-text result)
+  (let ((typed-text (car result))
+        (brief (cdr (assq 'b (cdr result))))
         result-type)
+    (setq result (car result))         ;ignore priority
     ;; find typed-text (and result optionaly)
     (while (not (stringp (car typed-text)))
       (let ((elem (car typed-text)))
@@ -163,7 +165,8 @@ completion results."
     ;; make the item
     (when typed-text
       (setq result-type (if result-type (format "[%s]" result-type)))
-      (popup-make-item (car typed-text) :value result :summary result-type))))
+      (popup-make-item (car typed-text) :value result :summary result-type
+                       :document brief))))
 
 (defun irony-ac-simplified-candidates (results)
   (mapcar 'irony-ac-make-simplified-candidate results))
@@ -180,7 +183,7 @@ completion results."
           (irony-ac-detailed-candidates results)
         (irony-ac-simplified-candidates results))))))
 
-(defun irony-ac-new-item (result window-width &optional priority)
+(defun irony-ac-new-item (result window-width &optional priority brief)
   "Return a new item of a result element.
 
 Here is 4 differents RESULT to get an idea of the representation:
@@ -236,7 +239,8 @@ the summary is truncated in order to not span on multiple lines.
                       (format "[%s]" result-type))
                      (t
                       (format ":%3d" priority)))))
-    (popup-make-item typed-text :view view :value result :summary summary)))
+    (popup-make-item typed-text :view view :value result :summary summary
+                     :document brief)))
 
 (defun irony-ac-expand-optionals (data)
   (let ((results (list nil)))

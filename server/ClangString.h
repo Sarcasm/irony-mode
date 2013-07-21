@@ -35,7 +35,7 @@ public:
     // imply Escape
     // toto     -> "toto"
     // note: Quote will be added as necessary: toto\"ohoh -> "toto\"ohoh"
-    AddQuotes = (0x02 | Escape)
+    AddQuotes = 0x02
   };
 
 public:

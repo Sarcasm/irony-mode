@@ -12,11 +12,12 @@
 
 #include "CodeCompletion.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
-#include <string>
+#include <sstream>
 #include <stdexcept>
-#include <algorithm>
+#include <string>
 
 #include "util/arraysize.hpp"
 
@@ -37,6 +38,11 @@ public:
   }
 
   std::string escapedContent() const
+  {
+    return ClangString(text(), ClangString::AddQuotes).asString();
+  }
+
+  std::string escapedUnquotedContent() const
   {
     return ClangString(text(), ClangString::Escape).asString();
   }
@@ -114,6 +120,74 @@ public:
     return typedText_;
   }
 
+  /// \brief Generate a short documentation for the candidate. Contains at least
+  ///        the prototype of the function and if available the brief comment.
+  const std::string & briefDoc() const
+  {
+    if (briefDoc_.empty()) {
+      std::ostringstream os;
+
+      os << '"';
+      formatCompletionChunks(firstChunk(), os);
+
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
+  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+      CXString brief = clang_getCompletionBriefComment(completionResult_.CompletionString);
+      ClangString briefStr(brief, ClangString::Escape);
+
+      if (!briefStr.isNull())
+        os << "\n\n" << briefStr.asString();
+#endif
+
+      os << '"';
+      briefDoc_ = os.str();
+    }
+    return briefDoc_;
+  }
+
+  void formatCompletionChunks(const CompletionChunk & start, std::ostream & os) const
+  {
+    for (CompletionChunk chunk(start); chunk.hasNext(); chunk.next()) {
+      switch (chunk.kind()) {
+      case CXCompletionChunk_ResultType:
+        os << chunk.escapedUnquotedContent() << " ";
+        break;
+
+      case CXCompletionChunk_TypedText:
+      case CXCompletionChunk_Placeholder:
+      case CXCompletionChunk_Text:
+      case CXCompletionChunk_Informative:
+      case CXCompletionChunk_CurrentParameter:
+        os << chunk.escapedUnquotedContent();
+        break ;
+
+      case CXCompletionChunk_LeftParen:       os << '(';  break ;
+      case CXCompletionChunk_RightParen:      os << ')';  break ;
+      case CXCompletionChunk_LeftBracket:     os << '[';  break ;
+      case CXCompletionChunk_RightBracket:    os << ']';  break ;
+      case CXCompletionChunk_LeftBrace:       os << '{';  break ;
+      case CXCompletionChunk_RightBrace:      os << '}';  break ;
+      case CXCompletionChunk_LeftAngle:       os << '<';  break ;
+      case CXCompletionChunk_RightAngle:      os << '>';  break ;
+      case CXCompletionChunk_Comma:           os << ", ";  break ;
+      case CXCompletionChunk_Colon:           os << ':';  break ;
+      case CXCompletionChunk_SemiColon:       os << ';';  break ;
+      case CXCompletionChunk_Equal:           os << '=';  break ;
+      case CXCompletionChunk_HorizontalSpace: os << ' ';  break ;
+      case CXCompletionChunk_VerticalSpace:   os << '\n'; break ;
+
+      case CXCompletionChunk_Optional:
+        os << '[';
+        formatCompletionChunks(chunk.optionalChunks(), os);
+        os << ']';
+        break ;
+
+      default:
+        break ;
+      }
+    }
+  }
+
   CompletionChunk firstChunk() const
   {
     return CompletionChunk(completionResult_.CompletionString);
@@ -151,6 +225,7 @@ private:
   CXCompletionResult  completionResult_;
   mutable int         priority_;
   mutable std::string typedText_;
+  mutable std::string briefDoc_;
 };
 
 CodeCompletion::CodeCompletion(TUManager & tuManager,
@@ -161,6 +236,11 @@ CodeCompletion::CodeCompletion(TUManager & tuManager,
   TUManager::Settings settings;
 
   settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
+
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
+  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+  settings.parseTUOptions |= CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
+#endif
 
   settingsID_ = tuManager.registerSettings(settings);
 }
@@ -230,10 +310,13 @@ bool CodeCompletion::complete(CXTranslationUnit & tu,
                            line,
                            column,
                            0, 0,
-                           clang_defaultCodeCompleteOptions() |
-                           CXCodeComplete_IncludeCodePatterns)) {
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) && \
+  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+                           CXCodeComplete_IncludeBriefComments |
+#endif
+                           // CXCodeComplete_IncludeCodePatterns |
+                           clang_defaultCodeCompleteOptions())) {
     handleDiagnostics(completions);
-
     CompletionResults candidates(completions->NumResults);
 
     for (unsigned i = 0; i != candidates.size(); ++i) {
@@ -353,6 +436,10 @@ void CodeCompletion::printDetailedResults(const CompletionResults & completions,
     if (hasOptional) {
       out << " (opt . t)";
     }
+
+    const std::string & briefDoc = it->briefDoc();
+    if (! briefDoc.empty())
+      out << " (b . " << briefDoc << ")";
     out << " (p . " << it->priority() << "))";
   }
 }

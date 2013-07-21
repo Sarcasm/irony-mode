@@ -21,7 +21,10 @@ ClangString::ClangString(const CXString & cxstring,
   : cxstring_(cxstring)
   , cstr_(clang_getCString(cxstring_))
   , flags_(flags)
-{ }
+{
+  if (flags_ & AddQuotes)
+    flags_ |= ClangString::Escape;
+}
 
 ClangString::~ClangString()
 {
