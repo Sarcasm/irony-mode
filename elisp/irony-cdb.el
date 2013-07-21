@@ -214,7 +214,7 @@ To be used by `irony-cdb-menu'."
           (let ((pop-up-windows t))
             (display-buffer buffer t))
           (fit-window-to-buffer (get-buffer-window buffer))
-          (setq k (read-char-choice "Compilation DB choice: "
+          (setq k (read-char-choice "Select Compilation DB: "
                                     (cons ?q (mapcar 'car keys)))))))
     (message "") ;; clear `read-char-choice' prompt
     (unless (eq ?q k)
@@ -340,7 +340,7 @@ otherwise return t."
 	(mapc 'irony-cdb-parse-entry (json-read-file cc-file))
 	t)
     (file-error
-     (message "%s" (error-message-string err))
+     (message "Irony: Compilation-DB error: %s" (error-message-string err))
      nil)))
 
 (defun irony-cdb-find-compile-commands-dir ()
