@@ -170,11 +170,11 @@ It works great with the following tools:
   The typical usage for a `make` based project will be `bear -- make
   -B`.
 
-- [.clang_complete][clang_complete-doc-ref] - Just a file at the root
-  of your project containing the flags. This is compatible with the
-  with plugin [Rip-Rip/clang_complete][clang_complete-vim-ref]. If you
-  want to generates the `.clang_complete` file I suggest you to look
-  here: [cc_args.py documentation][cc_args-py-doc-ref].
+- [.clang_complete][clang_complete-doc-ref] - A file at the root of your project
+  containing the compilation flags, one per line. This is compatible with the
+  with plugin [Rip-Rip/clang_complete][clang_complete-vim-ref]. If you want to
+  generate the `.clang_complete` automatically, take a look there:
+  [cc_args.py documentation][cc_args-py-doc-ref].
 
 
 The
