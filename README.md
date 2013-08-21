@@ -135,9 +135,9 @@ The configuration might look like this:
   (yas/minor-mode-on)
   (auto-complete-mode 1))
 
-(add-hook 'c++-mode-hook 'sarcasm-enable-ac-and-yas)
+(add-hook 'c++-mode-hook 'my-enable-ac-and-yas)
 (add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'sarcasm-enable-ac-and-yas)
+(add-hook 'c-mode-hook 'my-enable-ac-and-yas)
 (add-hook 'c-mode-hook 'irony-mode)
 ```
 
