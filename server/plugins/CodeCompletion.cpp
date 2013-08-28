@@ -206,8 +206,13 @@ public:
 
     for (std::string::size_type i = 0, e = std::min(a.length(), b.length());
          i != e; ++i) {
+#ifdef _WIN32
+      const char low_a = ::tolower(a[i]);
+      const char low_b = ::tolower(b[i]);
+#else
       const char low_a = std::tolower(a[i]);
       const char low_b = std::tolower(b[i]);
+#endif
 
       // compare lower first
       if (low_a != low_b)
