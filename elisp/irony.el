@@ -560,7 +560,7 @@ The function will look respectively for:
 - /home/jimmy/project/blah/src/server/build/compile_commands.json -- not found
 - /home/jimmy/project/blah/src/build/compile_commands.json -- not found
 - /home/jimmy/project/blah/build/compile_commands.json -- found"
-  (unless (string= (setq dir (file-truename dir)) "/")
+  (unless (string-match "\\([a-zA-Z]\\:\\)?/$" (setq dir (file-truename dir)))
     (if (file-exists-p (expand-file-name subpath dir))
         (file-name-as-directory dir)
       (irony-find-traverse-for-subpath

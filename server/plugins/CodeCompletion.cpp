@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <cctype>
 
 #include "util/arraysize.hpp"
 

@@ -14,7 +14,15 @@
 
 #include <iostream>
 #include <string>
+
+#ifdef _WIN32
+#else
 #include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 #include <string>
 #include <cstdio>
@@ -72,7 +80,7 @@ int Server::run()
     {
       // Try stream iterators:
       // http://www.cplusplus.com/reference/std/iterator/istreambuf_iterator/
-      ssize_t nb_read = ::read(0, buf, arraysize(buf));
+      int nb_read = ::read(0, buf, arraysize(buf));
 
       if (nb_read == -1)
         {
