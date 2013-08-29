@@ -18,9 +18,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#ifdef WIN32
 #include <cctype>
-#endif
+
 #include "util/arraysize.hpp"
 
 #include "ClangString.h"
