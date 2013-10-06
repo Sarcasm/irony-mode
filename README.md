@@ -56,52 +56,27 @@ Recommended packages and versions:
 [ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
 [yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
 
-[el-get](https://github.com/dimitri/el-get) help a lot for package
-management in Emacs. You can take a look at
-[my configuration](https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-el-get.el)).
+[el-get](https://github.com/dimitri/el-get) help a lot for package management in
+Emacs. You can take a look at
+[my configuration](https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-el-get.el).
 
-Copy and paste in the **\*scratch\*** buffer:
+Add irony-mode to the load `load-path`:
 
 ```el
 (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
-
-(require 'auto-complete)
-(require 'irony)
-
-(irony-enable 'ac)
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
-;if note
 ```
 
-Hit `C-x h M-x eval-buffer RET`, open a C++ file and try the auto
-completion feature.
+And fill in a basic configuration as shown below in
+[Auto Complete](#auto-complete).
 
-If you want the completion to work on a project you will probably need
-give some information about the flags necessary to compile a file.
+If you want the completion to work on a project you will probably need give some
+information about the flags necessary to compile a file. The best way to achieve
+that is probably to use the [Compilation Database](#compilation-database)
+plugin.
 
-The best way to achieve that is probably to use the
-[Compilation Database](#Compilation Database) plugin.
-
-You can also set the flags manually by creating a `.dir-locals.el`
-file in your project containing something like:
-
-```el
-((c++-mode .
-           ((irony-compile-flags-work-dir . "/path/to/project/root")
-            (irony-compile-flags          . ("-Wshadow"
-                                             "-Wall"
-                                             "-Wextra"
-                                             "-Ilib"
-                                             "-Iserver")))))
-```
-
-You can take a look at the documentation of the variables
-`irony-compile-flags` and `irony-compile-flags-work-dir`. You can also
-use the `customize` inside Emacs to set these variables.
-
-**Note:** If you want to force the reload of the flags on the server,
-you can use the command `M-x irony-reload-flags`.
+**Note:** If you want to force the reload of the flags on the server, you can
+use the command `M-x irony-reload-flags`. This shouldn't be necessary if you use
+the compilation database plugin.
 
 
 # Plugins
@@ -119,7 +94,8 @@ Requires:
 * [auto-complete][ac-ref]
 * [yasnippet][yasnippet-ref] (optional)
 
-The configuration might look like this:
+Configuration, please use the init order: `yas`, then `ac`, then `irony` unless
+you have a reason not to:
 
 ```el
 (require 'auto-complete)
@@ -129,23 +105,23 @@ The configuration might look like this:
 ;; the ac plugin will be activated in each buffer using irony-mode
 (irony-enable 'ac)             ; hit C-RET to trigger completion
 
-(defun my-enable-ac-and-yas ()
-  ;; if not set before (auto-complete-mode 1), overlays persist after
-  ;; an expansion
+(defun my-c++-hooks ()
+  "Enable the hooks in the preferred order: 'yas -> auto-complete -> irony'."
+  ;; if yas is not set before (auto-complete-mode 1), overlays may persist after
+  ;; an expansion.
   (yas/minor-mode-on)
-  (auto-complete-mode 1))
+  (auto-complete-mode 1)
+  (irony-mode 1))
 
-(add-hook 'c++-mode-hook 'my-enable-ac-and-yas)
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'my-enable-ac-and-yas)
-(add-hook 'c-mode-hook 'irony-mode)
+(add-hook 'c++-mode-hook 'my-c++-hooks)
+(add-hook 'c-mode-hook 'my-c++-hooks)
 ```
 
 **Note:** If my fork of `auto-complete` is used you should be careful
 to not have another installation of `auto-complete` or `popup` since
 both of them are present in my fork.
 
-You can eval these lines in the **\*scratch\*** buffer:
+You can eval these lines in the `*scratch*` buffer:
 
 ```el
 (let ((requirements (or (require 'auto-complete nil t)
@@ -154,6 +130,7 @@ You can eval these lines in the **\*scratch\*** buffer:
 ```
 
 Hit `C-x C-e` at the end of the expression to evaluate.
+
 
 ## Compilation Database
 
@@ -164,6 +141,9 @@ compile flags discovery, with minimum user input.
 It works great with the following tools:
 
 - [CMake][cmake-ref] >= 2.8.5
+
+- [Ninja][ninja-ref] >= 1.2 - Use `ninja -t compdb` to generate a compilation
+  database for your project.
 
 - [Bear][bear-ref] - Bear is a tool that can generate a
   `compile_commands.json` file by "monitoring" the build of a project.
@@ -197,6 +177,7 @@ issue please.
 
 
 [cmake-ref]: http://www.cmake.org "CMake"
+[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
 [bear-ref]: https://github.com/rizsotto/Bear "Bear"
 [clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
 [clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L45 ".clang_complete"

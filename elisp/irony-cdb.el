@@ -529,7 +529,8 @@ If not given CC-FILE will be defaulted to
       (plist-put item :keys (list '(?l nil)))
       (plist-put item :disabled t)
       (plist-put item :info
-                 "Create a .clang_complete in any subdirectory."))
+                 "Create a .clang_complete file in any subdirectory, \
+with one flag per line."))
     item))
 
 (provide 'irony-cdb)
