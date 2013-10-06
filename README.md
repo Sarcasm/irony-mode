@@ -94,8 +94,7 @@ Requires:
 * [auto-complete][ac-ref]
 * [yasnippet][yasnippet-ref] (optional)
 
-Configuration, please use the init order: `yas`, then `ac`, then `irony` unless
-you have a reason not to:
+Configuration:
 
 ```el
 (require 'auto-complete)
@@ -116,6 +115,13 @@ you have a reason not to:
 (add-hook 'c++-mode-hook 'my-c++-hooks)
 (add-hook 'c-mode-hook 'my-c++-hooks)
 ```
+
+Please initialize your packages in the the following order unless you have a
+reason not to:
+
+1. `yas`
+2. `ac`
+3. `irony`
 
 **Note:** If my fork of `auto-complete` is used you should be careful
 to not have another installation of `auto-complete` or `popup` since
