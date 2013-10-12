@@ -157,7 +157,7 @@ completion results."
         result-type)
     (setq result (car result))         ;ignore priority
     ;; find typed-text (and result optionaly)
-    (while (not (stringp (car typed-text)))
+    (while (and typed-text (not (stringp (car typed-text))))
       (let ((elem (car typed-text)))
         (when (and (consp elem) (eq (car elem) 'r))
           (setq result-type (cdr elem))))
