@@ -204,6 +204,46 @@ This only affect old versions of Clang (< 3.2), it is suggested to
 update your libclang installation if you want to take advantage of the
 optimisations.
 
+## Use a custom libclang installation
+
+On a system with multiple versions of libclang installed it is possible to
+"hint" CMake in order to pick-up the preferred one.
+
+To specify a custom include directory use the command line switch
+`-DLIBCLANG_INCLUDE_PATH=/path/to/libclang/include-dir`. The specified directory
+should contain the header file *clang-c/Index.h*.
+
+To specify the library directory use
+`-DLIBCLANG_LIBRARY_PATH=/path/to/libclang/libraries`. The specified directory
+should contain the libclang library, e.g: *libclang.so* on Linux.
+
+CMake invocation example with a custom libclang installation:
+
+    mkdir build
+    cd build
+    cmake -DLIBCLANG_INCLUDE_PATH=~/llvm-3.4/include/ \
+          -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ ..
+
+
+## CMake doesn't find libclang
+
+When libclang is installed in a non-standard path CMake may produce the
+following error:
+
+    CMake Error at /usr/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake:108 (message):
+    Could NOT find LibClang (missing: LibClang_LIBRARY LibClang_INCLUDE_DIR)
+    Call Stack (most recent call first):
+    /usr/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake:315 (FPHSAFAILURE_MESSAGE)
+    cmake/FindLibClang.cmake:35 (find_package_handle_standard_args)
+    server/CMakeLists.txt:4 (find_package)
+
+This can be fixed by using the same method as described in
+[Use a custom libclang installation](#use-a-custom-libclang-installation).
+
+Please report an issue if the include and library paths are the standard
+libclang installation paths on your system. Other users may benefit from these
+paths being handled *natively* by irony-mode.
+
 
 ## I got an error due to 'stdarg.h', how to solve this?
 

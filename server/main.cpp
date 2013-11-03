@@ -3,7 +3,7 @@
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  * \date   Wed Jul 13 18:21:04 2011
  *
- * \brief  File containing the main() functin (application entry
+ * \brief  File containing the main() function (application entry
  *         point).
  *
  * This file is distributed under the GNU General Public License. See
@@ -11,10 +11,9 @@
  *
  */
 
-#include <iostream>
 #include <clocale>
-
 #include <iomanip>
+#include <iostream>
 
 #include "Server.h"
 

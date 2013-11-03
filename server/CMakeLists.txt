@@ -2,7 +2,6 @@
 # irony-server executable build file
 #
 find_package (LibClang REQUIRED)
-find_package (Threads REQUIRED)
 
 include_directories (${LibClang_INCLUDE_DIRS})
 include_directories (${IRONY_UTILS_INCLUDES})
@@ -42,7 +41,6 @@ add_dependencies (irony-server
 target_link_libraries (irony-server
   irony-utils
   ${LibClang_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 install (TARGETS irony-server

@@ -3,27 +3,48 @@
 #
 # Once done this will define:
 # - LibClang_FOUND
-#               System has LibXml2
+#               System has libclang
 # - LibClang_INCLUDE_DIRS
-#               The LibXml2 include directories
+#               The Libclang include directories
 # - LibClang_LIBRARIES
-#               The libraries needed to use LibXml2
+#               The libraries needed to use libclang
 # - LibClang_DEFINITIONS
-#               Compiler switches required for using LibXml2
+#               Compiler switches required for using libclang
 #
-# If a pkg-config is available for libclang one day...
-# find_package(PkgConfig)
-# pkg_check_modules(PC_LibClang QUIET libclang)
-# set(LibClang_DEFINITIONS ${PC_LibClang_CFLAGS_OTHER})
+# At the CMake invocation level it is possible to specify some hints for the
+# libclang installation, e.g: for non-standard libclang installations.
+#
+# To specify the include directory use:
+#   -DLIBCLANG_INCLUDE_PATH=/path/to/libclang/include-dir
+# The specified directory should contain the header file 'clang-c/Index.h'
+#
+# To specify the library directory use:
+#   -DLIBCLANG_LIBRARY_PATH=/path/to/libclang/libraries
+# The specified directory should contain the libclang library, e.g: libclang.so
+# on Linux.
+#
+# CMake invocation example with a custom libclang installation:
+#     cmake -DLIBCLANG_INCLUDE_PATH=~/llvm-3.4/include/ \
+#           -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ <args...>
 
 find_path (LibClang_INCLUDE_DIR clang-c/Index.h
-  # HINTS ${PC_LibClang_INCLUDEDIR} ${PC_LibClang_INCLUDE_DIRS}
+  HINTS ${LIBCLANG_INCLUDE_PATH}
+  PATHS
+  # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
+  /usr/lib/llvm-3.1/include/
+  /usr/lib/llvm-3.2/include/
+  /usr/lib/llvm-3.3/include/
+  /usr/lib/llvm-3.4/include/
   )
 
 find_library (LibClang_LIBRARY NAMES clang libclang
-  # HINTS ${PC_LibClang_LIBDIR} ${PC_LibClang_LIBRARY_DIRS}
+  HINTS ${LIBCLANG_LIBRARY_PATH}
   PATHS
-  /usr/lib/llvm                 # for *Arch?* Linux
+  # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
+  /usr/lib/llvm-3.1/lib/
+  /usr/lib/llvm-3.2/lib/
+  /usr/lib/llvm-3.3/lib/
+  /usr/lib/llvm-3.4/lib/
   )
 
 set (LibClang_LIBRARIES ${LibClang_LIBRARY})
