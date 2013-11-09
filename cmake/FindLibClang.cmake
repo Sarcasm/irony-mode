@@ -35,6 +35,11 @@ find_path (LibClang_INCLUDE_DIR clang-c/Index.h
   /usr/lib/llvm-3.2/include/
   /usr/lib/llvm-3.3/include/
   /usr/lib/llvm-3.4/include/
+  # LLVM MacPorts
+  /opt/local/libexec/llvm-3.1/include
+  /opt/local/libexec/llvm-3.2/include
+  /opt/local/libexec/llvm-3.3/include
+  /opt/local/libexec/llvm-3.4/include
   )
 
 find_library (LibClang_LIBRARY NAMES clang libclang
@@ -45,6 +50,11 @@ find_library (LibClang_LIBRARY NAMES clang libclang
   /usr/lib/llvm-3.2/lib/
   /usr/lib/llvm-3.3/lib/
   /usr/lib/llvm-3.4/lib/
+  # LLVM MacPorts
+  /opt/local/libexec/llvm-3.1/lib
+  /opt/local/libexec/llvm-3.2/lib
+  /opt/local/libexec/llvm-3.3/lib
+  /opt/local/libexec/llvm-3.4/lib
   )
 
 set (LibClang_LIBRARIES ${LibClang_LIBRARY})
