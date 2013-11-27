@@ -110,7 +110,10 @@ Configuration:
   ;; an expansion.
   (yas/minor-mode-on)
   (auto-complete-mode 1)
-  (irony-mode 1))
+
+  ;; avoid enabling irony-mode in modes that inherits c-mode, e.g: php-mode
+  (when (member major-mode irony-known-modes)
+    (irony-mode 1)))
 
 (add-hook 'c++-mode-hook 'my-c++-hooks)
 (add-hook 'c-mode-hook 'my-c++-hooks)
