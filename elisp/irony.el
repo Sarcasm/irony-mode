@@ -142,6 +142,7 @@ cancelled."
 (defvar irony-process nil
   "The current irony-server process.")
 
+;;;###autoload
 (defvar irony-request-mapping '((:status-code   . irony-handle-status-code)
                                 (:compile-check . irony-handle-compile-check))
   "Alist of known request types associated to their handler. New
