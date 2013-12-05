@@ -273,6 +273,7 @@ for this path."
 	     (not irony-cdb-enabled))
     (setq irony-cdb-enabled t)
     (define-key irony-mode-map (kbd "C-c C-b") 'irony-cdb-menu)
+    (setq irony-compile-flags-work-dir (irony-current-directory))
     (or
      ;; try load flags for this file if an entry is in compilation db
      ;; first
