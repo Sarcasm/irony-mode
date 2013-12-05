@@ -77,17 +77,17 @@ If `irony-snippet-available-p' return t then"
               ;; (string= ... "0.6.0c"), the 'c' suffix is not supported by
               ;; `version-to-list' in emacs versions < 24, treat this one
               ;; specifically.
-              (cond (or (string= yas-version "0.6.0c")
-                        (version<= yas-version "0.6.0b"))
-                     'irony-snippet-expand-yas-1)
-                    ;; `version<' thinks "0.8beta" < "0.8", we want to
-                    ;; consider anything starting with "0.8" as "0.8"
-                    ;; and more.
-                    ((and (version< yas-version "0.8")
-                          (not (string-prefix-p "0.8" yas-version)))
-                     'irony-snippet-expand-yas-2)
-                    (t
-                     'irony-snippet-expand-yas-3)))))))
+              (cond
+               ((or (string= yas-version "0.6.0c")
+                    (version<= yas-version "0.6.0b"))
+                'irony-snippet-expand-yas-1)
+               ;; `version<' thinks "0.8beta" < "0.8", we want to consider
+               ;; anything starting with "0.8" as "0.8" and more.
+               ((and (version< yas-version "0.8")
+                     (not (string-prefix-p "0.8" yas-version)))
+                'irony-snippet-expand-yas-2)
+               (t
+                'irony-snippet-expand-yas-3)))))))
 
 (defun irony-snippet-yas-disabled-p ()
   "If the current yasnippet version offers a minor-mode, check if
