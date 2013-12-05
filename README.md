@@ -2,12 +2,12 @@
 
 [![Build Status](https://api.travis-ci.org/Sarcasm/irony-mode.png?branch=develop)](https://travis-ci.org/Sarcasm/irony-mode)
 
-Note: This is a work in progress:
+*Note:* This is a work in progress:
 
 * documentation might not be up-to-date
 * changes can break compability with earlier versions
 * use at your own risk!
-* open issues, fork-it and create pull-request!
+* open issues, fork-it and create pull-requests!
 
 
 # Screenshots
@@ -17,13 +17,29 @@ Note: This is a work in progress:
 ![Boost](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/boost-example.png)
 
 
-# Download and compilation
+# Automatic installation
 
-Download with `git >= 1.6.5` and later
+The easiest way to get irony-mode and its dependencies is to use
+[el-get][el-get-ref].
+
+    M-x el-get-install RET irony-mode RET
+
+My [irony-mode configuration for el-get][init-irony-mode-ref] can help you get
+started!
+
+[el-get-ref]: https://github.com/dimitri/el-get "El-Get"
+[init-irony-mode-ref]: https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-packages/init-irony-mode.el "Irony-Mode initialization"
+
+
+# Manual installation
+
+## Download and build
+
+Download with `git >= 1.6.5` and later:
 
     git clone --recursive git://github.com/Sarcasm/irony-mode.git
 
-Download with `git < 1.6.5`
+Download with `git < 1.6.5`:
 
     git clone git://github.com/Sarcasm/irony-mode.git
     git submodule update --init
@@ -36,13 +52,12 @@ Finally:
     cmake .. && make -j 4
     make install
 
-Note: It is recommended to proceed to the installation step. This is
-not a "system-wide" installation, it shouldn't require any privilege.
-The installation step will help `irony.el` to find the binary without
-additional configuration.
+*Note:* It is recommended to proceed to the installation step. This is not a
+system-wide installation, it shouldn't require any privilege. The installation
+step will help `irony.el` to find the binary without additional configuration.
 
 
-# Emacs configuration
+## Elisp dependencies
 
 Recommended packages and versions:
 
@@ -51,14 +66,15 @@ Recommended packages and versions:
 | [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                                |
 | [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete AND popup, able to display detailed completions such as overloaded functions |
 | [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                                         |
+| JSON                              | All       | needed        | Built-in since Emacs 23, can be downloaded here: [json.el][json-el-ref]                                 |
 
-[ac-ref]:        https://github.com/auto-complete/auto-complete "Auto Complete"
-[ac-fork-ref]:   https://github.com/Sarcasm/auto-complete       "Auto Complete Sarcasm fork"
-[yasnippet-ref]: https://github.com/capitaomorte/yasnippet      "YASnippet"
+[ac-ref]:        https://github.com/auto-complete/auto-complete                               "Auto Complete"
+[ac-fork-ref]:   https://github.com/Sarcasm/auto-complete                                     "Auto Complete Sarcasm fork"
+[yasnippet-ref]: https://github.com/capitaomorte/yasnippet                                    "YASnippet"
+[json-el-ref]:      http://cvs.savannah.gnu.org/viewvc/*checkout*/emacs/lisp/json.el?root=emacs) "json.el"
 
-[el-get](https://github.com/dimitri/el-get) help a lot for package management in
-Emacs. You can take a look at
-[my configuration](https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-el-get.el).
+
+## Emacs configuration
 
 Add irony-mode to the load `load-path`:
 
@@ -66,13 +82,16 @@ Add irony-mode to the load `load-path`:
 (add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
 ```
 
-And fill in a basic configuration as shown below in
+And fill-in a basic configuration as shown below in
 [Auto Complete](#auto-complete).
+
+
+# Usage
 
 If you want the completion to work on a project you will probably need give some
 information about the flags necessary to compile a file. The best way to achieve
-that is probably to use the [Compilation Database](#compilation-database)
-plugin.
+this is to use a [Compilation Database](#compilation-database). Otherwise you
+can always use the customizable variables: `M-x customize-group RET irony RET`.
 
 **Note:** If you want to force the reload of the flags on the server, you can
 use the command `M-x irony-reload-flags`. This shouldn't be necessary if you use
@@ -81,9 +100,9 @@ the compilation database plugin.
 
 # Plugins
 
-To enable one plugin call `(irony-enable 'plugin-name)`, to enable
-more than one plugin at once call the same function with a list
-`(irony-enable '(plugin-1 plugin-2))`.
+To enable a plugin call `(irony-enable 'plugin-name)`. To enable more than one
+plugin at once call the same function with a list `(irony-enable '(plugin-1
+plugin-2))`.
 
 
 ## Auto Complete
@@ -91,6 +110,7 @@ more than one plugin at once call the same function with a list
 Code completion with auto-complete.
 
 Requires:
+
 * [auto-complete][ac-ref]
 * [yasnippet][yasnippet-ref] (optional)
 
@@ -143,9 +163,9 @@ Hit `C-x C-e` at the end of the expression to evaluate.
 
 ## Compilation Database
 
-In order to work correctly, `irony-mode` needs to know the compile
-flags. This plugin allow aims to provide *as automatic as possible*
-compile flags discovery, with minimum user input.
+In order to work correctly, `irony-mode` needs to know the compile flags. This
+plugin allow aims to provide *as automatic as possible* compile flags discovery,
+with minimum user input.
 
 It works great with the following tools:
 
@@ -166,23 +186,21 @@ It works great with the following tools:
   [cc_args.py documentation][cc_args-py-doc-ref].
 
 
-The
-[JSON Compilation Database Format Specification][clang-compile-db-ref]
-page might reference some new tools in the future supporting the
-`compile_commands.json` format (such as `cmake` and `Bear` described
-above). `irony-mode` support that file format and hopefully it should
-work *out-of-the-box* for such tool.
+The [JSON Compilation Database Format Specification][clang-compile-db-ref] page
+might reference some new tools in the future supporting the
+`compile_commands.json` format (such as `cmake` and `Bear` described above).
+`irony-mode` support that file format and hopefully it should work
+*out-of-the-box* for such tool.
 
 ![Compilation DB demo](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/cdb.gif)
 
 Usage:
 
-This is not really a plugin but something built-in irony-mode core, as
-such it doesn't require any activation code. Just hit `C-c C-b` to
-display the build configuration menu.
+This is not really a plugin but something built-in irony-mode core, as such it
+doesn't require any activation code. Just hit `C-c C-b` to display the build
+configuration menu.
 
-The menu should be self explanatory, if it's not the case open an
-issue please.
+The menu should be self explanatory, if it's not the case open an issue please.
 
 
 [cmake-ref]: http://www.cmake.org "CMake"
@@ -198,14 +216,12 @@ issue please.
 
 ## It's slow, why?
 
-A bug in old version of Clang (at least '3.1-8') caused the completion
-to fail on the standard library types. To eliminate this bug an
-optimisation has been disabled in the parsing of a translation unit.
-This result in a slower parsing.
+A bug in old version of Clang (at least '3.1-8') caused the completion to fail
+on the standard library types. To eliminate this bug an optimisation has been
+disabled in the parsing of a translation unit. This result in a slower parsing.
 
-This only affect old versions of Clang (< 3.2), it is suggested to
-update your libclang installation if you want to take advantage of the
-optimisations.
+This only affect old versions of Clang (< 3.2), it is suggested to update your
+libclang installation if you want to take advantage of the optimisations.
 
 ## Use a custom libclang installation
 
