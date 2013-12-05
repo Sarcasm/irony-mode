@@ -27,6 +27,8 @@ The easiest way to get irony-mode and its dependencies is to use
 My [irony-mode configuration for el-get][init-irony-mode-ref] can help you get
 started!
 
+You are ready to go, you can jump to: [Usage](#usage)
+
 [el-get-ref]: https://github.com/dimitri/el-get "El-Get"
 [init-irony-mode-ref]: https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-packages/init-irony-mode.el "Irony-Mode initialization"
 
