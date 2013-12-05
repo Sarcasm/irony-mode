@@ -74,7 +74,11 @@ If `irony-snippet-available-p' return t then"
       (when (stringp yas-version)
         (setq yas-version (replace-regexp-in-string "(\\|)" "" yas-version))
         (setq irony-snippet-expand-function
-              (cond ((version<= yas-version "0.6.0c")
+              ;; (string= ... "0.6.0c"), the 'c' suffix is not supported by
+              ;; `version-to-list' in emacs versions < 24, treat this one
+              ;; specifically.
+              (cond (or (string= yas-version "0.6.0c")
+                        (version<= yas-version "0.6.0b"))
                      'irony-snippet-expand-yas-1)
                     ;; `version<' thinks "0.8beta" < "0.8", we want to
                     ;; consider anything starting with "0.8" as "0.8"

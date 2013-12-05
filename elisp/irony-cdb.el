@@ -194,6 +194,21 @@ To be used by `irony-cdb-menu'."
         append (plist-get item :keys) into keys
         finally return keys))
 
+(defun irony-read-char-choice (prompt chars)
+  "Wrapper around read-char-choice, which is not available in
+Emacs < 24."
+  (setq prompt (concat prompt " [" chars "]: "))
+  (cond
+   ((fboundp 'read-char-choice)
+    (read-char-choice prompt chars))
+   (t
+    (setq prompt (propertize prompt 'face 'minibuffer-prompt))
+    (let ((cursor-in-echo-area t)
+          k)
+      (while (not (member k chars))
+        (setq k (read-char-exclusive prompt)))
+      k))))
+
 (defun irony-cdb-menu ()
   "Display a build configuration menu."
   (interactive)
@@ -214,8 +229,8 @@ To be used by `irony-cdb-menu'."
           (let ((pop-up-windows t))
             (display-buffer buffer t))
           (fit-window-to-buffer (get-buffer-window buffer))
-          (setq k (read-char-choice "Select Compilation DB: "
-                                    (cons ?q (mapcar 'car keys)))))))
+          (let ((chars (sort (cons ?q (mapcar 'car keys)) '<)))
+            (setq k (irony-read-char-choice "Select Compilation DB" chars))))))
     (message "") ;; clear `read-char-choice' prompt
     (unless (eq ?q k)
       (setq cmd (cdr (assoc k keys))))
