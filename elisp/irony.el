@@ -122,7 +122,7 @@ Header files extensions shouldn't take part of this list."
   :group 'irony)
 
 ;;;###autoload
-(defcustom irony-mode-line " ⸮"
+(defcustom irony-mode-line " Irony"
   "Text to display in the mode line (actually an irony mark) when
 irony mode is on."
   :type 'string
