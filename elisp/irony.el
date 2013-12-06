@@ -400,7 +400,7 @@ current directory couldn't be found."
                    work-dir-flag)
                irony-compile-flags)))))
 
-(defun irony-header-search-paths-from-flags (compile-flags &optional work-dir)
+(defun irony-user-search-paths-from-flags (compile-flags &optional work-dir)
   "If WORK-DIR is given, relative path are expanded to be
 relative to WORK-DIR.
 
@@ -425,10 +425,10 @@ Note: WORK-DIR will not be used if the flag
                               include-dirs))))
       res)))
 
-(defun irony-header-search-paths ()
+(defun irony-user-search-paths ()
   "Returns a list of header search paths for the current buffer."
-  (irony-header-search-paths-from-flags irony-compile-flags
-					irony-compile-flags-work-dir))
+  (irony-user-search-paths-from-flags irony-compile-flags
+                                      irony-compile-flags-work-dir))
 
 (defun irony-language-option-flag ()
   "Find the language for filename based on the major mode. (the
@@ -457,8 +457,8 @@ Note: WORK-DIR will not be used if the flag
   "Find the -working-directory flag to set for the current buffer."
   (when (and irony-compile-flags-work-dir
              (not (irony-extract-working-dir-flag irony-compile-flags)))
-        (list "-working-directory"
-              irony-compile-flags-work-dir)))
+    (list "-working-directory"
+          irony-compile-flags-work-dir)))
 
 (defmacro irony-without-narrowing (&rest body)
   "Remove the effect of narrowing for the current buffer.
@@ -574,9 +574,9 @@ The function will look respectively for:
 Return a list of the final characters in the reverse order, only
 to be consumed by `irony-split-command-line'."
   (let ((len (length quoted-str))
-         (i 0)
-         ch next-ch
-         result)
+        (i 0)
+        ch next-ch
+        result)
     (while (< i len)
       (setq ch (aref quoted-str i))
       (when (eq ch ?\\)
@@ -600,11 +600,11 @@ breaks with escaped quotes in compile_commands.json, such as in:
     /usr/bin/c++ -DLLVM_VERSION_INFO=\\\\\\\"3.2svn\\\\\\\" <args>"
   ;; everytime I write a function like this one, it makes me feel bad
   (let* ((len (length cmd-line))
-        (spaces (string-to-list " \f\t\n\r\v"))
-        (fist-not-spaces-re (concat "[^" spaces "]"))
-        (i 0)
-        ch
-        args cur-arg)
+         (spaces (string-to-list " \f\t\n\r\v"))
+         (fist-not-spaces-re (concat "[^" spaces "]"))
+         (i 0)
+         ch
+         args cur-arg)
     (while (< i len)
       (setq ch (aref cmd-line i))
       (cond

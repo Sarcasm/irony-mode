@@ -57,7 +57,7 @@
   "*internal variable* Contains the last subdirectory (or nil when
   there is no subdirectory) after a call to `irony-pp-completion-point'.")
 
-(defvar irony-pp-compiler-searth-paths-cache (make-hash-table :test 'equal)
+(defvar irony-pp-system-searth-paths-cache (make-hash-table :test 'equal)
   "*internal variable* Memoize compiler search paths.")
 
 ;; What's parsed:
@@ -71,9 +71,9 @@
 ;;  /usr/lib/gcc/x86_64-unknown-linux-gnu/4.6.2/include-fixed
 ;;  /usr/include
 ;; End of search list.
-(defun irony-pp-get-header-search-paths-1 (lang-flag)
+(defun irony-pp-system-search-paths-1 (lang-flag)
   "*Internal function* Really retrieve compiler search paths.
-Please use `irony-get-compiler-header-search-paths'."
+Please use `irony-pp-system-search-paths'."
   (when irony-compiler-executable
     (with-temp-buffer
       (apply 'call-process irony-compiler-executable nil t nil
@@ -99,14 +99,14 @@ Please use `irony-get-compiler-header-search-paths'."
             (forward-line 1)))
         directories))))
 
-(defun irony-get-compiler-header-search-paths ()
+(defun irony-pp-system-search-paths ()
   "Retrieve compiler search paths for header files. Memoize the
 search in a hash table."
   (let ((lang-flag (irony-language-option-flag)))
-    (or (gethash lang-flag irony-pp-compiler-searth-paths-cache)
+    (or (gethash lang-flag irony-pp-system-searth-paths-cache)
         (puthash lang-flag
-                 (irony-pp-get-header-search-paths-1 lang-flag) ;value is returned
-                 irony-pp-compiler-searth-paths-cache))))
+                 (irony-pp-system-search-paths-1 lang-flag) ;value is returned
+                 irony-pp-system-searth-paths-cache))))
 
 (defun irony-pp-inside-include-stmt-p ()
   "Return t if the cursor is inside an include statement, such
@@ -167,21 +167,17 @@ files and directories."
 POS (the current position if not given). Headers extension is
 filtered according to `irony-pp-header-allowed-extensions'."
   (let ((cwd (irony-current-directory))
-        (header-directories (irony-get-compiler-header-search-paths)))
+        (header-directories (irony-pp-system-search-paths)))
     (delete-dups
      (append
-      (irony-pp-list-dir cwd
-                         irony-pp-comp-subdir
-                         t)
+      (irony-pp-list-dir cwd irony-pp-comp-subdir t)
       (loop for dir in header-directories
             append (irony-pp-list-dir dir irony-pp-comp-subdir) into completions
             finally return completions)
       (loop for dir in (irony-header-search-paths)
             with done = (append '(cwd) header-directories)
             unless (member dir done)
-            append (irony-pp-list-dir dir
-                                      irony-pp-comp-subdir
-                                      t)
+            append (irony-pp-list-dir dir irony-pp-comp-subdir t)
             into completions
             finally
             return completions)))))
