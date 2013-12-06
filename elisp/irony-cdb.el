@@ -128,7 +128,6 @@ be unecessary sadly).")
 ;; Functions
 ;;
 
-;; TODO: take a look at `file-relative-name'
 (defun irony-cdb-shorten-path (path)
   "Make the given path if possible while still describing the
 same path.
@@ -136,15 +135,16 @@ same path.
 The given path can be considered understandable by human but not
 necessary a valid path string to use in code. It's only purpose
 is to be displayed."
-  (let ((user-home (getenv "HOME")))
-    (cond
-     ((string-prefix-p user-home path)
-      (concat (if (string-match-p "/$" user-home)
-                  "~/"
-                "~")
-              (substring path (length user-home))))
-     (t
-      path))))
+  (let ((user-home (getenv "HOME"))
+        (relative (file-relative-name path)))
+    (when (string-prefix-p user-home path)
+      (setq path (concat (if (string-match-p "/$" user-home)
+                             "~/"
+                           "~")
+                         (substring path (length user-home)))))
+    (if (< (string-width relative) (string-width path))
+        relative
+      path)))
 
 (defun irony-cdb-get-menu-items ()
   "Generate the menu items for the current buffer.
