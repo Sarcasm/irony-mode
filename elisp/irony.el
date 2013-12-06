@@ -1,6 +1,6 @@
 ;;; irony.el --- C based language parsing facilities with Clang (libclang).
 
-;; Copyright (C) 2011  Guillaume Papin
+;; Copyright (C) 2011-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience, tools

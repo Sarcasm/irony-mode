@@ -27,7 +27,7 @@
 
 (require 'irony)
 (require 'irony-snippet)
-(require 'irony-header-comp)
+(require 'irony-pp)
 
 (eval-when-compile
   (require 'cc-defs)                    ;for `c-save-buffer-state'
@@ -168,8 +168,8 @@ some requests still pending."
       (incf irony-completion-request-running-count)
       (setq irony-completion-user-triggered nil)
       (set-marker irony-completion-last-marker ctx-pos)
-      (if (nth 2 stats)             ;header-comp-p -> t
-          (run-with-timer 0.2 nil 'irony-request-header-comp)
+      (if (nth 2 stats)             ;pp-comp-p -> t
+          (run-with-timer 0.2 nil 'irony-request-pp-complete)
         (irony-request-completion comp-pos)))
     (set-marker irony-completion-marker ctx-pos)
     ctx-pos))
@@ -195,7 +195,7 @@ some requests still pending."
 (defun irony-completion-stats-at-point ()
   "Return a list such as:
 
-    (context-pos completion-pos header-completion-p)
+    (context-pos completion-pos pp-completion-p)
 
 completion-pos is the point where the typed text starts on a
 completion while context-pos is the position that decides of the
@@ -256,9 +256,9 @@ should use `irony-get-completion-point-anywhere'."
      ;; preprocessor #define, #include, ...
      (when (re-search-backward "^\\s-*\\(#\\)\\s-*\\([[:alpha:]]*\\)\\=" nil t)
        (list (match-end 1) (match-beginning 2)))
-     (let ((header-comp-point (irony-header-comp-point)))
-       (when header-comp-point
-         (list header-comp-point header-comp-point t))))))
+     (let ((pp-comp-point (irony-pp-completion-point)))
+       (when pp-comp-point
+         (list pp-comp-point pp-comp-point t))))))
 
 (defun irony-get-completion-point-anywhere ()
   "Return the completion point for the current context, contrary
@@ -280,10 +280,10 @@ to `irony-get-completion' a point will be returned every times."
 (defun irony-handle-server-completion (data)
   (irony-handle-completion (plist-get data :results)))
 
-(defun irony-request-header-comp ()
-  (irony-handle-completion (irony-header-comp-complete-at)))
+(defun irony-request-pp-complete ()
+  (irony-handle-completion (irony-pp-complete-at)))
 
-(defun irony-header-comp-action ()
+(defun irony-pp-complete-action ()
   "After the completion is complete, add the closing
 character (double quote or angle-bracket) if needed."
   ;; do not add closing '>' or '"' when the completed item was a
@@ -394,8 +394,8 @@ position."
 CANDIDATE-DATA if provided contains informations about the
 candidate that was expanded, in the format of a car of an element
 returned by `irony-last-completion-results'."
-  (if (irony-header-comp-inside-include-stmt-p)
-      (irony-header-comp-action)
+  (if (irony-pp-inside-include-stmt-p)
+      (irony-pp-complete-action)
     (unless (stringp candidate-data)
       (let ((dyn-snip (irony-comp-dynamic-snippet candidate-data)))
         (if (cdr dyn-snip)              ;has placeholder(s)?
