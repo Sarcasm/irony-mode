@@ -7,7 +7,7 @@
         (irony-compile-flags-work-dir "/tmp/blah/"))
     (should (equal
              '("/tmp/blah/include" "/tmp/foo")
-             (irony-header-search-paths)))))
+             (irony-user-search-paths)))))
 
 (ert-deftest irony/include-directories-2 ()
   (let ((irony-compile-flags '("-Wextra" "-Iinclude" "-I" "foo" "-Wall"))
@@ -15,7 +15,7 @@
     (should (equal
              '("/tmp/blah/include"
                "/tmp/blah/foo")
-             (irony-header-search-paths)))))
+             (irony-user-search-paths)))))
 
 (ert-deftest irony/extract-working-dir-flag/none-present ()
   (let ((compile-flags '("-Wall")))
