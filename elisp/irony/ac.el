@@ -95,7 +95,6 @@ detailed completion."
 (defun irony-ac-setup ()
   "Hook to run for `auto-complete-mode' when `irony-mode' is
 activated."
-  (interactive)
   (add-hook 'irony-on-completion-hook 'irony-ac-complete)
   (add-to-list 'ac-sources 'ac-source-irony)
   (define-key irony-mode-map [(control return)] 'ac-complete-irony))

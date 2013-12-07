@@ -1,9 +1,8 @@
-/**
- * \file   JSONObjectWrapper.h
+/**-*-C++-*-
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Wed Aug 24 14:59:26 2011
  *
- * \brief  JSONObjectWrapper class definition.
+ * \brief JSONObjectWrapper class definition.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -15,45 +14,34 @@
 
 #include "util/NonCopyable.h"
 
-#include <string>
-#include <vector>
-#include <memory>
-
-// \c modf is used to check if numbers are integers.
-// 'trick' found here:
-// http://stackoverflow.com/questions/1521607/check-double-variable-if-it-contains-an-integer-and-not-floating-point/1521682#1521682
-#include <cmath>
-
 #include "JSON.h"
 #include "JSONValue.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
 /**
- * \brief This class aimed to be a wrapper for a JSONObject, it try to
- *        limit the check needed by the user.
+ * This class aimed to be a wrapper for a JSONObject, it try to limit the check
+ * needed by the user.
  *
  * \code
  * JSONObjectWrapper json(JSON::Parse("{ ... }"));
  *
  * if (json) {
- *   bool                     valid  = true;
- *   double                   line   = json.check(L"line", valid);
- *   double                   column = json.check(L"column", valid);
- *   std::vector<std::string> flags  = parser.get(L"flags");
+ *   bool valid = true;
+ *   double line = json.check(L"line", valid);
+ *   double column = json.check(L"column", valid);
+ *   std::vector<std::string> flags = parser.get(L"flags");
  *
- *   if (! valid) {
- *     std::cerr << "invalid/incomplete data (line and/or column)." << std::endl;
- *   }
+ *   if (! valid)
+ *     std::cerr << "invalid/incomplete data (line and/or column)."
+ *               << std::endl;
  * }
  * \endcode
  *
  */
-class JSONObjectWrapper : public util::NonCopyable
-{
-private:
-  JSONValue        *value_;
-  bool              isObject_;
-  const JSONObject  object_;
-
+class JSONObjectWrapper : public util::NonCopyable {
 public:
   class Checker;
 
@@ -75,7 +63,7 @@ public:
    *
    * \param object A JSON Object.
    */
-  explicit JSONObjectWrapper(const JSONObject & object);
+  explicit JSONObjectWrapper(const JSONObject &object);
 
   /**
    * \brief Destructor, call \c delete on the stored value.
@@ -114,7 +102,7 @@ public:
    *
    * \return A \c Checker class that will do the conversion.
    */
-  const Checker check(const std::wstring & key, bool & valid) const;
+  const Checker check(const std::wstring &key, bool &valid) const;
 
   /**
    * \see check(std::wstring key, bool & valid)
@@ -122,31 +110,30 @@ public:
    * \note The \c valid variable of \c check is missing that's all.
    *
    */
-  const Checker get(const std::wstring & key) const;
+  const Checker get(const std::wstring &key) const;
 
   class Checker {
   private:
-    const JSONObject  &        object_;
+    const JSONObject &object_;
     JSONObject::const_iterator key_;
 
     // note: when the check is not necessary 'valid_' is a reference
     // to 'dummy_'
-    bool   dummy_;
-    bool & valid_;
+    bool dummy_;
+    bool &valid_;
 
   public:
-    Checker(const JSONObject &                 object,
-            const JSONObject::const_iterator & key,
-            bool &                             valid);
-    Checker(const JSONObject &                 object,
-            const JSONObject::const_iterator & key);
+    Checker(const JSONObject &object,
+            const JSONObject::const_iterator &key,
+            bool &valid);
+    Checker(const JSONObject &object, const JSONObject::const_iterator &key);
 
     // Basic conversions
     operator std::wstring() const;
     operator double() const;
     operator std::vector<std::string>() const;
     operator std::string() const;
-    operator const JSONObject () const;
+    operator const JSONObject() const;
 
     /**
      * \brief Check if the number is really a unsigned int and if it's
@@ -162,6 +149,11 @@ public:
      */
     operator int() const;
   };
+
+private:
+  JSONValue *value_;
+  bool isObject_;
+  const JSONObject object_;
 };
 
 #endif /* !IRONY_MODE_LIB_UTIL_JSONOBJECTWRAPPER_H_ */

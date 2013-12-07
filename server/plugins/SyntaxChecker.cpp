@@ -1,9 +1,8 @@
 /**
- * \file   SyntaxChecker.cpp
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Wed Aug 24 14:07:09 2011
  *
- * \brief  SyntaxChecker implementation.
+ * \brief SyntaxChecker implementation.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -12,83 +11,87 @@
 
 #include "plugins/SyntaxChecker.h"
 
+#include "ClangString.h"
+
 #include <iostream>
 #include <cassert>
 
-#include "ClangString.h"
+SyntaxChecker::SyntaxChecker(TUManager &tuManager) : tuManager_(tuManager) {
+}
 
-SyntaxChecker::SyntaxChecker(TUManager & tuManager)
-  : tuManager_(tuManager)
-{ }
+SyntaxChecker::~SyntaxChecker() {
+}
 
-SyntaxChecker::~SyntaxChecker()
-{ }
-
-std::string SyntaxChecker::handleRequest(const JSONObjectWrapper & data,
-                                         std::ostream &            out)
-{
-  bool                             valid = true;
-  const std::string &              file  = data.check(L"file", valid);
-  const std::vector<std::string> & flags = data.get(L"flags");
+std::string SyntaxChecker::handleRequest(const JSONObjectWrapper &data,
+                                         std::ostream &out) {
+  bool valid = true;
+  const std::string &file = data.check(L"file", valid);
+  const std::vector<std::string> &flags = data.get(L"flags");
 
   out << ":diagnostics (";
 
-  if (! valid)
-    {
-      std::clog << "invalid/incomplete data for syntax checking." << std::endl;
-    }
-  else if (CXTranslationUnit tu = tuManager_.parse(file, flags))
-    {
-      unsigned numDiagnostic   = clang_getNumDiagnostics(tu);
-      unsigned firstDiagnostic = 0;
+  if (!valid) {
+    std::clog << "invalid/incomplete data for syntax checking." << std::endl;
+  } else if (CXTranslationUnit tu = tuManager_.parse(file, flags)) {
+    unsigned numDiagnostic = clang_getNumDiagnostics(tu);
+    unsigned firstDiagnostic = 0;
 
-      // The assumption is that for every note there was a previous
-      // warning/error/... that needed this note to be complete. So to
-      // begin we skip each note without any previous warning/error.
-      while (firstDiagnostic < numDiagnostic &&
-             clang_getDiagnosticSeverity(clang_getDiagnostic(tu, firstDiagnostic)) == CXDiagnostic_Note)
-        ++firstDiagnostic;
+    // The assumption is that for every note there was a previous
+    // warning/error/... that needed this note to be complete. So to
+    // begin we skip each note without any previous warning/error.
+    while (firstDiagnostic < numDiagnostic &&
+           clang_getDiagnosticSeverity(
+               clang_getDiagnostic(tu, firstDiagnostic)) == CXDiagnostic_Note)
+      ++firstDiagnostic;
 
-      for (unsigned i = firstDiagnostic; i < numDiagnostic; ++i)
-        {
-          CXDiagnostic         diagnostic = clang_getDiagnostic(tu, i);
-          CXDiagnosticSeverity severity   = clang_getDiagnosticSeverity(diagnostic);
+    for (unsigned i = firstDiagnostic; i < numDiagnostic; ++i) {
+      CXDiagnostic diagnostic = clang_getDiagnostic(tu, i);
+      CXDiagnosticSeverity severity = clang_getDiagnosticSeverity(diagnostic);
 
-          // Close previous opened parenthesis
-          if (severity != CXDiagnostic_Note && i != firstDiagnostic)
-            out << "))";
-
-          out << "\n(";
-          formatDiagnostic(diagnostic, out);
-
-          if (severity == CXDiagnostic_Note)
-            out << ")";
-          else
-            out << " :notes (";
-        }
-
-      // close the last diagnostic if any
-      if (firstDiagnostic < numDiagnostic)
+      // Close previous opened parenthesis
+      if (severity != CXDiagnostic_Note && i != firstDiagnostic)
         out << "))";
+
+      out << "\n(";
+      formatDiagnostic(diagnostic, out);
+
+      if (severity == CXDiagnostic_Note)
+        out << ")";
+      else
+        out << " :notes (";
     }
+
+    // close the last diagnostic if any
+    if (firstDiagnostic < numDiagnostic)
+      out << "))";
+  }
 
   out << ")";
   return ":syntax-checking";
 }
 
-void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
-                                     std::ostream &       out)
-{
+void SyntaxChecker::formatDiagnostic(const CXDiagnostic &diagnostic,
+                                     std::ostream &out) {
   //
   // Severity
   //
   out << ":severity ";
   switch (clang_getDiagnosticSeverity(diagnostic)) {
-  case CXDiagnostic_Ignored: out << ":ignored"; break;
-  case CXDiagnostic_Note:    out << ":note";    break;
-  case CXDiagnostic_Warning: out << ":warning"; break;
-  case CXDiagnostic_Error:   out << ":error";   break;
-  case CXDiagnostic_Fatal:   out << ":fatal";   break;
+  case CXDiagnostic_Ignored:
+    out << ":ignored";
+    break;
+  case CXDiagnostic_Note:
+    out << ":note";
+    break;
+  case CXDiagnostic_Warning:
+    out << ":warning";
+    break;
+  case CXDiagnostic_Error:
+    out << ":error";
+    break;
+  case CXDiagnostic_Fatal:
+    out << ":fatal";
+    break;
   }
 
   //
@@ -115,11 +118,8 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   CXString option = clang_getDiagnosticOption(diagnostic, &disable);
 
   out << " :flags ";
-  out << "(\""
-      << clang_getCString(option)
-      << "\" . \""
-      << clang_getCString(disable)
-      << "\")";
+  out << "(\"" << clang_getCString(option) << "\" . \""
+      << clang_getCString(disable) << "\")";
 
   clang_disposeString(option);
   clang_disposeString(disable);
@@ -134,9 +134,9 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
 
   out << " :ranges (";
   for (unsigned i = 0; i < numRanges; ++i) {
-    const CXSourceRange & range = clang_getDiagnosticRange(diagnostic, i);
+    const CXSourceRange &range = clang_getDiagnosticRange(diagnostic, i);
 
-    assert(! clang_Range_isNull(range));
+    assert(!clang_Range_isNull(range));
     formatSourceRange(range, out);
   }
   out << ")";
@@ -149,22 +149,20 @@ void SyntaxChecker::formatDiagnostic(const CXDiagnostic & diagnostic,
   out << ")";
 }
 
-void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
-                                         std::ostream &           out)
-{
-  if (clang_equalLocations(location, clang_getNullLocation()))
-    {
-      out << " nil ";
-      return ;
-    }
+void SyntaxChecker::formatSourceLocation(const CXSourceLocation &location,
+                                         std::ostream &out) {
+  if (clang_equalLocations(location, clang_getNullLocation())) {
+    out << " nil ";
+    return;
+  }
 
-  CXFile   file;
+  CXFile file;
   unsigned line, column, offset;
 
-  // clang_getInstantiationLocation() has been marked deprecated and
-  // is aimed to be replaced by clang_getExpansionLocation().
-#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&   \
-  (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+// clang_getInstantiationLocation() has been marked deprecated and
+// is aimed to be replaced by clang_getExpansionLocation().
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
+    (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
   clang_getExpansionLocation(location, &file, &line, &column, &offset);
 #else
   clang_getInstantiationLocation(location, &file, &line, &column, &offset);
@@ -174,11 +172,11 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
 
   if (const char *filenameStr = clang_getCString(filename)) {
     // ("filename" offset (line . column))
-      out << "(\"" << filenameStr    // filename
-          << "\" " << offset         // offset
-          << " ("  << line           // line
-          << " . " << column         // column
-          << "))";
+    out << "(\"" << filenameStr // filename
+        << "\" " << offset      // offset
+        << " (" << line         // line
+        << " . " << column      // column
+        << "))";
   } else {
     // XXX: Absence of a filename is not interesting for the client
     // and is considered equivalent to a null location.
@@ -188,9 +186,8 @@ void SyntaxChecker::formatSourceLocation(const CXSourceLocation & location,
   clang_disposeString(filename);
 }
 
-void SyntaxChecker::formatSourceRange(const CXSourceRange & range,
-                                      std::ostream &        out)
-{
+void SyntaxChecker::formatSourceRange(const CXSourceRange &range,
+                                      std::ostream &out) {
   out << "(";
   formatSourceLocation(clang_getRangeStart(range), out);
   out << " . ";
@@ -198,23 +195,19 @@ void SyntaxChecker::formatSourceRange(const CXSourceRange & range,
   out << ")";
 }
 
-void SyntaxChecker::formatFitItHints(const CXDiagnostic & diagnostic,
-                                     std::ostream &       out)
-{
+void SyntaxChecker::formatFitItHints(const CXDiagnostic &diagnostic,
+                                     std::ostream &out) {
   unsigned numFixIts = clang_getDiagnosticNumFixIts(diagnostic);
 
-  for (unsigned i = 0; i < numFixIts; ++i)
-    {
-      CXSourceRange replacementRange;
-      CXString      fixItHint = clang_getDiagnosticFixIt(diagnostic, i,
-                                                         &replacementRange);
+  for (unsigned i = 0; i < numFixIts; ++i) {
+    CXSourceRange replacementRange;
+    CXString fixItHint =
+        clang_getDiagnosticFixIt(diagnostic, i, &replacementRange);
 
-      out << "(\""
-          << clang_getCString(fixItHint)
-          << "\" . ";
-      formatSourceRange(replacementRange, out);
-      out << ")";
+    out << "(\"" << clang_getCString(fixItHint) << "\" . ";
+    formatSourceRange(replacementRange, out);
+    out << ")";
 
-      clang_disposeString(fixItHint);
-    }
+    clang_disposeString(fixItHint);
+  }
 }

@@ -1,9 +1,8 @@
 /**
- * \file   ClangString.cpp
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Wed Feb 13 10:49:32 2013
  *
- * \brief  ClangString implementation.
+ * \brief ClangString implementation.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -16,42 +15,32 @@
 #include <cstring>
 #include <iostream>
 
-ClangString::ClangString(const CXString & cxstring,
-			 unsigned         flags)
-  : cxstring_(cxstring)
-  , cstr_(clang_getCString(cxstring_))
-  , flags_(flags)
-{
+ClangString::ClangString(const CXString &cxstring, unsigned flags)
+  : cxstring_(cxstring), cstr_(clang_getCString(cxstring_)), flags_(flags) {
   if (flags_ & AddQuotes)
     flags_ |= ClangString::Escape;
 }
 
-ClangString::~ClangString()
-{
+ClangString::~ClangString() {
   clang_disposeString(cxstring_);
 }
 
 namespace {
-
-bool needEscape(char ch)
-{
+bool needEscape(char ch) {
   return ch == '\\' || ch == '"';
 }
-
 }
 
-bool ClangString::isNull() const
-{
+bool ClangString::isNull() const {
   return cstr_ == 0;
 }
 
-std::string ClangString::asString() const
-{
-  const char  *cStr      = isNull() ? "" : cstr_;
-  std::size_t  len       = std::strlen(cStr);
-  std::size_t  finalSize = len;
+std::string ClangString::asString() const {
+  const char *cStr = isNull() ? "" : cstr_;
+  std::size_t len = std::strlen(cStr);
+  std::size_t finalSize = len;
 
-  if (! (flags_ & Escape)) {
+  if (!(flags_ & Escape)) {
     return std::string(cStr, finalSize);
   }
 
@@ -59,8 +48,8 @@ std::string ClangString::asString() const
     finalSize += 2;
   }
 
-  std::string  quotedStr;
-  std::size_t  escapes = std::count_if(cStr, cStr + len, needEscape);
+  std::string quotedStr;
+  std::size_t escapes = std::count_if(cStr, cStr + len, needEscape);
 
   finalSize += escapes;
   quotedStr.reserve(finalSize);
@@ -69,12 +58,12 @@ std::string ClangString::asString() const
     quotedStr += '"';
   }
 
-  if (! escapes) {
+  if (!escapes) {
     quotedStr.append(cStr, len);
   } else {
     for (std::size_t i = 0; i < len; ++i) {
       if (needEscape(cStr[i])) {
-	quotedStr += '\\';
+        quotedStr += '\\';
       }
       quotedStr += cStr[i];
     }

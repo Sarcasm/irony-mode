@@ -1,9 +1,8 @@
 /**-*-C++-*-
- * \file   SyntaxChecker.h
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Wed Aug 24 13:52:10 2011
  *
- * \brief  Syntax checker plugin declaration.
+ * \brief Syntax checker plugin declaration.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -15,23 +14,18 @@
 
 #include "IPlugin.h"
 
-#include <clang-c/Index.h>
-
 #include "util/NonCopyable.h"
+
+#include <clang-c/Index.h>
 
 /**
  * \brief A syntax checking plugin, give informations about the
  *        translation unit parsing. Errors found, possible fix, etc.
  *
  */
-class SyntaxChecker : public IPlugin,
-                      public util::NonCopyable
-{
-private:
-  TUManager & tuManager_;
-
+class SyntaxChecker : public IPlugin, public util::NonCopyable {
 public:
-  SyntaxChecker(TUManager & tuManager);
+  SyntaxChecker(TUManager &tuManager);
   virtual ~SyntaxChecker();
 
   /**
@@ -42,8 +36,8 @@ public:
    * \param data
    * \param [out] out    A stream to print parsing errors.
    */
-  virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::ostream &            out);
+  virtual std::string handleRequest(const JSONObjectWrapper &data,
+                                    std::ostream &out);
 
 private:
   /**
@@ -53,8 +47,7 @@ private:
    * \param diagnostic  The diagnostic to format.
    * \param [out] out   The stream where the diagnostic should be written.
    */
-  void formatDiagnostic(const CXDiagnostic & diagnostic,
-                        std::ostream &       out);
+  void formatDiagnostic(const CXDiagnostic &diagnostic, std::ostream &out);
 
   /**
    * \brief Format the source location \p location into an Emacs Lisp
@@ -75,8 +68,8 @@ private:
    * \param [out] out   The stream where the location should be added.
    *
    */
-  void formatSourceLocation(const CXSourceLocation & location,
-                            std::ostream &           out);
+  void formatSourceLocation(const CXSourceLocation &location,
+                            std::ostream &out);
 
   /**
    * \brief Format a range, a range is a cons of 2 sources locations.
@@ -88,8 +81,7 @@ private:
    * \param range       The range to format.
    * \param [out] out   Where the range should be written.
    */
-  void formatSourceRange(const CXSourceRange & range,
-                         std::ostream &        out);
+  void formatSourceRange(const CXSourceRange &range, std::ostream &out);
 
   /**
    * \brief Format diagnostic fix-it hints. Fix-its hints is a list of
@@ -104,8 +96,10 @@ private:
    * \param fixIt       The range to format.
    * \param [out] out   Where the range should be written.
    */
-  void formatFitItHints(const CXDiagnostic & diagnostic,
-                        std::ostream &       out);
+  void formatFitItHints(const CXDiagnostic &diagnostic, std::ostream &out);
+
+private:
+  TUManager &tuManager_;
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_SYNTAXCHECKER_H_ */

@@ -1,32 +1,26 @@
 /**-*-C++-*-
- * \file   CacheInvalidation.h
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Fri Jan 11 18:01:07 2013
  *
- * \brief  Reload flag/Cache invalidation plugin class declaration.
+ * \brief Reload flag/Cache invalidation plugin class declaration.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
  *
  */
 
-#ifndef CACHEINVALIDATION_H_
-#define CACHEINVALIDATION_H_
+#ifndef IRONY_MODE_SERVER_PLUGINS_CACHEINVALIDATION_H_
+#define IRONY_MODE_SERVER_PLUGINS_CACHEINVALIDATION_H_
 
 #include "IPlugin.h"
 
 /**
- * \brief A plugin that delete from TU Manager the cached flags on a
- *        given file.
+ * A plugin that delete from TU Manager the cached flags on a given file.
  *
  */
-class CacheInvalidation : public IPlugin
-{
-private:
-  TUManager & tuManager_;
-
+class CacheInvalidation : public IPlugin {
 public:
-  CacheInvalidation(TUManager & tuManager);
+  CacheInvalidation(TUManager &tuManager);
   virtual ~CacheInvalidation();
 
   /**
@@ -34,8 +28,11 @@ public:
    *
    * \sa IPlugin
    */
-  virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::ostream &            out);
+  virtual std::string handleRequest(const JSONObjectWrapper &data,
+                                    std::ostream &out);
+
+private:
+  TUManager &tuManager_;
 };
 
-#endif /* !CACHEINVALIDATION_H_ */
+#endif /* !IRONY_MODE_SERVER_PLUGINS_CACHEINVALIDATION_H_ */

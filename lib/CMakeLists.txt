@@ -6,7 +6,7 @@ include_directories (${IRONY_UTILS_INCLUDES})
 
 add_library (irony-utils
   # utils sources
-  util/arraysize.hpp
+  util/arraysize.h
   util/NonCopyable.h
   util/JSONObjectWrapper.cpp
   util/JSONObjectWrapper.h
@@ -20,5 +20,5 @@ add_library (irony-utils
   # String sources
   str/wstring_to_string.cpp
   str/wstring_to_string.h
-  str/to_string.hpp
+  str/to_string.h
   )

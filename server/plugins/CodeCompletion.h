@@ -1,9 +1,8 @@
 /**-*-C++-*-
- * \file   CodeCompletion.h
+ * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * \date   Thu Jul 21 00:08:54 2011
  *
- * \brief  Completion plugin class declaration.
+ * \brief Completion plugin class declaration.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -15,11 +14,12 @@
 
 #include "IPlugin.h"
 
+#include "util/NonCopyable.h"
+
 #include <clang-c/Index.h>
+
 #include <string>
 #include <vector>
-
-#include "util/NonCopyable.h"
 
 class Candidate;
 typedef std::vector<Candidate> CompletionResults;
@@ -28,22 +28,19 @@ typedef std::vector<Candidate> CompletionResults;
  * \brief A completion plugin, using the libclang completion features.
  *
  */
-class CodeCompletion : public IPlugin,
-                       public util::NonCopyable
-{
+class CodeCompletion : public IPlugin, public util::NonCopyable {
 public:
   /**
    * \brief Create a completion plugin.
    *
    * \param TUManager
-   * \param detailedCompletions If \c false only
-   *                            \c CXCompletionChunk_TypedText will be
-   *                            present in the completion result
-   *                            (unlike a list of cons cells).
+   * \param detailedCompletions
+   *    If \c false only \c CXCompletionChunk_TypedText will be present in the
+   *    completion result (unlike a list of cons cells).
    *
    * \return
    */
-  CodeCompletion(TUManager & tuManager, bool detailedCompletions);
+  CodeCompletion(TUManager &tuManager, bool detailedCompletions);
   virtual ~CodeCompletion();
 
   /**
@@ -53,16 +50,16 @@ public:
    *
    * \param data
    * \param [out] out
-   *            A stream to print the possible completions.
+   *    A stream to print the possible completions.
    *
    */
-  virtual std::string handleRequest(const JSONObjectWrapper & data,
-                                    std::ostream &            out);
+  virtual std::string handleRequest(const JSONObjectWrapper &data,
+                                    std::ostream &out);
 
 private:
   /**
-   * \brief Execute a code completion at line \p line and column \p
-   *        column in the file \p filename.
+   * Execute a code completion at line \p line and column \p column in the file
+   * \p filename.
    *
    * The result of the completion is added to the parameter \p out.
    *
@@ -78,15 +75,15 @@ private:
    * \return \c true if the code completion succeed, otherwise
    *         \c false and nothing is printed to \p out.
    */
-  bool complete(CXTranslationUnit & tu,
-                const std::string & filename,
-                unsigned            line,
-                unsigned            column,
-                std::ostream &      out);
+  bool complete(CXTranslationUnit &tu,
+                const std::string &filename,
+                unsigned line,
+                unsigned column,
+                std::ostream &out);
 
   /**
-   * \brief Print results with detailed information, such as result
-   *        type, priority, optionals, ...
+   * Print results with detailed information, such as result type, priority,
+   * optionals, ...
    *
    * A result look like this (start with a list, and the cdr is an
    * assoc list):
@@ -94,7 +91,8 @@ private:
 \verbatim
 ;; (result-list (p . PRIORITY-NUMBER) [(opt . t)])
 (("ptrdiff_t") (p . 50))
-(("basic_ios" ?< (ph . "typename _CharT") (opt ?, (ph . "typename_Traits")) ?>)  (p . 50) (opt . t))
+(("basic_ios" ?< (ph . "typename _CharT") (opt ?, (ph . "typename_Traits")) ?>)
+(p . 50) (opt . t))
 (((r . "bool") "uncaught_exception" ?( ?)) (p . 50))
 (("std" (t . "::")) (p . 75))
 \endverbatim
@@ -115,20 +113,20 @@ private:
    * If (opt . t) is given, it means that the result contains optional
    * fragments that may be expanded.
    */
-  void printDetailedResults(const CompletionResults & completions,
-                            std::ostream &            out);
+  void printDetailedResults(const CompletionResults &completions,
+                            std::ostream &out);
 
   /**
-   * \brief Log the diagnostics found during completion.
+   * Log the diagnostics found during completion.
    *
    * \param completions
    */
   void handleDiagnostics(CXCodeCompleteResults *completions) const;
 
 private:
-  TUManager &           tuManager_;
+  TUManager &tuManager_;
   TUManager::SettingsID settingsID_;
-  bool                  detailedCompletions_;
+  bool detailedCompletions_;
 };
 
 #endif /* !IRONY_MODE_SERVER_PLUGINS_CODECOMPLETION_H_ */

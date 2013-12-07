@@ -1,14 +1,14 @@
-# Description
+# irony-utils library
 
-A small description of each subdirectory.
+This directory contains some the various third-party or not libraries used by
+the project.
 
-*note: In theory each subdirectory should be in it own namespace (i.e:
- str/class.h -> str::class).*
+*Note:* In theory each subdirectory should be enclosed in its own namespace
+ (i.e: str/class.h -> str::class).
 
-## SimpleJSON
+## SimpleJSON/
 
-A simple "library" (4 files to include in the project) for JSON
-parsing.
+A simple "library" (4 files to include in the project) for JSON parsing.
 
 Command to retrieve the library:
 
@@ -16,8 +16,8 @@ Command to retrieve the library:
 
 ## str/
 
-Contain functions/classes that works on strings.
+Contains functions and classes to deal with strings.
 
 ## util/
 
-Contain macros and "global" classes and/or functions.
+Contains macros, general purpose classes and functions.
