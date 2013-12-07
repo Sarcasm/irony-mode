@@ -102,23 +102,21 @@ clang_parseTranslationUnit() command line arguments."
 (defvar irony-cdb-compile-db-cache (make-hash-table :test 'equal)
   "*internal variable* Compilation commands cache.
 
-The key is the true-name of the file (see `file-truename'.
-The value is a cons of (compile-flags . working-dir) where both
-can have a nil value.")
+The key is the true-name of the file (see `file-truename'. The
+value is a cons of (command-line . working-dir), working-dir
+being optional.")
 
-(defvar irony-cdb-header-directory-flags-cache (make-hash-table
-						:test 'equal)
+(defvar irony-cdb-header-directories-lut (make-hash-table
+                                          :test 'equal)
   "Hash that contain a header search path as a key and the value
-  is the associated flags.
+  is the associated flags and working directory.
 
-Format is similar to `irony-cdb-compile-db-cache' except the key
-is the header search path.
+e.g: /foo/include: ('(\"-Ibar\") . \"/foo\")
 
-compile_commands.json doesn't manage header headers that's why
-this is necessary. If a file in a compilation DB compile with
-this include, it means using the same flags we should be able to
-compile the header (and probably the majority of the flags will
-be unecessary sadly).")
+compile_commands.json doesn't manage headers that's why this is
+necessary. If a file in a compilation DB compiles with this
+include it's assumed the same flags should be able to compile the
+header.")
 
 (defvar irony-cdb-loaded-clang-complete-files nil
   "*internal variable* List of already loaded .clang_complete
@@ -244,16 +242,44 @@ reload of the cache with `irony-reload-flags'."
   (setq irony-compile-flags-work-dir work-dir)
   (irony-reload-flags))
 
+(defun irony-cdb-parse-compile-commands-command (command)
+  (let ((cmd (irony-split-command-line command)))
+    (when (and cmd (member (file-name-nondirectory (car cmd))
+                           irony-cdb-known-binaries))
+      (irony-cdb-gen-clang-args (cdr cmd)))))
+
+(defun irony-cdb-compile-commands-work-dir (work-dir &optional compile-flags)
+  "Returns the working dir unless it's specified on the command line."
+  (unless (irony-extract-working-dir-flag compile-flags)
+    (file-truename work-dir)))
+
+(defun irony-cdb-update-header-directories-lut (flags work-dir)
+  (mapc
+   (lambda (header-path)
+     (setq header-path (file-truename header-path))
+     ;; XXX: {get,put}hash might be inneficient
+     (unless (gethash header-path irony-cdb-header-directories-lut)
+       (puthash header-path (cons flags work-dir)
+                irony-cdb-header-directories-lut)))
+   (irony-user-search-paths-from-flags flags)))
+
 (defun irony-cdb-try-load-from-cache ()
   "Set the flags for the current buffer if a cache entry exists
 for this path."
   (when buffer-file-name
     (let ((flags-work-dir (gethash (file-truename buffer-file-name)
                                    irony-cdb-compile-db-cache)))
-      (if flags-work-dir
-	  (progn (irony-cdb-load-flags (car flags-work-dir)
-				       (cdr flags-work-dir))
-		 t)
+      (cond
+       (flags-work-dir
+        (let ((flags (irony-cdb-parse-compile-commands-command
+                      (car flags-work-dir)))
+              (work-dir (cdr flags-work-dir)))
+          (irony-cdb-update-header-directories-lut flags work-dir)
+          (irony-cdb-load-flags flags
+                                (irony-cdb-compile-commands-work-dir work-dir
+                                                                     flags)))
+        t)
+       (t
 	(let ((buf-name (file-truename buffer-file-name))
 	      most-common-dir)
 	  (maphash '(lambda (dir value)
@@ -261,11 +287,11 @@ for this path."
 				 (string-prefix-p dir buf-name))
 			(setq most-common-dir dir
 			      flags-work-dir value)))
-		   irony-cdb-header-directory-flags-cache)
+		   irony-cdb-header-directories-lut)
 	  (when flags-work-dir
 	    (irony-cdb-load-flags (car flags-work-dir)
 				  (cdr flags-work-dir))
-	    t))))))
+	    t)))))))
 
 (defun irony-cdb-try-load-clang-complete ()
   (when buffer-file-name
@@ -317,33 +343,15 @@ subsist."
       (setq cmd-args (cdr cmd-args)))
     (nreverse compile-flags)))
 
-(defun irony-cdb-parse-entry (entry)
+(defun irony-cdb-store-entry (entry)
   "Extract the flags of the entry and add them to cache."
   (let ((file (cdr (assq 'file entry)))
         (work-dir (cdr (assq 'directory entry)))
-        (cmd (irony-split-command-line (cdr (assq 'command entry)))))
-    (when (and cmd
-               (member (file-name-nondirectory (car cmd))
-                       irony-cdb-known-binaries)
-               (member (file-name-extension file) ;get rid of assembly files
-                       irony-known-source-extensions))
-      (when work-dir
-        (setq work-dir (file-truename work-dir)))
-      (let* ((compile-flags (irony-cdb-gen-clang-args (cdr cmd)))
-	     (value (cons compile-flags
-			  (unless (irony-extract-working-dir-flag
-				   compile-flags)
-			    work-dir))))
-        (puthash (file-truename file) value irony-cdb-compile-db-cache)
-	(mapc (lambda (header-path)
-		(setq header-path (file-truename header-path))
-		;; XXX: {get,put}hash might be inneficient
-		(unless (gethash header-path
-				 irony-cdb-header-directory-flags-cache)
-		  (puthash header-path value
-			   irony-cdb-header-directory-flags-cache)))
-	      (irony-header-search-paths-from-flags compile-flags
-						    work-dir))))))
+        (cmd (cdr (assq 'command entry))))
+    (when (member (file-name-extension file) ;get rid of assembly files
+                  irony-known-source-extensions)
+      (puthash (file-truename file) (cons cmd work-dir)
+               irony-cdb-compile-db-cache))))
 
 (defun irony-cdb-parse-compile-commands (cc-file)
   "Parse a compile_commands.json file and add its entries to the
@@ -353,7 +361,7 @@ Returns nil on failure (if the file doesn't exist for example),
 otherwise return t."
   (condition-case err
       (progn
-	(mapc 'irony-cdb-parse-entry (json-read-file cc-file))
+	(mapc 'irony-cdb-store-entry (json-read-file cc-file))
 	t)
     (file-error
      (message "Irony: Compilation-DB error: %s" (error-message-string err))
@@ -371,7 +379,7 @@ otherwise return t."
               return (concat found build-dir)))))
 
 (defun irony-cdb-load-compile-commands (cc-file)
-  "Load CC-FILE if not already loaded and use load call
+  "Loads CC-FILE if not already loaded and calls
 `irony-cdb-try-load-from-cache' to load the flags in the current
 buffer."
   (interactive
@@ -393,7 +401,7 @@ buffer."
             cc-file-str (irony-cdb-shorten-path cc-file))
       (when (> (length cc-file-str) limit)
         (setq cc-file-str (concat "..." (substring cc-file-str
-                                                  (- (- limit 3))))))
+                                                   (- (- limit 3))))))
       (add-to-list 'keys (list ?J 'irony-cdb-load-compile-commands cc-file) t))
     (list
      :keys keys
@@ -506,7 +514,7 @@ filesystem."
 		  ".clang_complete"
 		  (or (irony-current-directory) default-directory))))
     (when cc-file
-     (concat cc-file ".clang_complete"))))
+      (concat cc-file ".clang_complete"))))
 
 (defun irony-cdb-load-clang-complete (&optional cc-file)
   "Load the flags from CC-FILE (a .clang_complete file).
