@@ -216,29 +216,28 @@ The menu should be self explanatory, if it's not the case open an issue please.
 # FAQ
 
 
-## It's slow, why?
+__It's slow, why?__
 
 A bug in old version of Clang (at least '3.1-8') caused the completion to fail
 on the standard library types. To eliminate this bug an optimisation has been
 disabled in the parsing of a translation unit. This result in a slower parsing.
 
 This only affect old versions of Clang (< 3.2), it is suggested to update your
-libclang installation if you want to take advantage of the optimisations.
+libclang installation if you want to take advantage of the optimizations.
 
-## Use a custom libclang installation
+__How do I use a custom version of libclang?__
 
-On a system with multiple versions of libclang installed it is possible to
-"hint" CMake in order to pick-up the preferred one.
+On a system with multiple versions of libclang installed, it is possible to
+*hint* CMake in order to pick-up the preferred one. Two variables can be
+specified when invoking CMake:
 
-To specify a custom include directory use the command line switch
-`-DLIBCLANG_INCLUDE_PATH=/path/to/libclang/include-dir`. The specified directory
-should contain the header file *clang-c/Index.h*.
+1. `LIBCLANG_INCLUDE_PATH=/path/to/libclang/include-dir`: The path to the
+   include directory that contains the header file *clang-c/Index.h*.
 
-To specify the library directory use
-`-DLIBCLANG_LIBRARY_PATH=/path/to/libclang/libraries`. The specified directory
-should contain the libclang library, e.g: *libclang.so* on Linux.
+2. `LIBCLANG_LIBRARY_PATH=/path/to/libclang/libraries`: The path to the
+   directory that contains the libclang library, e.g: *libclang.so* on Linux.
 
-CMake invocation example with a custom libclang installation:
+Example of a CMake invocation using a custom libclang installation:
 
     mkdir build
     cd build
@@ -246,7 +245,7 @@ CMake invocation example with a custom libclang installation:
           -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ ..
 
 
-## CMake doesn't find libclang
+__CMake doesn't find libclang...__
 
 When libclang is installed in a non-standard path CMake may produce the
 following error:
@@ -258,15 +257,15 @@ following error:
     cmake/FindLibClang.cmake:35 (find_package_handle_standard_args)
     server/CMakeLists.txt:4 (find_package)
 
-This can be fixed by using the same method as described in
-[Use a custom libclang installation](#use-a-custom-libclang-installation).
+This can be fixed by using the same method as described above, using a custom
+version of libclang.
 
 Please report an issue if the include and library paths are the standard
 libclang installation paths on your system. Other users may benefit from these
 paths being handled *natively* by irony-mode.
 
 
-## I got an error due to 'stdarg.h', how to solve this?
+__I got an error due to 'stdarg.h'...__
 
 If by looking into the log file (`/tmp/irony.$$PID.log` on Linux) you
 can have the following error:
@@ -301,7 +300,7 @@ This is issue is a known problem:
 > it.
 
 
-## libclang.so: cannot open shared object file...
+__libclang.so: cannot open shared object file...__
 
 Compiling `irony-server` succeed but you have the following message
 when you try to run the `irony-server` executable:
@@ -318,7 +317,7 @@ following command:
     cmake -DUSE_RPATH=ON ..
 
 
-## auto-complete acts strangely, it tries to complete inside string literals
+__auto-complete acts strangely, it tries to complete inside string literals...__
 
 In order to enable header completion, such as:
 
@@ -333,4 +332,4 @@ literals in `irony-ac-enable`.
 (setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces))
 ```
 
-Please create an issue if you find this not unacceptable.
+Please create an issue if you find this unacceptable.
