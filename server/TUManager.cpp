@@ -49,16 +49,13 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
 
     if (nbArgs > 0) {
       argv = new const char *[nbArgs + 1];
-      argv[nbArgs] = 0;
 
-      for (std::size_t i = 0; i < nbArgs; ++i) {
+      for (std::size_t i = 0; i < nbArgs; ++i)
         argv[i] = flags[i].c_str();
-      }
+
+      argv[nbArgs] = 0;
     }
 
-    // TODO: See if it's necessary, but using a CMake compilation
-    // database may require to do a chdir() to the build directory
-    // before parsing those commands.
     tu = clang_parseTranslationUnit(index_,
                                     filename.c_str(),
                                     argv,
@@ -74,13 +71,11 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
     return 0;
   }
 
-  // NOTE: Even at the first time the translation unit is reparsed, because
-  // without this the completion is erroneous.
-
-  // From the clang mailing list:
-  // From: Douglas Gregor <dgregor-2kanFRK1NckAvxtiuMwx3w@public.gmane.org>
+  // Reparsing is necessary to enable optimizations.
+  //
+  // From the clang mailing list (cfe-dev):
+  // From: Douglas Gregor
   // Subject: Re: Clang indexing library performance
-  // Newsgroups: gmane.comp.compilers.clang.devel
   // ...
   // You want to use the "default editing options" when parsing the translation
   // unit
@@ -89,7 +84,7 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
   // code-completion optimizations that should bring this time down
   // significantly.
   if (clang_reparseTranslationUnit(tu, 0, 0, clang_defaultReparseOptions(tu))) {
-    // a 'fatal' error occur (even a diagnostic is impossible)
+    // a 'fatal' error occured (even a diagnostic is impossible)
     clang_disposeTranslationUnit(tu);
     tu = 0;
     return 0;
