@@ -79,7 +79,8 @@ otherwise try GCC."
 (make-variable-buffer-local 'irony-compile-flags-work-dir)
 
 (defcustom irony-known-modes '(c++-mode
-                               c-mode)
+                               c-mode
+                               objc-mode)
   "List of modes where `irony-mode' can be turn on without
   warnings.
 
