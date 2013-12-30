@@ -352,10 +352,7 @@ void formatCompletionChunks(const CompletionChunk &start,
   for (CompletionChunk chunk(start); chunk.hasNext(); chunk.next()) {
     switch (chunk.kind()) {
 
-    case CXCompletionChunk_TypedText:
-      out << " " << chunk.escapedContent();
-      break;
-
+    case CXCompletionChunk_TypedText:        chunkContentCell("t",  chunk, out); break;
     case CXCompletionChunk_ResultType:       chunkContentCell("r",  chunk, out); break;
     case CXCompletionChunk_Placeholder:      chunkContentCell("ph", chunk, out); break;
     case CXCompletionChunk_Text:             chunkContentCell("t",  chunk, out); break;
