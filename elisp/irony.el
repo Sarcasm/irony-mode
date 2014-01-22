@@ -472,11 +472,15 @@ before calling that macro."
 
 (defun irony-point-location (point)
   "Return a cons of the following form: (line . column)
-corresponding to POS. The narrowing is skipped temporarily."
+corresponding to POS. The narrowing is skipped temporarily.
+
+`position-bytes' is used to handle multibyte and
+'multiple-column' (i.e tabulations) characters properly."
   (save-excursion
     (goto-char point)
-    (irony-without-narrowing
-      (cons (line-number-at-pos) (1+ (current-column))))))
+    (let ((col (- (position-bytes (point)) (position-bytes (point-at-bol)))))
+      (irony-without-narrowing
+        (cons (line-number-at-pos) (1+ col))))))
 
 
 ;; Irony utility functions
