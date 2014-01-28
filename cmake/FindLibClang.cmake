@@ -35,16 +35,19 @@ find_path (LibClang_INCLUDE_DIR clang-c/Index.h
   /usr/lib/llvm-3.2/include/
   /usr/lib/llvm-3.3/include/
   /usr/lib/llvm-3.4/include/
+  /usr/lib/llvm-3.5/include/
   # LLVM MacPorts
   /opt/local/libexec/llvm-3.1/include
   /opt/local/libexec/llvm-3.2/include
   /opt/local/libexec/llvm-3.3/include
   /opt/local/libexec/llvm-3.4/include
+  /opt/local/libexec/llvm-3.5/include
   # LLVM Homebrew
   /usr/local/Cellar/llvm/3.1/include
   /usr/local/Cellar/llvm/3.2/include
   /usr/local/Cellar/llvm/3.3/include
   /usr/local/Cellar/llvm/3.4/include
+  /usr/local/Cellar/llvm/3.5/include
   )
 
 find_library (LibClang_LIBRARY NAMES clang libclang
@@ -55,16 +58,19 @@ find_library (LibClang_LIBRARY NAMES clang libclang
   /usr/lib/llvm-3.2/lib/
   /usr/lib/llvm-3.3/lib/
   /usr/lib/llvm-3.4/lib/
+  /usr/lib/llvm-3.5/lib/
   # LLVM MacPorts
   /opt/local/libexec/llvm-3.1/lib
   /opt/local/libexec/llvm-3.2/lib
   /opt/local/libexec/llvm-3.3/lib
   /opt/local/libexec/llvm-3.4/lib
+  /opt/local/libexec/llvm-3.5/lib
   # LLVM Homebrew
   /usr/local/Cellar/llvm/3.1/lib
   /usr/local/Cellar/llvm/3.2/lib
   /usr/local/Cellar/llvm/3.3/lib
   /usr/local/Cellar/llvm/3.4/lib
+  /usr/local/Cellar/llvm/3.5/lib
   )
 
 set (LibClang_LIBRARIES ${LibClang_LIBRARY})
