@@ -128,8 +128,8 @@ Configuration:
 
 (defun my-c++-hooks ()
   "Enable the hooks in the preferred order: 'yas -> auto-complete -> irony'."
-  ;; if yas is not set before (auto-complete-mode 1), overlays may persist after
-  ;; an expansion.
+  ;; be cautious, if yas is not enabled before (auto-complete-mode 1), overlays
+  ;; *may* persist after an expansion.
   (yas/minor-mode-on)
   (auto-complete-mode 1)
 
@@ -140,13 +140,6 @@ Configuration:
 (add-hook 'c++-mode-hook 'my-c++-hooks)
 (add-hook 'c-mode-hook 'my-c++-hooks)
 ```
-
-Please initialize your packages in the the following order unless you have a
-reason not to:
-
-1. `yas`
-2. `ac`
-3. `irony`
 
 **Note:** If my fork of `auto-complete` is used you should be careful
 to not have another installation of `auto-complete` or `popup` since
