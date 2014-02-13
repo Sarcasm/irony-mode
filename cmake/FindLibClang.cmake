@@ -71,6 +71,8 @@ find_library (LibClang_LIBRARY NAMES clang libclang
   /usr/local/Cellar/llvm/3.3/lib
   /usr/local/Cellar/llvm/3.4/lib
   /usr/local/Cellar/llvm/3.5/lib
+  # LLVM Fedora
+  /usr/lib/llvm
   )
 
 set (LibClang_LIBRARIES ${LibClang_LIBRARY})
