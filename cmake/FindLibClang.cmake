@@ -1,15 +1,13 @@
 #
-# Try to find LibClang
+# Try to find libclang
 #
 # Once done this will define:
-# - LibClang_FOUND
+# - LIBCLANG_FOUND
 #               System has libclang
-# - LibClang_INCLUDE_DIRS
-#               The Libclang include directories
-# - LibClang_LIBRARIES
+# - LIBCLANG_INCLUDE_DIRS
+#               The libclang include directories
+# - LIBCLANG_LIBRARIES
 #               The libraries needed to use libclang
-# - LibClang_DEFINITIONS
-#               Compiler switches required for using libclang
 #
 # At the CMake invocation level it is possible to specify some hints for the
 # libclang installation, e.g: for non-standard libclang installations.
@@ -27,7 +25,7 @@
 #     cmake -DLIBCLANG_INCLUDE_PATH=~/llvm-3.4/include/ \
 #           -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ <args...>
 
-find_path (LibClang_INCLUDE_DIR clang-c/Index.h
+find_path (LIBCLANG_INCLUDE_DIR clang-c/Index.h
   HINTS ${LIBCLANG_INCLUDE_PATH}
   PATHS
   # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
@@ -50,7 +48,7 @@ find_path (LibClang_INCLUDE_DIR clang-c/Index.h
   /usr/local/Cellar/llvm/3.5/include
   )
 
-find_library (LibClang_LIBRARY NAMES clang libclang
+find_library (LIBCLANG_LIBRARY NAMES clang libclang
   HINTS ${LIBCLANG_LIBRARY_PATH}
   PATHS
   # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
@@ -75,13 +73,13 @@ find_library (LibClang_LIBRARY NAMES clang libclang
   /usr/lib/llvm
   )
 
-set (LibClang_LIBRARIES ${LibClang_LIBRARY})
-set (LibClang_INCLUDE_DIRS ${LibClang_INCLUDE_DIR})
+set (LIBCLANG_LIBRARIES ${LIBCLANG_LIBRARY})
+set (LIBCLANG_INCLUDE_DIRS ${LIBCLANG_INCLUDE_DIR})
 
 include (FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set LibClang_FOUND to TRUE
-# if all listed variables are TRUE
+# handle the QUIETLY and REQUIRED arguments and set LIBCLANG_FOUND to TRUE if
+# all listed variables are TRUE
 find_package_handle_standard_args (LibClang DEFAULT_MSG
-  LibClang_LIBRARY LibClang_INCLUDE_DIR)
+  LIBCLANG_LIBRARY LIBCLANG_INCLUDE_DIR)
 
-mark_as_advanced (LibClang_INCLUDE_DIR LibClang_LIBRARY)
+mark_as_advanced (LIBCLANG_INCLUDE_DIR LIBCLANG_LIBRARY)

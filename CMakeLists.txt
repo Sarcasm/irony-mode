@@ -51,7 +51,7 @@ endif()
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   include(CheckCXXCompilerFlag)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -Wshadow")
-  
+
   # the flags -fcolor-diagnostics is for Ninja build, to get colored
   # output from Clang.
   if (${CMAKE_GENERATOR} MATCHES "Ninja")

@@ -3,7 +3,7 @@
 #
 find_package (LibClang REQUIRED)
 
-include_directories (${LibClang_INCLUDE_DIRS})
+include_directories (${LIBCLANG_INCLUDE_DIRS})
 include_directories (${IRONY_UTILS_INCLUDES})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -40,7 +40,7 @@ add_dependencies (irony-server
 
 target_link_libraries (irony-server
   irony-utils
-  ${LibClang_LIBRARIES}
+  ${LIBCLANG_LIBRARIES}
   )
 
 install (TARGETS irony-server
