@@ -128,16 +128,17 @@ Example:
 
     #include <str[]
               ^~~~ Completion point returned."
-  (when (re-search-backward irony-pp-include-re nil t)
-    (let* ((slash-offset (position ?/ (string-to-vector (match-string 1))
-                                   :from-end t))
-           (begin (match-beginning 1))
-           (end (+ begin (or (if slash-offset
-                                 (+ slash-offset 1)) 0))))
-      (setq irony-pp-comp-subdir
-            (if (not (= begin end))
-                (buffer-substring-no-properties begin end)))
-      end)))
+  (save-excursion
+    (when (re-search-backward irony-pp-include-re nil t)
+      (let* ((slash-offset (position ?/ (string-to-vector (match-string 1))
+                                     :from-end t))
+             (begin (match-beginning 1))
+             (end (+ begin (or (if slash-offset
+                                   (+ slash-offset 1)) 0))))
+        (setq irony-pp-comp-subdir
+              (if (not (= begin end))
+                  (buffer-substring-no-properties begin end)))
+        end))))
 
 (defun irony-pp-list-dir (base-dir sub-dir &optional filter-extensions)
   "List the content of SUB-DIR in BASE-DIR. If SUB-DIR is nil
@@ -174,7 +175,7 @@ filtered according to `irony-pp-header-allowed-extensions'."
       (loop for dir in header-directories
             append (irony-pp-list-dir dir irony-pp-comp-subdir) into completions
             finally return completions)
-      (loop for dir in (irony-header-search-paths)
+      (loop for dir in (irony-user-search-paths)
             with done = (append '(cwd) header-directories)
             unless (member dir done)
             append (irony-pp-list-dir dir irony-pp-comp-subdir t)
