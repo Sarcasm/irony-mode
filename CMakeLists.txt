@@ -29,11 +29,10 @@ include(utils)
 
 check_for_in_source_build()
 release_as_default_build_type()
+enable_colored_diagnotics()
 
-# If Clang specific code is not used it will be a better idea to use:
-#       if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-if ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
-  set(CMAKE_COMPILER_IS_CLANGCXX TRUE)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options_(-Wall -Wextra)
 endif()
 
 # libclang in non standard locations can cause some troubles.
@@ -43,25 +42,14 @@ if (USE_RPATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
-# Add some extra flags during C++ compilation (targets GCC and Clang
-# compatible flags).
-if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
-  include(CheckCXXCompilerFlag)
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -Wshadow")
-
-  # the flags -fcolor-diagnostics is for Ninja build, to get colored
-  # output from Clang.
-  if (${CMAKE_GENERATOR} MATCHES "Ninja")
-    check_cxx_compiler_flag("-fcolor-diagnostics" HAS_FCOLOR_DIAGNOSTICS_FLAG)
-    if (HAS_FCOLOR_DIAGNOSTICS_FLAG)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
-    endif()
-  endif ()
-endif ()
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set (IRONY_UTILS_INCLUDES
   ${IRONY_SOURCE_DIR}/lib
-  ${IRONY_SOURCE_DIR}/lib/SimpleJSON/src)
+  ${IRONY_SOURCE_DIR}/lib/SimpleJSON/src
+  )
 
 # Don't forget to add dependencies for new executable
 # add_dependencies (executable lib)
