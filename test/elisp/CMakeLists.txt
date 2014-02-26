@@ -1,8 +1,6 @@
-message (STATUS "looking for emacs executable")
 find_program (EMACS_EXECUTABLE emacs)
 
 if (EMACS_EXECUTABLE)
-  message (STATUS "looking for emacs executable -- found")
   #
   # ert_test(name test_file)
   #
@@ -17,8 +15,7 @@ if (EMACS_EXECUTABLE)
   endfunction()
 
 else()
-  message (STATUS "looking for emacs executable -- not found")
-  message (WARNING "elisp tests will not run because the emacs executable is missing")
+  message (WARNING "emacs executable not found, elisp tests will not be run")
 
   function(ert_test name test_file)
     # empty definition

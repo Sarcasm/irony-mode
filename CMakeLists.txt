@@ -20,18 +20,15 @@
 cmake_minimum_required(VERSION 2.8)
 project(IRONY)
 
-# Copied/Pasted (or killed/yanked if you (I) prefer) from the LLVM
-# CMakeLists.txt
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
-  message(FATAL_ERROR "In-source builds are not allowed.
+set (CMAKE_MODULE_PATH
+  ${IRONY_SOURCE_DIR}/cmake
+  ${IRONY_SOURCE_DIR}/cmake/modules
+  ${CMAKE_MODULE_PATH})
 
-  Please create a build/ directory and run cmake from there, passing
-  the path to this source directory as the last argument. This process
-  created the file `CMakeCache.txt' and the directory `CMakeFiles'.
-  Please delete them.")
-endif()
+include(utils)
 
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+check_for_in_source_build()
+release_as_default_build_type()
 
 # If Clang specific code is not used it will be a better idea to use:
 #       if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
