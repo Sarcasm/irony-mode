@@ -113,15 +113,6 @@ public:
   const Checker get(const std::wstring &key) const;
 
   class Checker {
-  private:
-    const JSONObject &object_;
-    JSONObject::const_iterator key_;
-
-    // note: when the check is not necessary 'valid_' is a reference
-    // to 'dummy_'
-    bool dummy_;
-    bool &valid_;
-
   public:
     Checker(const JSONObject &object,
             const JSONObject::const_iterator &key,
@@ -148,6 +139,15 @@ public:
      *
      */
     operator int() const;
+
+  private:
+    const JSONObject &object_;
+    JSONObject::const_iterator key_;
+
+    // note: when the check is not necessary 'valid_' is a reference
+    // to 'dummy_'
+    bool dummy_;
+    bool &valid_;
   };
 
 private:
