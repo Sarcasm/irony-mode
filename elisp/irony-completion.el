@@ -304,7 +304,7 @@ character (double quote or angle-bracket) if needed."
 
 The name is shit, I know..."
   (if (consp element)
-      (eq (car element) 'p)
+      (or (eq (car element) 'p) (eq (car element) 't))
     (stringp element)))
 
 (defun irony-comp-dynamic-snippet (candidate-data)

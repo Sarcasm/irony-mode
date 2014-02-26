@@ -155,16 +155,19 @@ completion results."
         (brief (cdr (assq 'b (cdr result))))
         result-type)
     (setq result (car result))         ;ignore priority
+    (setq candidate-text nil)
     ;; find typed-text (and result optionaly)
-    (while (and typed-text (not (stringp (car typed-text))))
+    (while typed-text
       (let ((elem (car typed-text)))
         (when (and (consp elem) (eq (car elem) 'r))
-          (setq result-type (cdr elem))))
+          (setq result-type (cdr elem)))
+        (when (and (consp elem) (eq (car elem) 't) (not candidate-text))
+          (setq candidate-text (cdr elem))))
       (setq typed-text (cdr typed-text)))
     ;; make the item
-    (when typed-text
+    (when candidate-text
       (setq result-type (if result-type (format "[%s]" result-type)))
-      (popup-make-item (car typed-text) :value result :summary result-type
+      (popup-make-item candidate-text :value result :summary result-type
                        :document brief))))
 
 (defun irony-ac-simplified-candidates (results)
