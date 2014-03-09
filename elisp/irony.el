@@ -78,19 +78,16 @@ otherwise try GCC."
   :group 'irony)
 (make-variable-buffer-local 'irony-compile-flags-work-dir)
 
-(defcustom irony-known-modes '(c++-mode
-                               c-mode)
+(defcustom irony-known-modes '(c++-mode c-mode objc-mode)
   "List of modes where `irony-mode' can be turn on without
-  warnings.
-
-note: `obj-c-mode' would probably fit here but it need to be
-tested."
+  warnings."
   :type '(repeat symbol)
   :require 'irony
   :group 'irony)
 
 (defcustom irony-lang-option-alist '((c++-mode . "c++")
-                                     (c-mode   . "c"))
+                                     (c-mode   . "c")
+                                     (objc-mode . "objective-c"))
   "Association list of major-mode -> -x <lang_option> to pass to
   the compiler ."
   :type '(alist :key-type symbol :value-type string)

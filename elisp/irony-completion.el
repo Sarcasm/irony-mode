@@ -326,20 +326,20 @@ expansion."
       (setq candidate-data (cdr candidate-data)))
     ;; build snippet
     (dolist (e (cdr candidate-data))
-      (if (characterp e)
-          (setq dynamic-snippet (concat dynamic-snippet (list e)
-                                        (when (eq e ?,) ;prettify commas
-                                          " ")))
-        (when (consp e)
-          (cond
-           ((eq (car e) 't)
-            (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
-
-           ((eq (car e) 'ph)
-            (incf num-placeholders)
-            (setq dynamic-snippet
-                  (concat dynamic-snippet
-                          (format "${%d:%s}" num-placeholders (cdr e)))))))))
+      (cond
+       ((characterp e)
+        (setq dynamic-snippet (concat dynamic-snippet (list e)
+                                      (when (eq e ?,) ;prettify commas
+                                        " "))))
+       ((stringp e)
+        (setq dynamic-snippet (concat dynamic-snippet e)))
+       ((and (consp e) (eq (car e) 't))
+        (setq dynamic-snippet (concat dynamic-snippet (cdr e))))
+       ((and (consp e) (eq (car e) 'ph))
+        (incf num-placeholders)
+        (setq dynamic-snippet
+              (concat dynamic-snippet
+                      (format "${%d:%s}" num-placeholders (cdr e)))))))
     (unless (zerop num-placeholders)
       (setq dynamic-snippet (concat dynamic-snippet "$0")))
     (cons dynamic-snippet
