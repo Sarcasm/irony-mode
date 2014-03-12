@@ -44,4 +44,4 @@ target_link_libraries (irony-server
   )
 
 install (TARGETS irony-server
-  RUNTIME DESTINATION ${IRONY_SOURCE_DIR}/bin)
+  RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin)
