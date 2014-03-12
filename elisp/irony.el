@@ -1,4 +1,4 @@
-;;; irony.el --- C based language parsing facilities with Clang (libclang).
+;;; irony.el --- C/C++ minor mode powered by libclang
 
 ;; Copyright (C) 2011-2013  Guillaume Papin
 
