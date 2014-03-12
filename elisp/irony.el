@@ -3,6 +3,9 @@
 ;; Copyright (C) 2011-2013  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
+;; Version: 0.1
+;; URL: https://github.com/Sarcasm/irony-mode
+;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -19,20 +22,10 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
+;;
 ;; This file provide `irony-mode' a minor mode for C, C++ (eventually
 ;; Objective C and Objective C++).  This minor mode does nothing alone
 ;; in buffers where it's activated.
-;;
-;; TODO:
-;; - explain `irony-mode' in details.
-;; - checkdoc ?
-;; - when an irony-mode buffer is exited, inform the irony process ?
-;;   (change-major-mode-hook)
-;; - ...
-;;
-
-;;; Usage:
 
 ;;; Code:
 
@@ -52,6 +45,9 @@
 and more."
   :version "23.3"
   :group 'c)
+
+(defconst irony-version "0.1"
+  "The version number of the file irony.el.")
 
 (defcustom irony-compiler-executable
   (or (executable-find "clang")
