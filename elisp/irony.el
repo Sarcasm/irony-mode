@@ -21,7 +21,7 @@
 ;;; Commentary:
 
 ;; This file provide `irony-mode' a minor mode for C, C++ (eventually
-;; Objective C and Objective C++). This minor mode does nothing alone
+;; Objective C and Objective C++).  This minor mode does nothing alone
 ;; in buffers where it's activated.
 ;;
 ;; TODO:
@@ -253,16 +253,39 @@ the value of the variable `irony-server-executable'."
     (when (memq status '(exit signal closed failed))
       (message "irony process stopped..."))))
 
-(defun irony-handle-output (process output)
-  "Handle output that come from the `irony-process'.
+(defun irony-handle-response (response)
+  "Handle a response from the `irony-handle-output'.
 
 If a complete response is present in the irony process buffer the
 variable `irony-request-mapping' is used in order to find
 the action to do with the :type key in the request."
-  ;; If with OUTPUT we get a complete answer, RESPONSE will be
-  ;; non-nil.
+  (when (stringp response)
+    (let* ((sexp (read response))
+           (type (plist-get sexp :type))
+           (buffer-file (plist-get sexp :buffer))
+           (buffer (if buffer-file (get-file-buffer buffer-file)))
+           (handler (cdr (assq type irony-request-mapping))))
+      (if buffer
+          (irony-pop-request buffer))
+      (if (null handler)
+          (error "Irony process received an unknown request. \
+Request was \"%s\"." response)
+        (cond
+         ((functionp handler)
+          (funcall handler sexp))
+         (handler
+          (warn "The value of %s is not set correctly, function \
+expected got: %s." (symbol-name handler) handler)))))))
+
+(defun irony-handle-output (process output)
+  "Handle output that come from the `irony-process'.
+
+Output has multiple responses.  Each responses are
+handled by `irony-handle-response'."
+  ;; If with OUTPUT we get a complete answers, RESPONSES will be
+  ;; non-nil list.
   (let ((pbuf (process-buffer process))
-        response)
+        responses)
     ;; Add to process buffer
     (when (buffer-live-p pbuf)
       (with-current-buffer pbuf
@@ -272,32 +295,19 @@ the action to do with the :type key in the request."
           (set-marker (process-mark process) (point))
           ;; Check if the message is complete based on `irony-eot'
           (goto-char (point-min))
-          (when (search-forward irony-eot nil t)
-            (setq response (buffer-substring (point-min) (point)))
-            (delete-region (point-min) (point))
-            (let ((reason (unsafep response)))
-              (when reason
-                (setq response nil)
-                (error "Unsafe data received by the irony process\
- (request skipped): %s." reason)))))
+          (while (search-forward irony-eot nil t)
+            (let ((response (buffer-substring (point-min) (point))))
+              (delete-region (point-min) (point))
+              (let ((reason (unsafep response)))
+                (when reason
+                  (setq response nil)
+                  (error "Unsafe data received by the irony process\
+ (request skipped): %s." reason)))
+              (setq responses (cons response responses)))))
         (goto-char (process-mark process))))
-    (when (stringp response)
-      (let* ((sexp (read response))
-             (type (plist-get sexp :type))
-             (buffer-file (plist-get sexp :buffer))
-             (buffer (if buffer-file (get-file-buffer buffer-file)))
-             (handler (cdr (assq type irony-request-mapping))))
-        (if buffer
-            (irony-pop-request buffer))
-        (if (null handler)
-            (error "Irony process received an unknown request. \
-Request was \"%s\"." response)
-          (cond
-           ((functionp handler)
-            (funcall handler sexp))
-           (handler
-            (warn "The value of %s is not set correctly, function \
-expected got: %s." (symbol-name handler) handler))))))))
+    ;; Handle all responses.
+    (mapc #'irony-handle-response
+          (reverse responses))))
 
 (defun irony-push-request (buffer)
   "Increment the request count `irony-num-requests' in the given
