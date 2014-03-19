@@ -25,7 +25,7 @@ static void parseCommandLine(const std::vector<std::string> &argv) {
     if (arg == "--version") {
       // do not change the format for the first line, external programs should
       // be able to rely on it
-      std::cout << "irony-mode version 0.1" << std::endl;
+      std::cout << "irony-mode version 0.1.0" << std::endl;
       exit(0);
     }
 
