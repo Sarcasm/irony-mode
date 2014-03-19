@@ -1,9 +1,9 @@
 ;;; irony.el --- C/C++ minor mode powered by libclang
 
-;; Copyright (C) 2011-2013  Guillaume Papin
+;; Copyright (C) 2011-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.1
+;; Version: 0.1.0
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -45,9 +45,6 @@
 and more."
   :version "23.3"
   :group 'c)
-
-(defconst irony-version "0.1"
-  "The version number of the file irony.el.")
 
 (defcustom irony-compiler-executable
   (or (executable-find "clang")
@@ -192,6 +189,20 @@ with a major mode present in `irony-known-modes'."))
            (irony-compile-check)))
         (t
          (setq irony-mode-enabled nil))))
+
+(defun irony-version (&optional show-version)
+  "Returns the version number of the file irony.el.
+
+If called interactively display the version in the echo area."
+  (interactive "P")
+  ;; Shamelessly stolen from `company-mode'.
+  (with-temp-buffer
+    (insert-file-contents (find-library-name "irony"))
+    (require 'lisp-mnt)
+    (let ((v (lm-version)))
+      (when show-version
+        (message "Irony version: %s" v))
+      v)))
 
 (defun irony-cancel-process ()
   "Stop the irony process. `irony-cancel-process-hook' are
@@ -528,29 +539,6 @@ cached flags on a file."
                             (cons :flags (irony-get-libclang-flags)))))
     (irony-send-request :compile-check request-data
                         (or buffer (current-buffer)))))
-
-;; TODO:
-;; Interactive with completion (see `completion-read')
-(defun irony-enable (modules)
-  "Load one or more modules for Irony. (this is simply a helper
-function for modules that respect the following contract:
-
-- provide irony-MODULE-NAME
-- defun irony-MODULE-NAME-enable
-- defun irony-MODULE-NAME-disable"
-  (dolist (module (if (listp modules) modules (list modules)))
-    (require (intern (concat "irony/" (symbol-name module))))
-    (funcall (intern (concat "irony-" (symbol-name module) "-enable")))))
-
-(defun irony-disable (modules)
-  "Unload one or more modules for Irony. (this is simply a helper
-function for modules that respect the following contract:
-
-- provide irony-MODULE-NAME
-- defun irony-MODULE-NAME-enable
-- defun irony-MODULE-NAME-disable"
-  (dolist (module (if (listp modules) modules (list modules)))
-    (funcall (intern (concat "irony-" (symbol-name module) "-disable")))))
 
 (defun irony-find-traverse-for-subpath (subpath dir)
   "Look starting at DIR for and traverse the filesystem until

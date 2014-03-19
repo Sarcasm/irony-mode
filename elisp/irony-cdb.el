@@ -1,6 +1,6 @@
 ;;; irony-cdb.el --- `irony-mode` compilation database
 
-;; Copyright (C) 2012-2013  Guillaume Papin
+;; Copyright (C) 2012-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience, tools

@@ -1,4 +1,5 @@
-# Status
+# Irony-Mode
+## A C/C++ minor mode powered by [libclang][libclang-ref]
 
 [![Build Status](https://api.travis-ci.org/Sarcasm/irony-mode.png?branch=develop)](https://travis-ci.org/Sarcasm/irony-mode)
 
@@ -10,85 +11,52 @@
 * open issues, fork-it and create pull-requests!
 
 
-# Screenshots
+## Features
 
-![Optional Parameters](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/optional-parameters.png)
-
-![Boost](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/boost-example.png)
+* Semantic completion with [ac-irony][ac-irony-ref]
 
 
-# Automatic installation
+## Dependencies
 
-The easiest way to get irony-mode and its dependencies is to use
-[el-get][el-get-ref].
+This package depends on:
 
-    M-x el-get-install RET irony-mode RET
-
-My [irony-mode configuration for el-get][init-irony-mode-ref] can help you get
-started!
-
-You are ready to go, you can jump to: [Usage](#usage)
-
-[el-get-ref]: https://github.com/dimitri/el-get "El-Get"
-[init-irony-mode-ref]: https://github.com/Sarcasm/.emacs.d/blob/master/sarcasm-elisp/sarcasm-packages/init-irony-mode.el "Irony-Mode initialization"
+| Package               | Version  | Status       | Comment                                               |
+| --------------------- | -------- | ------------ | ----------------------------------------------------- |
+| [YASnippet][yas-ref]  | All      | recommended  | Used only when available to provide dynamic snippets  |
+| [JSON][json-el-ref]   | All      | required     | Built-in since Emacs 23                               |
 
 
-# Manual installation
+## Installation
 
-## Download and build
+The recommended way to install `irony-mode` and its dependencies is to use a
+package manager.
 
-Download with `git >= 1.6.5` and later:
+* Using [el-get](https://github.com/dimitri/el-get)
 
-    git clone --recursive git://github.com/Sarcasm/irony-mode.git
+        M-x el-get-install RET irony-mode RET
 
-Download with `git < 1.6.5`:
+* Using [MELPA](http://melpa.milkbox.net/)
 
-    git clone git://github.com/Sarcasm/irony-mode.git
-    git submodule update --init
-
-Finally:
-
-    cd irony-mode
-    mkdir -p build
-    cd build
-    cmake .. && make -j 4
-    make install
-
-*Note:* It is recommended to proceed to the installation step. This is not a
-system-wide installation, it shouldn't require any privilege. The installation
-step will help `irony.el` to find the binary without additional configuration.
+        M-x package-install RET irony-mode RET
 
 
-## Elisp dependencies
+## Configuration
 
-Recommended packages and versions:
+~~~el
+(require 'irony-mode)
 
-| Package                           | Version   | Status        | Comment                                                                                                 |
-| --------------------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------------- |
-| [auto-complete][ac-ref]           | 1.4       | recommended   | you can check the version in the auto-complete.el header                                                |
-| [auto-complete fork][ac-fork-ref] | 1.4       | as-you-wish   | conflicts w/ auto-complete AND popup, able to display detailed completions such as overloaded functions |
-| [YASnippet][yasnippet-ref]        | All       | recommended   | `yas--version` or `yas/version`                                                                         |
-| JSON                              | All       | needed        | Built-in since Emacs 23, can be downloaded here: [json.el][json-el-ref]                                 |
+(defun my-irony-mode-enable ()
+  ;; avoid enabling irony-mode in modes that inherits c-mode, e.g: php-mode
+  (when (member major-mode irony-known-modes)
+    (irony-mode 1)))
 
-[ac-ref]:        https://github.com/auto-complete/auto-complete                               "Auto Complete"
-[ac-fork-ref]:   https://github.com/Sarcasm/auto-complete                                     "Auto Complete Sarcasm fork"
-[yasnippet-ref]: https://github.com/capitaomorte/yasnippet                                    "YASnippet"
-[json-el-ref]:      http://cvs.savannah.gnu.org/viewvc/*checkout*/emacs/lisp/json.el?root=emacs) "json.el"
-
-
-## Emacs configuration
-
-Add irony-mode to the load `load-path`:
-
-```el
-(add-to-list 'load-path (expand-file-name "~/IRONY/MODE/PATH/elisp/"))
-```
-
-And fill-in a basic configuration as shown below in
-[Auto Complete](#auto-complete).
+(add-hook 'c++-mode-hook 'my-irony-mode-enable)
+(add-hook 'c-mode-hook 'my-irony-mode-enable)
+(add-hook 'objc-mode-hook 'my-irony-mode-enable)
+~~~
 
 
-# Usage
+## Usage
 
 If you want the completion to work on a project you will probably need give some
 information about the flags necessary to compile a file. The best way to achieve
@@ -100,69 +68,18 @@ use the command `M-x irony-reload-flags`. This shouldn't be necessary if you use
 the compilation database plugin.
 
 
-# Plugins
-
-To enable a plugin call `(irony-enable 'plugin-name)`. To enable more than one
-plugin at once call the same function with a list `(irony-enable '(plugin-1
-plugin-2))`.
-
-
-## Auto Complete
-
-Code completion with auto-complete.
-
-Requires:
-
-* [auto-complete][ac-ref]
-* [yasnippet][yasnippet-ref] (optional)
-
-Configuration:
-
-```el
-(require 'auto-complete)
-(require 'yasnippet)
-(require 'irony) ;Note: hit `C-c C-b' to open build menu
-
-;; the ac plugin will be activated in each buffer using irony-mode
-(irony-enable 'ac)             ; hit C-RET to trigger completion
-
-(defun my-c++-hooks ()
-  "Enable the hooks in the preferred order: 'yas -> auto-complete -> irony'."
-  ;; be cautious, if yas is not enabled before (auto-complete-mode 1), overlays
-  ;; *may* persist after an expansion.
-  (yas/minor-mode-on)
-  (auto-complete-mode 1)
-
-  ;; avoid enabling irony-mode in modes that inherits c-mode, e.g: php-mode
-  (when (member major-mode irony-known-modes)
-    (irony-mode 1)))
-
-(add-hook 'c++-mode-hook 'my-c++-hooks)
-(add-hook 'c-mode-hook 'my-c++-hooks)
-```
-
-**Note:** If my fork of `auto-complete` is used you should be careful
-to not have another installation of `auto-complete` or `popup` since
-both of them are present in my fork.
-
-You can eval these lines in the `*scratch*` buffer:
-
-```el
-(let ((requirements (or (require 'auto-complete nil t)
-                        (require 'popup nil t))))
-  (message "You should remove both auto-complete and popup before using my fork of auto-complete"))
-```
-
-Hit `C-x C-e` at the end of the expression to evaluate.
-
-
 ## Compilation Database
 
 In order to work correctly, `irony-mode` needs to know the compile flags. This
 plugin allow aims to provide *as automatic as possible* compile flags discovery,
 with minimum user input.
 
-It works great with the following tools:
+Just hit `C-c C-b` (aka `irony-cdb-menu`) to display the build configuration
+menu.
+
+The menu should be self explanatory, if it's not the case please open an issue.
+
+This plugin works great with the following tools:
 
 - [CMake][cmake-ref] >= 2.8.5
 
@@ -171,8 +88,7 @@ It works great with the following tools:
 
 - [Bear][bear-ref] - Bear is a tool that can generate a
   `compile_commands.json` file by "monitoring" the build of a project.
-  The typical usage for a `make` based project will be `bear -- make
-  -B`.
+  The typical usage for a `make` based project will be `bear -- make -B`.
 
 - [.clang_complete][clang_complete-doc-ref] - A file at the root of your project
   containing the compilation flags, one per line. This is compatible with the
@@ -182,32 +98,14 @@ It works great with the following tools:
 
 
 The [JSON Compilation Database Format Specification][clang-compile-db-ref] page
-might reference some new tools in the future supporting the
-`compile_commands.json` format (such as `cmake` and `Bear` described above).
-`irony-mode` support that file format and hopefully it should work
-*out-of-the-box* for such tool.
+may reference some new tools in the future that supports the
+`compile_commands.json` format. `irony-mode` support that file format and
+hopefully it should work *out-of-the-box* for any of such tools.
 
-![Compilation DB demo](https://raw.github.com/Sarcasm/irony-mode/develop/screenshots/cdb.gif)
-
-Usage:
-
-This is not really a plugin but something built-in irony-mode core, as such it
-doesn't require any activation code. Just hit `C-c C-b` to display the build
-configuration menu.
-
-The menu should be self explanatory, if it's not the case open an issue please.
+![Compilation DB demo](screenshots/cdb.gif)
 
 
-[cmake-ref]: http://www.cmake.org "CMake"
-[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
-[bear-ref]: https://github.com/rizsotto/Bear "Bear"
-[clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
-[clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L45 ".clang_complete"
-[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
-[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/2831a5040ee328103b941fcdbc3c8d6ef5593b59/doc/clang_complete.txt#L271 "cc_args.py documentation"
-
-# FAQ
-
+## FAQ
 
 __It's slow, why?__
 
@@ -280,7 +178,7 @@ You can use the following configuration:
         '("-isystem" "/usr/lib/clang/3.2/include/")))
 ```
 
-This is issue is a known problem:
+This is issue is a known problem with libclang:
 
 * http://lists.cs.uiuc.edu/pipermail/cfe-dev/2012-July/022893.html
 
@@ -295,34 +193,29 @@ This is issue is a known problem:
 
 __libclang.so: cannot open shared object file...__
 
-Compiling `irony-server` succeed but you have the following message
-when you try to run the `irony-server` executable:
+Compiling `irony-server` succeed but you have the following message when you try
+to run the `irony-server` executable:
 
     'irony-server: error while loading shared libraries: libclang.so: cannot open shared object file: No such file or directory
 
-Maybe it's due to a non-standard location for your installation of
-`libclang`. A path such as `/usr/local/lib` might not be in the path
-list of the dynamic loader (see ld.so.conf).
+Maybe it's due to a non-standard location for your installation of `libclang`. A
+path such as `/usr/local/lib` might not be in the path list of the dynamic
+loader (see ld.so.conf).
 
-To solve this issue it is possible to build `irony-server` with the
-following command:
+To solve this issue you can try to build `irony-server` with the following
+command:
 
     cmake -DUSE_RPATH=ON ..
 
 
-__auto-complete acts strangely, it tries to complete inside string literals...__
-
-In order to enable header completion, such as:
-
-```cpp
-#include "heade[COMP]
-```
-
-The `ac` plugin allows `auto-complete` to complete inside string
-literals in `irony-ac-enable`.
-
-```el
-(setq ac-disable-faces (delq 'font-lock-string-face ac-disable-faces))
-```
-
-Please create an issue if you find this unacceptable.
+[libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
+[ac-irony-ref]: https://github.com/Sarcasm/ac-irony "AC Irony"
+[yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"
+[json-el-ref]: http://cvs.savannah.gnu.org/viewvc/*checkout*/emacs/lisp/json.el?root=emacs "json.el"
+[clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
+[cmake-ref]: http://www.cmake.org "CMake"
+[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
+[bear-ref]: https://github.com/rizsotto/Bear "Bear"
+[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
+[clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L55 ".clang_complete"
+[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L270 "cc_args.py documentation"

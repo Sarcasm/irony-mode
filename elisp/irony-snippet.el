@@ -1,6 +1,6 @@
 ;;; irony-snippet.el --- Snippet support for Irony-Mode
 
-;; Copyright (C) 2013  Guillaume Papin
+;; Copyright (C) 2013-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: c, convenience
