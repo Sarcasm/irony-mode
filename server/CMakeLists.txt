@@ -1,47 +1,40 @@
-#
-# irony-server executable build file
-#
-find_package (LibClang REQUIRED)
+cmake_minimum_required(VERSION 2.8)
 
-include_directories (${LIBCLANG_INCLUDE_DIRS})
-include_directories (${IRONY_UTILS_INCLUDES})
-include_directories (${CMAKE_CURRENT_SOURCE_DIR})
+project(IronyMode)
 
-#
-# irony-server executable
-#
-add_executable (irony-server
-  # Main sources
-  IPlugin.cpp
-  IPlugin.h
-  ClangString.cpp
-  ClangString.h
-  Server.cpp
-  Server.h
-  TUManager.cpp
-  TUManager.h
-  main.cpp
+set(CMAKE_MODULE_PATH
+  ${PROJECT_SOURCE_DIR}/cmake
+  ${PROJECT_SOURCE_DIR}/cmake/modules
+  ${CMAKE_MODULE_PATH})
 
-  # "Built-in" plugins sources
-  plugins/CodeCompletion.cpp
-  plugins/CodeCompletion.h
-  plugins/SyntaxChecker.cpp
-  plugins/SyntaxChecker.h
-  plugins/CacheInvalidation.h
-  plugins/CacheInvalidation.cpp
-  plugins/CompileChecker.cpp
-  plugins/CompileChecker.h
+include(utils)
+
+check_for_in_source_build()
+release_as_default_build_type()
+enable_colored_diagnotics()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options_(-Wall -Wextra)
+endif()
+
+# libclang in non standard locations can cause some troubles.
+option(USE_RPATH "Enable rpath for shared libraries (such as libclang.so)." OFF)
+
+if (USE_RPATH)
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+set(IRONY_UTILS_INCLUDES
+  ${PROJECT_SOURCE_DIR}/lib
+  ${PROJECT_SOURCE_DIR}/lib/SimpleJSON/src
   )
 
-add_dependencies (irony-server
-  # Dependencies
-  irony-utils
-  )
-
-target_link_libraries (irony-server
-  irony-utils
-  ${LIBCLANG_LIBRARIES}
-  )
-
-install (TARGETS irony-server
-  RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+add_subdirectory(lib)
+add_subdirectory(src)
+add_subdirectory(docs)
+enable_testing()
+add_subdirectory(test)

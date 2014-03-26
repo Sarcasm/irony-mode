@@ -4,8 +4,6 @@
 
 (require 'irony-cdb)
 
-(require 'json)
-
 (ert-deftest cdb/gen-clang-args/end-of-opts ()
   (should (not
            (irony-cdb-gen-clang-args '("--" "a.c" "b.c")))))
@@ -14,8 +12,8 @@
   "Test if the arguments are given back in the same order as they
 were given.
 
-An argument my be dependent of the previous one, we want to keep
-the order. -W"
+An argument may be dependent of the previous one, it's important
+to keep the ordering right."
   (let ((args '("-Wall" "-ferror-limit" "42" "-Wextra")))
     (should (equal
              args

@@ -13,8 +13,8 @@ before_script:
   - cd build
 
 script:
-  - cmake ..
-  - make -k -j 4
+  - cmake ../server
+  - make -k -j4
   - ctest --output-on-failure 
 
 after_script:

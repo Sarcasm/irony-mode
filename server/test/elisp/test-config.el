@@ -6,7 +6,7 @@
 
 ;; load irony
 (unless (require 'irony nil t)
-  (let ((irony-dir (expand-file-name "../../elisp" test-dir)))
+  (let ((irony-dir (expand-file-name "../../.." test-dir)))
     (add-to-list 'load-path irony-dir)
     (require 'irony)))
 
