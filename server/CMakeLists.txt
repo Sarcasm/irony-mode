@@ -12,6 +12,7 @@ include(utils)
 check_for_in_source_build()
 release_as_default_build_type()
 enable_colored_diagnotics()
+enable_cxx11_compile_options()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options_(-Wall -Wextra)
@@ -28,12 +29,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(IRONY_UTILS_INCLUDES
-  ${PROJECT_SOURCE_DIR}/lib
-  ${PROJECT_SOURCE_DIR}/lib/SimpleJSON/src
-  )
-
-add_subdirectory(lib)
 add_subdirectory(src)
 add_subdirectory(docs)
 enable_testing()

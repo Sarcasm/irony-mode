@@ -1,3 +1,0 @@
-[submodule "server/lib/SimpleJSON"]
-	path = server/lib/SimpleJSON
-	url = https://github.com/MJPA/SimpleJSON.git

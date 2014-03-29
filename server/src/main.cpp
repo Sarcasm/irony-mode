@@ -7,45 +7,67 @@
  *
  */
 
-#include "Server.h"
+#include "Irony.h"
+#include "Command.h"
 
-#include <clocale>
 #include <cstdlib>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
-static void parseCommandLine(const std::vector<std::string> &argv) {
-  for (std::vector<std::string>::const_iterator it = argv.begin() + 1,
-                                                end = argv.end();
-       it != end;
-       ++it) {
+static void printHelp(const std::string &programName) {
+  std::cout << "usage: " << programName << " [-h] [--version]\n";
+}
+
+static void parseGlobalOptions(const std::string &programName,
+                               std::vector<std::string> &argv) {
+  std::vector<std::string>::const_iterator it = argv.begin();
+
+  for (; it != argv.end(); ++it) {
     const std::string &arg = *it;
 
     if (arg == "--version") {
       // do not change the format for the first line, external programs should
       // be able to rely on it
-      std::cout << "irony-mode version 0.1.0" << std::endl;
+      std::cout << "irony-mode version 0.1.0\n";
       exit(0);
     }
 
     if (arg == "--help" || arg == "-h") {
-      std::cout << "usage: " << argv[0] << " [-h] [--version]\n";
+      printHelp(programName);
       exit(0);
-    } else {
-      std::cerr << argv[0] << ": error: unrecognized argment '" << arg << "'\n";
+    } else if (!arg.empty() && arg[0] == '-') {
+      std::cerr << programName << ": error: unrecognized program option '"
+                << arg << "'\n";
       exit(1);
+    } else {
+      return;
     }
   }
 }
 
 int main(int argc, const char *argv[]) {
-  // Required for wstring
-  setlocale(LC_CTYPE, "");
+  std::string programName = argv[0];
+  std::vector<std::string> args(&argv[1], &argv[argc]);
 
-  parseCommandLine(std::vector<std::string>(argv, &argv[argc]));
+  // XXX: exits if any global option is provided, this behavior may be changed
+  // as global option are added.
+  parseGlobalOptions(programName, args);
 
-  Server server;
+  Irony irony;
+  CommandParser commandParser;
 
-  return server.run();
+  if (Command *c = commandParser.parse(args)) {
+    std::clog << "execute: " << *c << "\n";
+
+    switch (c->action) {
+    case Command::CheckCompile:
+      irony.check(c->file, c->flags);
+      break;
+    default:
+      // cerr << "unsupported"
+      break;
+    }
+  }
+
+  return 0;
 }

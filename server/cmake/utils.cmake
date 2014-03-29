@@ -73,3 +73,49 @@ function(enable_colored_diagnotics)
     endif()
   endif()
 endfunction()
+
+#
+# check_cxx11_compiler_option()
+#
+# Throws a FATAL_ERROR if C++11 isn't available otherwise sets
+# CXX11_COMPILER_OPTIONS with the proper compiler option to enable C++11 (if
+# any).
+#
+function(check_cxx11_compiler_options)
+  if (CXX11_COMPILER_OPTIONS)
+    return() # already in cache
+  endif()
+
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    check_cxx_compiler_flag("-std=c++11" HAS_STDCXX11)
+    if (HAS_STDCXX11)
+      set(cxx11_options -std=c++11)
+    else()
+      check_cxx_compiler_flag("-std=c++0x" HAS_STDCXX0X)
+      if (HAS_STDCXX0X)
+        set(cxx11_options -std=c++0x)
+      else()
+        message(FATAL_ERROR "Basic C++11 support is required!")
+      endif()
+    endif()
+  endif()
+
+  if (cxx11_options)
+    message(STATUS "C++11 compiler option is ${cxx11_options}")
+  endif()
+  set(CXX11_COMPILER_OPTIONS ${cxx11_options} CACHE INTERNAL
+    "C++11 compile options, if any")
+endfunction()
+
+#
+# enable_cxx11_compile_options()
+#
+# Test for C++11 availability and setup the compiler options needed if any.
+# Otherwise throw an error.
+#
+function(enable_cxx11_compile_options)
+  check_cxx11_compiler_options()
+  if (CXX11_COMPILER_OPTIONS)
+    add_compile_options_(${CXX11_COMPILER_OPTIONS})
+  endif()
+endfunction()

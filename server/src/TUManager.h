@@ -12,7 +12,7 @@
 #ifndef IRONY_MODE_SERVER_TUMANAGER_H_
 #define IRONY_MODE_SERVER_TUMANAGER_H_
 
-#include "util/NonCopyable.h"
+#include "support/NonCopyable.h"
 
 #include <clang-c/Index.h>
 
@@ -90,7 +90,7 @@ public:
    * CXTranslationUnit tu = tuManager.parse("file.cpp", flags);
    *
    * if (! tu)
-   *   std::cerr << "parsing translation unit failed" << std::endl;
+   *   std::cerr << "parsing translation unit failed\n";
    * \endcode
    *
    * \param filename    The filename to parse.

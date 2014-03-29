@@ -67,7 +67,7 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
   }
 
   if (!tu) {
-    std::clog << "parsing \"" << filename << "\" failed." << std::endl;
+    std::clog << "error: libclang couldn't parse '" << filename << "'\n";
     return 0;
   }
 
@@ -86,6 +86,7 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
   if (clang_reparseTranslationUnit(tu, 0, 0, clang_defaultReparseOptions(tu))) {
     // a 'fatal' error occured (even a diagnostic is impossible)
     clang_disposeTranslationUnit(tu);
+    std::clog << "error: libclang couldn't reparse '" << filename << "'\n";
     tu = 0;
     return 0;
   }
