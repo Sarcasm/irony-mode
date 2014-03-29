@@ -45,14 +45,13 @@ private:
 
 std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
   os << "Command::";
-  switch (action) {
-  case Command::CheckCompile:
-    os << "CheckCompile";
-    break;
 
-  case Command::Unkown:
-    os << "Unknown";
+  switch (action) {
+#define X(sym, str)                                                            \
+  case Command::sym:                                                           \
+    os << #sym;                                                                \
     break;
+#include "Command.def"
   }
   return os;
 }
@@ -75,6 +74,16 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
   return os << "}";
 }
 
+static Command::Action actionFromString(const std::string &actionStr) {
+#define X(sym, str)                                                            \
+  if (actionStr == str)                                                        \
+    return Command::sym;
+
+#include "Command.def"
+
+  return Command::Unknown;
+}
+
 Command *CommandParser::parse(const std::vector<std::string> &argv) {
   command_.clear();
 
@@ -90,9 +99,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   const std::string &actionStr = argv[0];
 
-  if (actionStr == "compile-check") {
-    command_.action = Command::CheckCompile;
-  }
+  command_.action = actionFromString(actionStr);
 
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
@@ -104,7 +111,11 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     break;
 
-  case Command::Unkown:
+  case Command::Version:
+  case Command::Help:
+    break;
+
+  case Command::Unknown:
     std::clog << "error: invalid command specified: " << actionStr << "\n";
     return 0;
   }

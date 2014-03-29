@@ -20,14 +20,18 @@ struct Command {
   }
 
   void clear() {
-    action = Unkown;
+    action = Unknown;
     flags.clear();
     file.clear();
     line = 0;
     column = 0;
   }
 
-  enum Action { CheckCompile, Unkown } action;
+#define X(sym, str) sym,
+  enum Action {
+#include "Command.def"
+  } action;
+
   std::vector<std::string> flags;
   std::string file;
   unsigned line;

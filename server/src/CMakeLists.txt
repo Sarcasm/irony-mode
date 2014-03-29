@@ -9,8 +9,9 @@ add_executable(irony-server
 
   ClangString.cpp
   ClangString.h
-  Command.h
   Command.cpp
+  Command.def
+  Command.h
   Irony.cpp
   Irony.h
   TUManager.cpp
