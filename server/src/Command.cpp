@@ -108,8 +108,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::CheckCompile:
     // file.cpp line column
     positionalArgs.push_back(StringConverter(&command_.file));
-    positionalArgs.push_back(UnsignedIntConverter(&command_.line));
-    positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     break;
 
   case Command::Version:

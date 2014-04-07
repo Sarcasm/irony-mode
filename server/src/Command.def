@@ -13,7 +13,7 @@
 #error X macro should be define before inclusion!
 #endif
 
-X(CheckCompile, "check-compile", "file line column")
+X(CheckCompile, "check-compile", "file")
 X(Help, "help", "<none>")
 X(Version, "version", "<none>")
 
