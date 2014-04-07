@@ -12,10 +12,16 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 
 static void printHelp(const std::string &programName) {
-  std::cout << "usage: " << programName << " [-h] [--version]\n";
+  std::cout << "usage: " << programName << " <command> [<args>]\n\n";
+
+#define X(sym, str, desc)                                                      \
+  if (Command::sym != Command::Unknown)                                        \
+    std::cout << std::left << std::setw(18) << "  " str << desc << "\n";
+#include "Command.def"
 }
 
 int main(int argc, const char *argv[]) {
@@ -29,8 +35,8 @@ int main(int argc, const char *argv[]) {
     std::clog << "execute: " << *c << "\n";
 
     switch (c->action) {
-    case Command::CheckCompile:
-      irony.check(c->file, c->flags);
+    case Command::Help:
+      printHelp(programName);
       break;
 
     case Command::Version:
@@ -39,12 +45,11 @@ int main(int argc, const char *argv[]) {
       std::cout << "irony-mode version 0.1.0\n";
       break;
 
-    case Command::Help:
-      printHelp(programName);
+    case Command::CheckCompile:
+      irony.check(c->file, c->flags);
       break;
 
     case Command::Unknown:
-      // cerr << "unsupported"
       break;
     }
   }

@@ -47,7 +47,7 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
   os << "Command::";
 
   switch (action) {
-#define X(sym, str)                                                            \
+#define X(sym, str, help)                                                      \
   case Command::sym:                                                           \
     os << #sym;                                                                \
     break;
@@ -75,7 +75,7 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
 }
 
 static Command::Action actionFromString(const std::string &actionStr) {
-#define X(sym, str)                                                            \
+#define X(sym, str, help)                                                      \
   if (actionStr == str)                                                        \
     return Command::sym;
 
@@ -93,7 +93,8 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     command_.flags.assign(end + 1, argv.end());
 
   if (argv.begin() == end) {
-    std::clog << "error: no command specified\n";
+    std::clog << "error: no command specified.\n"
+                 "See 'irony-server help' to list available commands\n";
     return 0;
   }
 

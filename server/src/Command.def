@@ -13,9 +13,11 @@
 #error X macro should be define before inclusion!
 #endif
 
-X(Version, "version")
-X(CheckCompile, "check-compile")
-X(Help, "Help")
-X(Unknown, "<unkown>")
+X(CheckCompile, "check-compile", "file line column")
+X(Help, "help", "<none>")
+X(Version, "version", "<none>")
+
+// should be the last one, sentinel value
+X(Unknown, "<unkown>",  "<unspecified>")
 
 #undef X

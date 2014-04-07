@@ -27,7 +27,7 @@ struct Command {
     column = 0;
   }
 
-#define X(sym, str) sym,
+#define X(sym, str, desc) sym,
   enum Action {
 #include "Command.def"
   } action;
