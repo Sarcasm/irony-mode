@@ -10,7 +10,7 @@ add_executable(irony-server
   ClangString.cpp
   ClangString.h
   Command.cpp
-  Command.def
+  Commands.def
   Command.h
   Irony.cpp
   Irony.h

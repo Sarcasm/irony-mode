@@ -13,11 +13,10 @@
 #error X macro should be define before inclusion!
 #endif
 
-X(CheckCompile, "check-compile", "file")
-X(Help, "help", "<none>")
-X(Version, "version", "<none>")
+X(CheckCompile, "check-compile", "FILE - check that a given file compiles")
+X(Help, "help", "show this message")
 
-// should be the last one, sentinel value
+// sentinel value, should be the last one
 X(Unknown, "<unkown>",  "<unspecified>")
 
 #undef X

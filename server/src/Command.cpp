@@ -51,7 +51,7 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
   case Command::sym:                                                           \
     os << #sym;                                                                \
     break;
-#include "Command.def"
+#include "Commands.def"
   }
   return os;
 }
@@ -79,7 +79,7 @@ static Command::Action actionFromString(const std::string &actionStr) {
   if (actionStr == str)                                                        \
     return Command::sym;
 
-#include "Command.def"
+#include "Commands.def"
 
   return Command::Unknown;
 }
@@ -110,7 +110,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     positionalArgs.push_back(StringConverter(&command_.file));
     break;
 
-  case Command::Version:
   case Command::Help:
     break;
 

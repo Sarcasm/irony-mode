@@ -29,7 +29,7 @@ struct Command {
 
 #define X(sym, str, desc) sym,
   enum Action {
-#include "Command.def"
+#include "Commands.def"
   } action;
 
   std::vector<std::string> flags;
