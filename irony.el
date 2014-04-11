@@ -23,15 +23,9 @@
 
 ;;; Commentary:
 ;;
-;; This file provide `irony-mode' a minor mode for C, C++ (eventually
-;; Objective C and Objective C++).  This minor mode does nothing alone
-;; in buffers where it's activated.
+;; This file provide `irony-mode' a minor mode for C, C++ and Objective-C.
 
 ;;; Code:
-
-(require 'json)
-
-(autoload 'irony-compilation-db-setup "irony-cdb")
 
 (eval-when-compile
   (require 'cl))
@@ -100,21 +94,16 @@ Header files extensions shouldn't take part of this list."
   :group 'irony
   :type '(choice (repeat string)))
 
-(defcustom irony-server-executable (or (executable-find "irony-server")
-                                       (let ((path (concat (file-name-directory
-                                                            (locate-library "irony"))
-                                                           "../bin/irony-server")))
-                                         (if (file-exists-p path)
-                                             (expand-file-name path))))
-  "The path where the \"irony-server\" executable can be found."
+(defcustom irony-server-executable "irony-server"
+  "The path where the 'irony-server' executable or simply the
+executable name if it is in your PATH."
   :type 'file
   :require 'irony
   :group 'irony)
 
 ;;;###autoload
 (defcustom irony-mode-line " Irony"
-  "Text to display in the mode line (actually an irony mark) when
-irony mode is on."
+  "Text to display in the mode line when irony mode is on."
   :type 'string
   :require 'irony
   :group 'irony)
@@ -125,6 +114,7 @@ cancelled."
   :group 'irony
   :type 'hook)
 
+
 ;;
 ;; Internal variables
 ;;
@@ -255,7 +245,6 @@ the value of the variable `irony-server-executable'."
 
 (defun irony-sentinel (process event)
   "Watch the activity of irony process."
-  ;; FIXME: turn off `irony-mode' in all buffer ?
   (let ((status (process-status process)))
     (when (memq status '(exit signal closed failed))
       (message "irony process stopped..."))))
@@ -285,12 +274,7 @@ Request was \"%s\"." response)
 expected got: %s." (symbol-name handler) handler)))))))
 
 (defun irony-handle-output (process output)
-  "Handle output that come from the `irony-process'.
-
-Output has multiple responses.  Each responses are
-handled by `irony-handle-response'."
-  ;; If with OUTPUT we get a complete answers, RESPONSES will be
-  ;; non-nil list.
+  "Handle output that come from the active `irony-process'."
   (let ((pbuf (process-buffer process))
         responses)
     ;; Add to process buffer
@@ -303,18 +287,16 @@ handled by `irony-handle-response'."
           ;; Check if the message is complete based on `irony-eot'
           (goto-char (point-min))
           (while (search-forward irony-eot nil t)
-            (let ((response (buffer-substring (point-min) (point))))
+            (let* ((response (buffer-substring (point-min) (point)))
+                   (setq reason (unsafep response)))
               (delete-region (point-min) (point))
-              (let ((reason (unsafep response)))
-                (when reason
-                  (setq response nil)
-                  (error "Unsafe data received by the irony process\
- (request skipped): %s." reason)))
-              (setq responses (cons response responses)))))
-        (goto-char (process-mark process))))
+              (if (not reason)
+                  (setq responses (cons response responses))
+                (error "Unsafe data received by the irony process\
+ (request skipped): %s." reason))
+              (goto-char (process-mark process)))))))
     ;; Handle all responses.
-    (mapc #'irony-handle-response
-          (reverse responses))))
+    (mapc #'irony-handle-response (nreverse responses))))
 
 (defun irony-push-request (buffer)
   "Increment the request count `irony-num-requests' in the given

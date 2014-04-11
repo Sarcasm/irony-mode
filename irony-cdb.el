@@ -23,6 +23,7 @@
 ;;; Code:
 
 (require 'irony)
+(require 'json)
 
 (eval-when-compile
   (require 'cl))
@@ -192,7 +193,7 @@ To be used by `irony-cdb-menu'."
         append (plist-get item :keys) into keys
         finally return keys))
 
-(defun irony-read-char-choice (prompt chars)
+(defun irony-cdb-read-char-choice (prompt chars)
   "Wrapper around read-char-choice, which is not available in
 Emacs < 24."
   (setq prompt (concat prompt " [" chars "]: "))
@@ -228,7 +229,7 @@ Emacs < 24."
             (display-buffer buffer t))
           (fit-window-to-buffer (get-buffer-window buffer))
           (let ((chars (sort (cons ?q (mapcar 'car keys)) '<)))
-            (setq k (irony-read-char-choice "Select Compilation DB" chars))))))
+            (setq k (irony-cdb-read-char-choice "Select Compilation DB" chars))))))
     (message "") ;; clear `read-char-choice' prompt
     (unless (eq ?q k)
       (setq cmd (cdr (assoc k keys))))
@@ -308,7 +309,8 @@ for this path."
       (when cc-file
 	(irony-cdb-load-clang-complete cc-file)))))
 
-(defun irony-compilation-db-setup ()
+;;;###autoload
+(defun irony-cdb-setup ()
   "Irony-mode hook for irony-cdb plugin."
   (when (and buffer-file-name
 	     (not irony-cdb-enabled))
