@@ -30,6 +30,12 @@
 (eval-when-compile
   (require 'cl))
 
+(defcustom irony-pp-compiler-executable (or (executable-find "clang")
+                                            (executable-find "gcc"))
+  "Path of a GCC/Clang compatible compiler executable."
+  :group 'irony
+  :type '(file :must-match t))
+
 (defcustom irony-pp-compiler-args
   '("-v" "-E" "/dev/null")
   "The lang option will be automatically added (-x c++ / -x c)."
@@ -74,9 +80,9 @@
 (defun irony-pp-system-search-paths-1 (lang-flag)
   "*Internal function* Really retrieve compiler search paths.
 Please use `irony-pp-system-search-paths'."
-  (when irony-compiler-executable
+  (when irony-pp-compiler-executable
     (with-temp-buffer
-      (apply 'call-process irony-compiler-executable nil t nil
+      (apply 'call-process irony-pp-compiler-executable nil t nil
              (append lang-flag irony-pp-compiler-args))
       (goto-char (point-min))
       (let (directories
@@ -184,9 +190,5 @@ filtered according to `irony-pp-header-allowed-extensions'."
             return completions)))))
 
 (provide 'irony-pp)
-
-;; Local Variables:
-;; byte-compile-warnings: (not cl-functions)
-;; End:
 
 ;;; irony-pp.el ends here
