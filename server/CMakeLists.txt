@@ -18,6 +18,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options_(-Wall -Wextra)
 endif()
 
+option(BUILD_DOXYGEN "Whether or not to build the Doxygen documentation" OFF)
 # libclang in non standard locations can cause some troubles.
 option(USE_RPATH "Enable rpath for shared libraries (such as libclang.so)." OFF)
 
