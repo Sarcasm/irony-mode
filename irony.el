@@ -165,13 +165,13 @@ Set to nil if not found.")
 
 (defun irony-mode-enter ()
   ;; warn the user about suspicious modes such as php-mode that inherits c-mode
-  (if (not (memq major-mode irony-known-modes))
-      (display-warning 'irony "Irony mode is aimed to work with a\
- major mode present in `irony-known-modes'.")
-    ;;c-mode-hook and c++-mode-hook appears to run twice, avoid unecessary call
-    ;;to `irony-locate-server-executable' if it has already be done once.
-    (unless irony-server-executable-path
-      (irony-locate-server-executable))))
+  (when (not (memq major-mode irony-known-modes))
+    (display-warning 'irony "Irony mode is aimed to work with a\
+ major mode present in `irony-known-modes'."))
+  ;;c-mode-hook and c++-mode-hook appears to run twice, avoid unecessary call
+  ;;to `irony-locate-server-executable' if it has already be done once.
+  (unless irony-server-executable-path
+    (irony-locate-server-executable)))
 
 (defun irony-mode-exit ())
 
