@@ -16,8 +16,9 @@
 #include <vector>
 
 static void printHelp() {
-  std::cout << "usage: irony-server [--version|-v] [--help|-h] [--interactive|-i]\n"
-               "                    <command> [<args>]\n\n";
+  std::cout
+      << "usage: irony-server [--version|-v] [--help|-h] [--interactive|-i]\n"
+         "                    <command> [<args>]\n\n";
 
 #define X(sym, str, desc)                                                      \
   if (Command::sym != Command::Unknown)                                        \
@@ -76,12 +77,14 @@ int main(int argc, const char *argv[]) {
       break;
 
     case Command::CheckCompile:
-      irony.check(c->file, c->flags);
+      irony.check(c->file, c->flags, c->cxUnsavedFiles);
       break;
 
     case Command::Unknown:
+      std::cout << "nil" << std::endl;
       break;
     }
+    std::cout << "\n;;EOT\n";
   }
 
   return 0;

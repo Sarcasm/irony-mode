@@ -24,7 +24,9 @@ public:
   ///   (:warnings 5)
   ///   (:errors 3 :warnings 5)
   /// \endverbatim
-  void check(const std::string &file, const std::vector<std::string> &flags);
+  void check(const std::string &file,
+             const std::vector<std::string> &flags,
+             const std::vector<CXUnsavedFile> &unsavedFiles);
   /// }
 
 private:

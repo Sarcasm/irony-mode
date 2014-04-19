@@ -39,8 +39,10 @@ TUManager::~TUManager() {
   clang_disposeIndex(index_);
 }
 
-CXTranslationUnit TUManager::parse(const std::string &filename,
-                                   const std::vector<std::string> &flags) {
+CXTranslationUnit
+TUManager::parse(const std::string &filename,
+                 const std::vector<std::string> &flags,
+                 const std::vector<CXUnsavedFile> &unsavedFiles) {
   CXTranslationUnit &tu = translationUnits_[filename];
 
   if (!tu) {
@@ -56,13 +58,14 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
       argv[nbArgs] = 0;
     }
 
-    tu = clang_parseTranslationUnit(index_,
-                                    filename.c_str(),
-                                    argv,
-                                    static_cast<int>(nbArgs),
-                                    0,
-                                    0,
-                                    effectiveSettings_.parseTUOptions);
+    tu = clang_parseTranslationUnit(
+        index_,
+        filename.c_str(),
+        argv,
+        static_cast<int>(nbArgs),
+        const_cast<CXUnsavedFile *>(unsavedFiles.data()),
+        unsavedFiles.size(),
+        effectiveSettings_.parseTUOptions);
     delete[] argv;
   }
 
@@ -83,7 +86,11 @@ CXTranslationUnit TUManager::parse(const std::string &filename,
   // and then reparse at least once. That will enable the various
   // code-completion optimizations that should bring this time down
   // significantly.
-  if (clang_reparseTranslationUnit(tu, 0, 0, clang_defaultReparseOptions(tu))) {
+  if (clang_reparseTranslationUnit(
+          tu,
+          unsavedFiles.size(),
+          const_cast<CXUnsavedFile *>(unsavedFiles.data()),
+          clang_defaultReparseOptions(tu))) {
     // a 'fatal' error occured (even a diagnostic is impossible)
     clang_disposeTranslationUnit(tu);
     std::clog << "error: libclang couldn't reparse '" << filename << "'\n";

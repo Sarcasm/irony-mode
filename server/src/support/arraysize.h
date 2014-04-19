@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef IRONY_MODE_LIB_UTIL_ARRAYSIZE_H_
-#define IRONY_MODE_LIB_UTIL_ARRAYSIZE_H_
+#ifndef IRONY_MODE_SERVER_SUPPORT_ARRAYSIZE_H_
+#define IRONY_MODE_SERVER_SUPPORT_ARRAYSIZE_H_
 
 #include <cstddef>
 
@@ -40,4 +40,4 @@ char (&ArraySizeHelper(T (&array)[N]))[N];
   ((sizeof(a) / sizeof(*(a))) /                                                \
    static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
-#endif /* !IRONY_MODE_LIB_UTIL_ARRAYSIZE_H_ */
+#endif /* !IRONY_MODE_SERVER_SUPPORT_ARRAYSIZE_H_ */

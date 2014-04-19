@@ -100,7 +100,8 @@ public:
    *         will be \c NULL.
    */
   CXTranslationUnit parse(const std::string &filename,
-                          const std::vector<std::string> &flags);
+                          const std::vector<std::string> &flags,
+                          const std::vector<CXUnsavedFile> &unsavedFiles);
 
   /**
    * \brief Register some \c Settings for this particular TUManager instance.

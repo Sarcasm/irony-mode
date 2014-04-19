@@ -84,6 +84,9 @@ static Command::Action actionFromString(const std::string &actionStr) {
   return Command::Unknown;
 }
 
+CommandParser::CommandParser() : tempFile_("irony-server") {
+}
+
 Command *CommandParser::parse(const std::vector<std::string> &argv) {
   command_.clear();
 
@@ -102,12 +105,14 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   command_.action = actionFromString(actionStr);
 
+  bool handleUnsaved = false;
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
   switch (command_.action) {
   case Command::CheckCompile:
     // file.cpp line column
     positionalArgs.push_back(StringConverter(&command_.file));
+    handleUnsaved = true;
     break;
 
   case Command::Help:
@@ -120,6 +125,30 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   auto argIt = argv.begin() + 1;
   int argCount = std::distance(argIt, end);
+
+  // parse optional arguments come first
+  while (argIt != end) {
+    // '-' is allowed as a "default" file, this isn't an option but a positional
+    // argument
+    if ((*argIt)[0] != '-' || *argIt == "-")
+      break;
+
+    const std::string &opt = *argIt;
+
+    ++argIt;
+    argCount--;
+
+    if (handleUnsaved) {
+      // TODO: handle multiple unsaved files
+      if (opt == "--num-unsaved=1") {
+        command_.unsavedFiles.resize(1);
+      }
+    } else {
+      std::clog << "error: invalid option for '" << actionStr << "': '" << opt
+                << "' unknown\n";
+      return 0;
+    }
+  }
 
   if (argCount != static_cast<int>(positionalArgs.size())) {
     std::clog << "error: invalid number of arguments for '" << actionStr
@@ -135,6 +164,51 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
       return 0;
     }
     ++argIt;
+  }
+
+  // '-' is used as a special file to inform that the buffer hasn't been saved
+  // on disk and only the buffer content is available. libclang needs a file, so
+  // this is treated as a special value for irony-server to create a temporary
+  // file for this. note taht libclang will gladly accept '-' as a filename but
+  // we don't want to let this happen since irony already reads stdin.
+  if (command_.file == "-") {
+    command_.file = tempFile_.getPath();
+  }
+
+  // read unsaved files
+  // filename
+  // filesize
+  // <file content...>
+  for (auto &p : command_.unsavedFiles) {
+    std::getline(std::cin, p.first);
+
+    unsigned length;
+    std::string filesizeStr;
+    std::getline(std::cin, filesizeStr);
+
+    UnsignedIntConverter uintConverter(&length);
+
+    if (!uintConverter(filesizeStr)) {
+      std::clog << "error: invalid file size '" << filesizeStr << "'\n";
+      return 0;
+    }
+
+    p.second.resize(length);
+    std::cin.read(p.second.data(), p.second.size());
+
+    CXUnsavedFile cxUnsavedFile;
+
+    cxUnsavedFile.Filename = p.first.c_str();
+    cxUnsavedFile.Contents = p.second.data();
+    cxUnsavedFile.Length = p.second.size();
+    command_.cxUnsavedFiles.push_back(cxUnsavedFile);
+
+    char nl;
+    std::cin.read(&nl, 1);
+    if (nl != '\n') {
+      std::clog << "error: missing newline for unsaved file content\n";
+      return 0;
+    }
   }
 
   return &command_;

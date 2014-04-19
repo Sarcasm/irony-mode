@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef IRONY_MODE_LIB_UTIL_NONCOPYABLE_H_
-#define IRONY_MODE_LIB_UTIL_NONCOPYABLE_H_
+#ifndef IRONY_MODE_SERVER_SUPPORT_NONCOPYABLE_H_
+#define IRONY_MODE_SERVER_SUPPORT_NONCOPYABLE_H_
 
 namespace util {
 
@@ -32,4 +32,4 @@ private:
 
 } // ! namespace util
 
-#endif /* !IRONY_MODE_LIB_UTIL_NONCOPYABLE_H_ */
+#endif /* !IRONY_MODE_SERVER_SUPPORT_NONCOPYABLE_H_ */

@@ -6,7 +6,8 @@ Irony::Irony() {
 }
 
 void Irony::check(const std::string &file,
-                  const std::vector<std::string> &flags) {
+                  const std::vector<std::string> &flags,
+                  const std::vector<CXUnsavedFile> &unsavedFiles) {
   std::cout << "(";
 
   unsigned numDiag = 0;
@@ -14,7 +15,7 @@ void Irony::check(const std::string &file,
   int errors = 0;
   int warnings = 0;
 
-  CXTranslationUnit tu = tuManager_.parse(file, flags);
+  CXTranslationUnit tu = tuManager_.parse(file, flags, unsavedFiles);
 
   if (tu) {
     numDiag = clang_getNumDiagnostics(tu);

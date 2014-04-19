@@ -6,6 +6,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(irony-server
   support/arraysize.h
   support/NonCopyable.h
+  support/TemporaryFile.h
+  support/TemporaryFile.cpp
 
   ClangString.cpp
   ClangString.h
