@@ -7,7 +7,7 @@
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((cl-lib "0.5") (json "1.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
   :group 'irony)
 
 (defcustom irony-user-dir (locate-user-emacs-file "irony/")
-  "Directory containing the irony-mode generated files.
+  "Directory containing the Irony generated files.
 
 The slash is expected at the end."
   :type 'directory
@@ -56,7 +56,7 @@ The slash is expected at the end."
   :group 'irony)
 
 (defcustom irony-known-modes '(c++-mode c-mode objc-mode)
-  "List of modes known to be compatible with `irony-mode'."
+  "List of modes known to be compatible with Irony."
   :type '(repeat symbol)
   :group 'irony)
 
@@ -71,8 +71,7 @@ the -x <language> command line switch."
   :group 'irony)
 
 (defcustom irony-cmake-executable "cmake"
-  "A name that can be found in `exec-path' or the full-path to
-  the cmake executable."
+  "The name or path of the CMake executable."
   :type 'string
   :group 'irony)
 
@@ -154,8 +153,7 @@ automatically buffer-local wherever it is set."
 ;; -- https://lists.gnu.org/archive/html/emacs-devel/2013-06/msg01129.html
 
 (defconst irony--eot "\n;;EOT\n"
-  "The string sent by the server to finish the transmission of a
-  message.")
+  "String sent by the server to signal the end of a response.")
 
 (defconst irony-server-eot "\nEOT\n"
   "The string to send to the server to finish a transmission.")
@@ -184,7 +182,7 @@ Possible values are:
 (defmacro irony-without-narrowing (&rest body)
   "Remove the effect of narrowing for the current buffer.
 
-Note: If `save-excursion' is needed for body, it should be used
+Note: If `save-excursion' is needed for BODY, it should be used
 before calling this macro."
   (declare (indent 0) (debug t))
   `(save-restriction
@@ -192,7 +190,7 @@ before calling this macro."
      (progn ,@body)))
 
 (defun irony-buffer-size-in-bytes ()
-  "Returns the buffer size, in bytes."
+  "Return the buffer size, in bytes."
   (1- (position-bytes (point-max))))
 
 
@@ -215,8 +213,8 @@ before calling this macro."
     (irony-mode-exit)))
 
 (defun irony-mode-enter ()
-  ;; warn the user about suspicious modes such as php-mode that inherits c-mode
   (when (not (memq major-mode irony-known-modes))
+    ;; warn the user about modes such as php-mode who inherits c-mode
     (display-warning 'irony "Irony mode is aimed to work with a\
  major mode present in `irony-known-modes'."))
   ;;c-mode-hook and c++-mode-hook appears to run twice, avoid unecessary call
@@ -230,7 +228,7 @@ before calling this macro."
 (defun irony-mode-exit ())
 
 (defun irony-version (&optional show-version)
-  "Returns the version number of the file irony.el.
+  "Return the version number of the file irony.el.
 
 If called interactively display the version in the echo area."
   (interactive "P")
@@ -261,6 +259,9 @@ If called interactively display the version in the echo area."
     (message "Failed to build irony-server, you are on your own buddy!")))
 
 (defun irony-install-server ()
+  "Install or reinstall the Irony server.
+
+The installation requires CMake and the libclang developpement package."
   (interactive)
   (let ((cur-buf (current-buffer))
         (default-directory irony-server-build-dir)
@@ -303,8 +304,7 @@ If called interactively display the version in the echo area."
          (message "Please install irony-server: M-x irony-install-server"))))))
 
 (defun irony--initial-check-compile ()
-  "Check that the current buffer compiles, if not a hint will be
- displayed to the user.
+  "Check that the current buffer compiles, hinting the user if not.
 
 Ideally this is done only once, when the buffer is first
 opened (or irony-mode first started), just to inform the user if
@@ -430,7 +430,7 @@ If no such file exists on the filesystem the special file '-' is
     "-"))
 
 (defun irony--send-file-request (request callback &rest args)
-  "Send a request that act on a file (the current buffer) to irony-server.
+  "Send a request that acts on the current buffer to the server.
 
 This concerns mainly irony-server commands that do some work on a
 translation unit for libclang, the unsaved buffer data are taken
