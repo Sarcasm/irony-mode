@@ -15,6 +15,7 @@
 
 X(CheckCompile, "check-compile", "FILE - check that a given file compiles")
 X(Help, "help", "show this message")
+X(Exit, "exit", "exit interactive mode, print nothing")
 
 // sentinel value, should be the last one
 X(Unknown, "<unkown>",  "<unspecified>")

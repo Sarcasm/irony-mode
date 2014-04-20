@@ -98,6 +98,25 @@ The irony-server executable is expected to be in
   :type 'directory
   :group 'irony)
 
+(defcustom irony-check-compile-functions
+  '(irony--process-initial-check-compile)
+  "Abnormal hook run when new check-compile results are available.
+
+Takes as an argument the number of fatal errors (usually 0 or 1),
+the number of errors and the number of warnings.
+
+Example function:
+
+  (defun my-irony-check-compile-function (nfatals nerrors nwarnings)
+    (message \"%d error(s) and %d warning(s)\" (+ nfatals nerrors)\
+ nwarnings))
+
+  (add-hook 'irony-check-compile-functions\
+ 'my-irony-check-compile-function)"
+  :type 'hook
+  :options '(irony--process-initial-check-compile)
+  :group 'irony)
+
 
 ;;
 ;; Compatibility
@@ -148,7 +167,7 @@ automatically buffer-local wherever it is set."
 
 Set to nil if not found.")
 
-(defvar-local irony-initial-compile-check-status nil
+(defvar-local irony--initial-compile-check-status nil
   "Non-nil when an initial compile check as already been requested.
 
 Possible values are:
@@ -204,20 +223,11 @@ before calling this macro."
   ;;to `irony-locate-server-executable' if it has already be done once.
   (unless irony-server-executable-path
     (irony-locate-server-executable))
-  (irony-buffer-compiles-initial-check))
+  ;; TODO: init compilation database here
+  (when irony-server-executable-path
+    (irony--initial-check-compile)))
 
 (defun irony-mode-exit ())
-
-(defun irony-buffer-compiles-initial-check ()
-  "Check that the current buffer compiles, if not a hint will be
- displayed to the user.
-
-Ideally this is done only once, when the buffer is first
-opened (or irony-mode first started), just to inform the user if
-he forgot to provide the flags for the current buffer."
-  (unless irony-initial-compile-check-status
-    (setq irony-initial-compile-check-status 'requested)
-    (irony-request-check-compile)))
 
 (defun irony-version (&optional show-version)
   "Returns the version number of the file irony.el.
@@ -292,20 +302,123 @@ If called interactively display the version in the echo area."
          ;; the user about how to build the executable
          (message "Please install irony-server: M-x irony-install-server"))))))
 
+(defun irony--initial-check-compile ()
+  "Check that the current buffer compiles, if not a hint will be
+ displayed to the user.
+
+Ideally this is done only once, when the buffer is first
+opened (or irony-mode first started), just to inform the user if
+he forgot to provide the flags for the current buffer."
+  (unless irony--initial-compile-check-status
+    (setq irony--initial-compile-check-status 'requested)
+    (irony-request-check-compile)))
+
+(defun irony--process-initial-check-compile (nfatals nerrors nwarnings)
+  "See `irony-check-compile-functions'."
+  (when (and (eq irony--initial-compile-check-status 'requested)
+             (not (zerop (+ nfatals nerrors nwarnings))))
+    (setq irony--initial-compile-check-status 'done)
+    (let ((help-msg (substitute-command-keys
+                     "Type `\\[irony-cdb-menu]' to configure project"))
+          stats-strings)
+      (unless (zerop nwarnings)
+        (push (concat (number-to-string nwarnings)
+                      " warning"
+                      (unless (eq nwarnings 1) ;plural
+                        "s"))
+              stats-strings))
+      (setq nerrors (+ nfatals nerrors))
+      (unless (zerop nerrors)
+        (push (concat (number-to-string nerrors)
+                      " error"
+                      (unless (eq nerrors 1) ;plural
+                        "s"))
+              stats-strings))
+      (message "[%s] %s" (mapconcat 'identity stats-strings " | ")
+               help-msg))))
+
+
+;;
+;; irony-server process management.
+;;
+
+(defun irony--server-command ()
+  "Shell command used to start the irony-server process."
+  (format "%s -i 2>> %s/irony.$$.log"
+          (shell-quote-argument irony-server-executable-path)
+          temporary-file-directory))
+
+(defvar irony--server-process nil)
+
+(defun irony--get-server-process ()
+  (if (and irony--server-process
+           (process-live-p irony--server-process))
+      irony--server-process
+    (let ((process-connection-type nil)
+          process)
+      (setq process (start-process-shell-command
+                     "Irony"                   ;process name
+                     "*Irony*"                 ;buffer
+                     (irony--server-command))) ;command
+      (set-process-query-on-exit-flag process nil)
+      (set-process-sentinel process 'irony--server-process-sentinel)
+      (set-process-filter process 'irony--server-process-filter)
+      (setq irony--server-process process))))
+
+(defun irony--server-process-sentinel (process event)
+  (unless (process-live-p process)
+    (setq irony--server-process nil)
+    (message "irony process stopped!")))
+
+(defun irony--process-server-response (process response)
+  (let ((sexp (read response))
+        (callback (irony--server-process-pop-callback process)))
+    (apply (car callback) sexp (cdr callback))))
+
+(defun irony--server-process-filter (process output)
+  "Handle output that come from an irony-server process."
+  (let ((pbuf (process-buffer process))
+        responses)
+    ;; append output to process buffer
+    (when (buffer-live-p pbuf)
+      (with-current-buffer pbuf
+        (save-excursion
+          (goto-char (process-mark process))
+          (insert output)
+          (set-marker (process-mark process) (point))
+          ;; check if the message is complete based on `irony--eot'
+          (goto-char (point-min))
+          (while (search-forward irony--eot nil t)
+            (let* ((response (buffer-substring-no-properties (point-min) (point)))
+                   (reason (unsafep response)))
+              (delete-region (point-min) (point))
+              (if (not reason)
+                  (setq responses (cons response responses))
+                (error "Irony: got unsafe data, skip request: '%s'" reason))
+              (goto-char (process-mark process)))))))
+    ;; Handle all responses.
+    (mapc #'(lambda (r)
+              (irony--process-server-response process r))
+          (nreverse responses))))
+
+(defun irony--server-process-push-callback (p cb)
+  (let ((callbacks (process-get p 'irony-callback-stack)))
+    (if callbacks
+        (nconc callbacks (list cb))
+      (process-put p 'irony-callback-stack (list cb)))))
+
+(defun irony--server-process-pop-callback (p)
+  (let ((callbacks (process-get p 'irony-callback-stack)))
+    (process-put p 'irony-callback-stack (cdr callbacks))
+    (car callbacks)))
+
+(defun irony--server-process-callback-count (p)
+  (length (process-get p 'irony-callback-stack)))
+
 
 ;;
 ;; Server commands
 ;;
-
-(defun irony--server-command (args)
-  "Shell command used to start the irony-server process."
-  (format "%s 2>> %s/irony.$$.log"
-          ;; XXX: quoting probably wrong with shell expansion but ideally this
-          ;; won't be a problem when the arguments are sent to stdin
-          (mapconcat 'shell-quote-argument
-                     (cons irony-server-executable-path args)
-                     " ")
-          temporary-file-directory))
 
 (defun irony--get-buffer-path-for-server ()
   "Get the path of the current buffer to send to irony-server.
@@ -316,80 +429,40 @@ If no such file exists on the filesystem the special file '-' is
       buffer-file-name
     "-"))
 
-;; is this even needed?
-(defvar irony-process nil)
+(defun irony--send-file-request (request callback &rest args)
+  "Send a request that act on a file (the current buffer) to irony-server.
 
-(defun irony--server-sentinel (process event)
-  ;; FIXME: this sentinel is worth nothing
-  (let ((status (process-status process)))
-    (when (memq status '(exit signal closed failed))
-      (message "irony process stopped..."))))
-
-(defun irony-handle-response (response)
-  "Handle a response from the `irony-handle-output'."
-  (let ((sexp (read response)))
-    (message "got response: %s" (prin1 sexp))))
-
-(defun irony-handle-output (process output)
-  "Handle output that come from the active `irony-process'."
-  (let ((pbuf (process-buffer process))
-        responses)
-    ;; Add to process buffer
-    (when (buffer-live-p pbuf)
-      (with-current-buffer pbuf
-        (save-excursion
-          (goto-char (process-mark process))
-          (insert output)
-          (set-marker (process-mark process) (point))
-          ;; Check if the message is complete based on `irony--eot'
-          (goto-char (point-min))
-          (while (search-forward irony--eot nil t)
-            (let* ((response (buffer-substring-no-properties (point-min) (point)))
-                   (reason (unsafep response)))
-              (delete-region (point-min) (point))
-              (if (not reason)
-                  (setq responses (cons response responses))
-                (error "Unsafe data received by the irony process\
- (request skipped): %s." reason))
-              (goto-char (process-mark process)))))))
-    ;; Handle all responses.
-    (mapc #'irony-handle-response (nreverse responses))))
-
-(defun irony-send-request (request &optional send-buffer-content &rest args)
-  ;; TODO: support multiple unsaved files
-  ;; widen the buffer in order to be able to send the content and compute its
-  ;; size instead of working on the narrowed part, if any.
-  (irony-without-narrowing
-    ;; find a process to write to
-    ;; ...
-    ;; for now create a new process, like a motherfucker!
-    (when send-buffer-content
-      (setq args (cons "--num-unsaved=1" args)))
-
-      ;; process-connection-type set to nil to avoid line buffering and cie.
-      (let ((process-connection-type nil)
-            (command (irony--server-command (cons request args))))
-        (setq irony-process (start-process-shell-command
-                             "Irony"    ;process name
-                             "*Irony*"  ;buffer
-                             command))  ;command
-        (set-process-query-on-exit-flag irony-process nil)
-        (set-process-sentinel irony-process 'irony--server-sentinel)
-        (set-process-filter irony-process 'irony-handle-output))
-      ;; send buffer content if required
-      (when send-buffer-content
-        (process-send-string irony-process
-                             (format "%s\n%d\n"
-                                     (shell-quote-argument buffer-file-name)
-                                     (irony-buffer-size-in-bytes)))
-        (process-send-region irony-process (point-min) (point-max))
-        ;; always make sure to finis with a newline (required by irony-server to
-        ;; play nice with line buffering even when the file doesn't end with a
-        ;; newline)
-        (process-send-string irony-process "\n"))))
+This concerns mainly irony-server commands that do some work on a
+translation unit for libclang, the unsaved buffer data are taken
+care of."
+  (let ((process (irony--get-server-process))
+        (argv (append (list request
+                            "--num-unsaved=1"
+                            (irony--get-buffer-path-for-server))
+                      args)))
+    (irony--server-process-push-callback process callback)
+    ;; skip narrowing to compute buffer size and content
+    (irony-without-narrowing
+      (process-send-string process
+                           (format "%s\n%s\n%d\n"
+                                   (mapconcat 'shell-quote-argument argv " ")
+                                   (shell-quote-argument buffer-file-name)
+                                   (irony-buffer-size-in-bytes)))
+      (process-send-region process (point-min) (point-max))
+      ;; always make sure to finis with a newline (required by irony-server to
+      ;; play nice with line buffering even when the file doesn't end with a
+      ;; newline)
+      (process-send-string process "\n"))))
 
 (defun irony-request-check-compile ()
-  (irony-send-request "check-compile" t (irony--get-buffer-path-for-server)))
+  (irony--send-file-request "check-compile"
+                            (list 'irony-check-compile-handler)))
+
+(defun irony-check-compile-handler (errors)
+  (run-hook-with-args 'irony-check-compile-functions
+                      (or (plist-get errors :fatals) 0)
+                      (or (plist-get errors :errors) 0)
+                      (or (plist-get errors :warnings) 0)))
 
 (provide 'irony)
 ;;; irony.el ends here

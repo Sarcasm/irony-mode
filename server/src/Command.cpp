@@ -116,6 +116,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     break;
 
   case Command::Help:
+  case Command::Exit:
     break;
 
   case Command::Unknown:
