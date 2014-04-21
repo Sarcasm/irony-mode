@@ -104,6 +104,7 @@ used."
 
 (defun irony-snippet-expand-yas-1 (snippet-str &optional pos)
   "Expand snippets for YASnippet version <= 0.6.0c."
+  (declare-function yas/expand-snippet "ext:yasnippet" t nil)
   (unless (irony-snippet-yas-disabled-p)
     (yas/expand-snippet (or pos (point))
                         (or pos (point))
@@ -113,6 +114,7 @@ used."
   "Expand snippets for YASnippet version < 0.8.
 
 See also `irony-snippet-expand-yas-1'."
+  (declare-function yas/expand-snippet "ext:yasnippet" t nil)
   (unless (irony-snippet-yas-disabled-p)
     (when pos
       (goto-char pos))
@@ -122,6 +124,7 @@ See also `irony-snippet-expand-yas-1'."
   "Expand snippets for YASnippet version >= 0.8.
 
 See also `irony-snippet-expand-yas-2'."
+  (declare-function yas-expand-snippet "ext:yasnippet" t nil)
   (unless (irony-snippet-yas-disabled-p)
     (when pos
       (goto-char pos))
