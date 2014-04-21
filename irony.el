@@ -28,10 +28,12 @@
 
 ;;; Code:
 
+(autoload 'irony-cdb-setup "irony-cdb")
+
 (require 'cl-lib)
 
-(autoload 'find-library-name "find-func" nil t)
-(autoload 'lm-version "lisp-mnt" nil t)
+(autoload 'find-library-name "find-func")
+(autoload 'lm-version "lisp-mnt")
 
 
 ;;
@@ -176,25 +178,6 @@ Possible values are:
 
 
 ;;
-;; Utility functions & macros
-;;
-
-(defmacro irony-without-narrowing (&rest body)
-  "Remove the effect of narrowing for the current buffer.
-
-Note: If `save-excursion' is needed for BODY, it should be used
-before calling this macro."
-  (declare (indent 0) (debug t))
-  `(save-restriction
-     (widen)
-     (progn ,@body)))
-
-(defun irony-buffer-size-in-bytes ()
-  "Return the buffer size, in bytes."
-  (1- (position-bytes (point-max))))
-
-
-;;
 ;; Mode
 ;;
 
@@ -227,6 +210,25 @@ before calling this macro."
 
 (defun irony-mode-exit ())
 
+
+;;
+;; Utility functions & macros
+;;
+
+(defmacro irony-without-narrowing (&rest body)
+  "Remove the effect of narrowing for the current buffer.
+
+Note: If `save-excursion' is needed for BODY, it should be used
+before calling this macro."
+  (declare (indent 0) (debug t))
+  `(save-restriction
+     (widen)
+     (progn ,@body)))
+
+(defun irony-buffer-size-in-bytes ()
+  "Return the buffer size, in bytes."
+  (1- (position-bytes (point-max))))
+
 (defun irony-version (&optional show-version)
   "Return the version number of the file irony.el.
 
@@ -239,6 +241,77 @@ If called interactively display the version in the echo area."
       (when show-version
         (message "irony version: %s" v))
       v)))
+
+(defun irony-split-command-line-1 (quoted-str)
+  "Remove the escaped quotes and backlash from a string.
+
+Return a list of the final characters in the reverse order, only
+to be consumed by `irony-split-command-line'."
+  (let ((len (length quoted-str))
+        (i 0)
+        ch next-ch
+        result)
+    (while (< i len)
+      (setq ch (aref quoted-str i))
+      (when (eq ch ?\\)
+        (let ((next-ch (and (< (1+ i) len)
+                            (aref quoted-str (1+ i)))))
+          (when (member next-ch '(?\\ ?\"))
+            (setq ch next-ch)
+            (incf i))))
+      (push ch result)
+      (incf i))
+    result))
+
+(defun irony-split-command-line (cmd-line)
+  "Split the command line into a list of arguments.
+
+Takes care of double quotes as well as backslash.
+
+Sadly I had to write this because `split-string-and-unquote'
+breaks with escaped quotes in compile_commands.json, such as in:
+
+    /usr/bin/c++ -DLLVM_VERSION_INFO=\\\\\\\"3.2svn\\\\\\\" <args>"
+  ;; everytime I write a function like this one, it makes me feel bad
+  (let* ((len (length cmd-line))
+         (spaces (string-to-list " \f\t\n\r\v"))
+         (first-not-spaces-re (concat "[^" spaces "]"))
+         (i 0)
+         ch
+         args cur-arg)
+    (while (< i len)
+      (setq ch (aref cmd-line i))
+      (cond
+       ((member ch spaces)              ;spaces
+        (when cur-arg
+          (setq args (cons (apply 'string (nreverse cur-arg)) args)
+                cur-arg nil))
+        ;; move to the next char
+        (setq i (or (string-match-p first-not-spaces-re cmd-line i)
+                    len)))
+       ((eq ch ?\")                     ;quoted string
+        (let ((endq (string-match-p "[^\\]\"" cmd-line i)))
+          (unless endq
+            (error "ill formed command line"))
+          (let ((quoted-str (substring cmd-line (1+ i) (1+ endq))))
+            (setq cur-arg (append (irony-split-command-line-1 quoted-str)
+                                  cur-arg)
+                  i (+ endq 2)))))
+       (t                             ;a valid char
+        ;; if it's an escape of: a backslash, a quote or a space push
+        ;; only the following char.
+        (when (eq ch ?\\)
+          (let ((next-ch (and (< (1+ i) len)
+                              (aref cmd-line (1+ i)))))
+            (when (or (member next-ch '(?\\ ?\"))
+                      (member next-ch spaces))
+              (setq ch next-ch)
+              (incf i))))
+        (push ch cur-arg)
+        (incf i))))
+    (when cur-arg
+      (setq args (cons (apply 'string (nreverse cur-arg)) args)))
+    (nreverse args)))
 
 (defun irony-install-server-finish-function (buffer msg)
   (if (string= "finished\n" msg)
@@ -461,6 +534,77 @@ care of."
                       (or (plist-get errors :fatals) 0)
                       (or (plist-get errors :errors) 0)
                       (or (plist-get errors :warnings) 0)))
+
+
+;;
+;; WIP CDB stubs
+
+(defcustom irony-compile-flags nil
+  "List of compiler flags to compile the current buffer.
+
+    e.g: '(\"-std=c++11\" \"-DNDEBUG\")"
+  :type '(repeat string)
+  :require 'irony
+  :group 'irony)
+(make-variable-buffer-local 'irony-compile-flags)
+
+(defcustom irony-compile-flags-work-dir nil
+  "If non-nil, contains default directory used to expand
+  relatives paths in the compile command for the current buffer."
+  :type '(string :tag "compile command default directory")
+  :require 'irony
+  :group 'irony)
+(make-variable-buffer-local 'irony-compile-flags-work-dir)
+
+(defcustom irony-lang-option-alist '((c++-mode . "c++")
+                                     (c-mode   . "c")
+                                     (objc-mode . "objective-c"))
+  "Association list of major-mode -> -x <lang_option> to pass to
+  the compiler ."
+  :type '(alist :key-type symbol :value-type string)
+  :require 'irony
+  :group 'irony)
+
+(defcustom irony-libclang-additional-flags nil
+  "Additionnal flags to send to libclang.")
+
+(defcustom irony-known-source-extensions '("c"   "cc"
+                                           "C"   "CC"
+                                           "cpp" "cxx" "c++"
+                                           "m"   "mm")
+  "Known file extensions used for source code in C/C++/Obj-C.
+
+Header files extensions shouldn't take part of this list."
+  :group 'irony
+  :type '(choice (repeat string)))
+
+;; Empty stubs (needs proper rewrite)
+;;;###autoload
+(defun irony-reload-flags ()
+  (interactive))
+(defun irony-user-search-paths-from-flags (compile-flags &optional work-dir))
+(defun irony-current-directory ())
+(defun irony-find-traverse-for-subpath (subpath dir)
+  ;; see dir-locals-find-file that checks the modification time
+  ;; see its use of locate-dominating-file (to be re-used for .clang_complete?)
+  ;; would also benefit from variable `locate-dominating-stop-dir-regexp'
+  )
+
+(defun irony-extract-working-dir-flag (flags)
+  "Get the clang \"-working-directory=<value>\" option value if
+  any."
+  (let (work-dir arg)
+    (while (and flags
+                (not work-dir))
+      (setq arg (car flags))
+      (cond
+       ((string= "-working-directory" arg)
+        (setq work-dir (cadr flags)))
+       ((string-prefix-p "-working-directory=" arg)
+        (setq work-dir (substring arg (length "-working-directory="))))
+       (t
+        (setq flags (cdr flags)))))
+    work-dir))
 
 (provide 'irony)
 ;;; irony.el ends here

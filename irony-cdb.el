@@ -23,20 +23,13 @@
 ;;; Code:
 
 (require 'irony)
+
+(require 'cl-lib)
 (require 'json)
 
-(eval-when-compile
-  (require 'cl))
-
-(defcustom irony-cdb-cmake-executable (executable-find "cmake")
-  "Location of the cmake executable."
-  :group 'irony
-  :type 'file)
-
 (defcustom irony-cdb-build-dir "emacs-build"
-  "Default directory name to use for the cmake build directory."
+  "Path relative to the root CMakeLists.txt to use as a build directory."
   :type 'string
-  :require 'irony
   :group 'irony)
 
 (defcustom irony-cdb-build-dir-names
@@ -132,7 +125,7 @@ header.")
 same path.
 
 The given path can be considered understandable by human but not
-necessary a valid path string to use in code. It's only purpose
+necessary a valid path string to use in code. Its only purpose
 is to be displayed."
   (let ((user-home (getenv "HOME"))
         (relative (file-relative-name path)))
@@ -208,6 +201,7 @@ Emacs < 24."
         (setq k (read-char-exclusive prompt)))
       k))))
 
+;;;###autoload
 (defun irony-cdb-menu ()
   "Display a build configuration menu."
   (interactive)
@@ -312,8 +306,7 @@ for this path."
 ;;;###autoload
 (defun irony-cdb-setup ()
   "Irony-mode hook for irony-cdb plugin."
-  (when (and buffer-file-name
-	     (not irony-cdb-enabled))
+  (when (and buffer-file-name (not irony-cdb-enabled))
     (setq irony-cdb-enabled t)
     (define-key irony-mode-map (kbd "C-c C-b") 'irony-cdb-menu)
     (setq irony-compile-flags-work-dir (irony-current-directory))
@@ -479,7 +472,7 @@ build."
                                           irony-cdb-cmake-generator))))
            (cmake-buffer (get-buffer-create "*CMake Command Output*"))
            (cmake-cmd (format "%s -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s %s"
-                              irony-cdb-cmake-executable
+                              irony-cmake-executable
                               args
                               (file-relative-name cmake-root))))
       (message "Running: %s" cmake-cmd)
