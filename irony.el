@@ -37,6 +37,33 @@
 
 
 ;;
+;; Compatibility
+;;
+
+(eval-and-compile
+
+  ;; As seen in flycheck/magit
+  ;;
+  ;; Added in Emacs 24.3 (mirrors/emacs@b335efc3).
+  (unless (fboundp 'setq-local)
+    (defmacro setq-local (var val)
+      "Set variable VAR to value VAL in current buffer."
+      (list 'set (list 'make-local-variable (list 'quote var)) val)))
+
+  ;; Added in Emacs 24.3 (mirrors/emacs@b335efc3).
+  (unless (fboundp 'defvar-local)
+    (defmacro defvar-local (var val &optional docstring)
+      "Define VAR as a buffer-local variable with default value VAL.
+Like `defvar' but additionally marks the variable as being
+automatically buffer-local wherever it is set."
+      (declare (debug defvar) (doc-string 3))
+      (list 'progn (list 'defvar var val docstring)
+            (list 'make-variable-buffer-local (list 'quote var)))))
+
+  ) ;; eval-and-compile
+
+
+;;
 ;; Customizable variables
 ;;
 
@@ -57,18 +84,43 @@ The slash is expected at the end."
   :risky t
   :group 'irony)
 
-(defcustom irony-known-modes '(c++-mode c-mode objc-mode)
+(defcustom irony-supported-major-modes '(c++-mode
+                                         c-mode
+                                         objc-mode)
   "List of modes known to be compatible with Irony."
   :type '(repeat symbol)
   :group 'irony)
 
-(defcustom irony-lang-option-alist '((c++-mode . "c++")
-                                     (c-mode   . "c")
-                                     (objc-mode . "objective-c"))
-  "Association list of (major-mode . \"<compiler language option>\").
+;;;###autoload
+(defcustom irony-additional-clang-options nil
+  "Additionnal command line options to pass down to libclang.
 
-The compiler language options matches the ones used by Clang with
-the -x <language> command line switch."
+Please, do NOT use this variable to add header search paths, only
+additional warnings or compiler options.
+
+These compiler options will be prepended to the command line, in
+order to not override the value coming from a compilation
+database."
+  :type '(repeat string)
+  :options '("-Wdocumentation")
+  :group 'irony)
+
+;;;###autoload
+(defcustom irony-clang-options-updated-hook nil
+  "Normal hook run when the command line options have been updated.
+
+This hook is run when the variables
+`irony-header-search-directories',
+`irony-clang-working-directory', etc, have been updated."
+  :type 'hook
+  ;; TODO: :options '(ff-find-other-file/ff-search-directories)
+  :group 'irony)
+
+(defcustom irony-clang-lang-options-alist
+  '((c++-mode  . "c++")
+    (c-mode    . "c")
+    (objc-mode . "objective-c"))
+  "Association list of major-mode/lang-option to pass to clang."
   :type '(alist :key-type symbol :value-type string)
   :group 'irony)
 
@@ -118,41 +170,52 @@ Example function:
   :options '(irony--process-initial-check-compile)
   :group 'irony)
 
+(defcustom irony-source-file-extensions '("c"   "cc"
+                                          "C"   "CC"
+                                          "cpp" "cxx" "c++"
+                                          "m"   "mm")
+  "Known file extensions used for source code in C/C++/Obj-C.
+
+Header files extensions should NOT take part of this list."
+  :type '(choice (repeat string))
+  :group 'irony)
+
 
 ;;
-;; Compatibility
+;; Public/API variables
+;;
+;; Non-customizable variables provided by Irony that can be useful to other
+;; packages.
+;;
+;; Note that they shouldn't be modified directly by external packages, just
+;; read.
 ;;
 
-(eval-and-compile
+(defvar irony-header-search-directories nil
+  "Header search directories list for the current buffer.
 
-  ;; As seen in flycheck/magit
-  ;;
-  ;; Added in Emacs 24.3 (mirrors/emacs@b335efc3).
-  (unless (fboundp 'setq-local)
-    (defmacro setq-local (var val)
-      "Set variable VAR to value VAL in current buffer."
-      (list 'set (list 'make-local-variable (list 'quote var)) val)))
+Contains the absolute paths to the directories.")
 
-  ;; Added in Emacs 24.3 (mirrors/emacs@b335efc3).
-  (unless (fboundp 'defvar-local)
-    (defmacro defvar-local (var val &optional docstring)
-      "Define VAR as a buffer-local variable with default value VAL.
-Like `defvar' but additionally marks the variable as being
-automatically buffer-local wherever it is set."
-      (declare (debug defvar) (doc-string 3))
-      (list 'progn (list 'defvar var val docstring)
-            (list 'make-variable-buffer-local (list 'quote var)))))
-
-  ) ;; eval-and-compile
+(defvar-local irony-clang-working-directory nil
+  "The working directory to pass to libclang, if any.")
 
 
 ;;
 ;; Internal variables
 ;;
-;; Use the prefix `irony--' when something can completely change (or disappear)
-;; from one release to the other.
+;; The prefix `irony--' is used when something can completely change (or
+;; disappear) from one release to the other.
 ;;
 ;; -- https://lists.gnu.org/archive/html/emacs-devel/2013-06/msg01129.html
+
+(defvar-local irony--clang-options nil
+  "Compile options for the current file.
+
+The compile options used by the compiler to build the current
+buffer file.")
+
+(defvar-local irony--extra-clang-options nil
+  "Extra options such as -x <lang>/-working-directory=<dir>.")
 
 (defconst irony--eot "\n;;EOT\n"
   "String sent by the server to signal the end of a response.")
@@ -196,10 +259,10 @@ Possible values are:
     (irony-mode-exit)))
 
 (defun irony-mode-enter ()
-  (when (not (memq major-mode irony-known-modes))
+  (when (not (memq major-mode irony-supported-major-modes))
     ;; warn the user about modes such as php-mode who inherits c-mode
     (display-warning 'irony "Irony mode is aimed to work with a\
- major mode present in `irony-known-modes'."))
+ major mode present in `irony-supported-major-modes'."))
   ;;c-mode-hook and c++-mode-hook appears to run twice, avoid unecessary call
   ;;to `irony-locate-server-executable' if it has already be done once.
   (unless irony-server-executable-path
@@ -243,7 +306,7 @@ If called interactively display the version in the echo area."
       v)))
 
 (defun irony-split-command-line-1 (quoted-str)
-  "Remove the escaped quotes and backlash from a string.
+  "Remove the escaped quotes and backlash from a QUOTED-STR.
 
 Return a list of the final characters in the reverse order, only
 to be consumed by `irony-split-command-line'."
@@ -264,7 +327,7 @@ to be consumed by `irony-split-command-line'."
     result))
 
 (defun irony-split-command-line (cmd-line)
-  "Split the command line into a list of arguments.
+  "Split CMD-LINE into a list of arguments.
 
 Takes care of double quotes as well as backslash.
 
@@ -292,7 +355,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
        ((eq ch ?\")                     ;quoted string
         (let ((endq (string-match-p "[^\\]\"" cmd-line i)))
           (unless endq
-            (error "ill formed command line"))
+            (error "Irony: ill formed command line"))
           (let ((quoted-str (substring cmd-line (1+ i) (1+ endq))))
             (setq cur-arg (append (irony-split-command-line-1 quoted-str)
                                   cur-arg)
@@ -387,7 +450,9 @@ he forgot to provide the flags for the current buffer."
     (irony-request-check-compile)))
 
 (defun irony--process-initial-check-compile (nfatals nerrors nwarnings)
-  "See `irony-check-compile-functions'."
+  "Display a one-time hint to the user to configure the compile options.
+
+See `irony-check-compile-functions'."
   (when (and (eq irony--initial-compile-check-status 'requested)
              (not (zerop (+ nfatals nerrors nwarnings))))
     (setq irony--initial-compile-check-status 'done)
@@ -501,7 +566,7 @@ If no such file exists on the filesystem the special file '-' is
     "-"))
 
 (defun irony--send-file-request (request callback &rest args)
-  "Send a request that acts on the current buffer to the server.
+  "Send a request that acts on the current buffer to irony-server.
 
 This concerns mainly irony-server commands that do some work on a
 translation unit for libclang, the unsaved buffer data are taken
@@ -539,44 +604,7 @@ care of."
 ;;
 ;; WIP CDB stubs
 
-(defcustom irony-compile-flags nil
-  "List of compiler flags to compile the current buffer.
-
-    e.g: '(\"-std=c++11\" \"-DNDEBUG\")"
-  :type '(repeat string)
-  :require 'irony
-  :group 'irony)
-(make-variable-buffer-local 'irony-compile-flags)
-
-(defcustom irony-compile-flags-work-dir nil
-  "If non-nil, contains default directory used to expand
-  relatives paths in the compile command for the current buffer."
-  :type '(string :tag "compile command default directory")
-  :require 'irony
-  :group 'irony)
-(make-variable-buffer-local 'irony-compile-flags-work-dir)
-
-(defcustom irony-lang-option-alist '((c++-mode . "c++")
-                                     (c-mode   . "c")
-                                     (objc-mode . "objective-c"))
-  "Association list of major-mode -> -x <lang_option> to pass to
-  the compiler ."
-  :type '(alist :key-type symbol :value-type string)
-  :require 'irony
-  :group 'irony)
-
-(defcustom irony-libclang-additional-flags nil
-  "Additionnal flags to send to libclang.")
-
-(defcustom irony-known-source-extensions '("c"   "cc"
-                                           "C"   "CC"
-                                           "cpp" "cxx" "c++"
-                                           "m"   "mm")
-  "Known file extensions used for source code in C/C++/Obj-C.
-
-Header files extensions shouldn't take part of this list."
-  :group 'irony
-  :type '(choice (repeat string)))
+;;;;;;;;;;;;;;;;;;
 
 ;; Empty stubs (needs proper rewrite)
 ;;;###autoload
@@ -589,22 +617,12 @@ Header files extensions shouldn't take part of this list."
   ;; see its use of locate-dominating-file (to be re-used for .clang_complete?)
   ;; would also benefit from variable `locate-dominating-stop-dir-regexp'
   )
+(defun irony-extract-working-dir-flag (flags))
 
-(defun irony-extract-working-dir-flag (flags)
-  "Get the clang \"-working-directory=<value>\" option value if
-  any."
-  (let (work-dir arg)
-    (while (and flags
-                (not work-dir))
-      (setq arg (car flags))
-      (cond
-       ((string= "-working-directory" arg)
-        (setq work-dir (cadr flags)))
-       ((string-prefix-p "-working-directory=" arg)
-        (setq work-dir (substring arg (length "-working-directory="))))
-       (t
-        (setq flags (cdr flags)))))
-    work-dir))
+;;;;;;;;;;;;;;;;;;
 
 (provide 'irony)
+
+(require 'irony-cdb)
+
 ;;; irony.el ends here

@@ -233,8 +233,8 @@ Emacs < 24."
 (defun irony-cdb-load-flags (compile-flags &optional work-dir)
   "Set the compile flags for the current buffer and trigger a
 reload of the cache with `irony-reload-flags'."
-  (setq irony-compile-flags compile-flags)
-  (setq irony-compile-flags-work-dir work-dir)
+  (setq irony--clang-options compile-flags)
+  (setq irony-clang-working-directory work-dir)
   (irony-reload-flags))
 
 (defun irony-cdb-parse-compile-commands-command (command)
@@ -309,7 +309,7 @@ for this path."
   (when (and buffer-file-name (not irony-cdb-enabled))
     (setq irony-cdb-enabled t)
     (define-key irony-mode-map (kbd "C-c C-b") 'irony-cdb-menu)
-    (setq irony-compile-flags-work-dir (irony-current-directory))
+    (setq irony-clang-working-directory (irony-current-directory))
     (or
      ;; try load flags for this file if an entry is in compilation db
      ;; first
@@ -333,7 +333,7 @@ subsist."
       (setq arg (car cmd-args))
       (if (or (string-prefix-p "-" arg)
               (not (member (file-name-extension arg) ;skip source files
-                           irony-known-source-extensions)))
+                           irony-source-file-extensions)))
           (push arg compile-flags))
       (setq cmd-args (cdr cmd-args)))
     (nreverse compile-flags)))
@@ -344,7 +344,7 @@ subsist."
         (work-dir (cdr (assq 'directory entry)))
         (cmd (cdr (assq 'command entry))))
     (when (member (file-name-extension file) ;get rid of assembly files
-                  irony-known-source-extensions)
+                  irony-source-file-extensions)
       (puthash (file-truename file) (cons cmd work-dir)
                irony-cdb-compile-db-cache))))
 
