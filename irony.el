@@ -389,12 +389,10 @@ he forgot to provide the flags for the current buffer."
           ;; check if the message is complete based on `irony--eot'
           (goto-char (point-min))
           (while (search-forward irony--eot nil t)
-            (let* ((response (buffer-substring-no-properties (point-min) (point)))
-                   (reason (unsafep response)))
+            (let ((response (buffer-substring-no-properties (point-min)
+                                                            (point))))
               (delete-region (point-min) (point))
-              (if (not reason)
-                  (setq responses (cons response responses))
-                (error "Irony: got unsafe data, skip request: '%s'" reason))
+              (setq responses (cons response responses))
               (goto-char (process-mark process)))))))
     ;; Handle all responses.
     (mapc #'(lambda (r)
