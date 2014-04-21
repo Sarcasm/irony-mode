@@ -612,7 +612,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
   ;; everytime I write a function like this one, it makes me feel bad
   (let* ((len (length cmd-line))
          (spaces (string-to-list " \f\t\n\r\v"))
-         (fist-not-spaces-re (concat "[^" spaces "]"))
+         (first-not-spaces-re (concat "[^" spaces "]"))
          (i 0)
          ch
          args cur-arg)
@@ -624,10 +624,10 @@ breaks with escaped quotes in compile_commands.json, such as in:
           (setq args (cons (apply 'string (nreverse cur-arg)) args)
                 cur-arg nil))
         ;; move to the next char
-        (setq i (or (string-match-p fist-not-spaces-re cmd-line i)
+        (setq i (or (string-match-p first-not-spaces-re cmd-line i)
                     len)))
        ((eq ch ?\")                     ;quoted string
-        (let ((endq (string-match-p "[^\\]\"" cmd-line (1+ i))))
+        (let ((endq (string-match-p "[^\\]\"" cmd-line i)))
           (unless endq
             (error "ill formed command line"))
           (let ((quoted-str (substring cmd-line (1+ i) (1+ endq))))
