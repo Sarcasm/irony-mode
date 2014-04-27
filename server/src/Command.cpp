@@ -1,5 +1,7 @@
 #include "Command.h"
 
+#include "support/CommandLineParser.h"
+
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -174,6 +176,15 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   // we don't want to let this happen since irony already reads stdin.
   if (command_.file == "-") {
     command_.file = tempFile_.getPath();
+  }
+
+  // When a file is provided, the next line contains the compilation options to
+  // pass to libclang.
+  if (!command_.file.empty()) {
+    std::string compileOptions;
+    std::getline(std::cin, compileOptions);
+
+    command_.flags = unescapeCommandLine(compileOptions);
   }
 
   // read unsaved files

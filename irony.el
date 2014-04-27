@@ -28,7 +28,7 @@
 
 ;;; Code:
 
-(autoload 'irony-cdb-setup "irony-cdb")
+(autoload 'irony-cdb-load-compile-options "irony-cdb")
 
 (require 'cl-lib)
 
@@ -112,6 +112,7 @@ database."
 This hook is run when the variables
 `irony-header-search-directories',
 `irony-clang-working-directory', etc, have been updated."
+  ;; TODO: no etc...
   :type 'hook
   ;; TODO: :options '(ff-find-other-file/ff-search-directories)
   :group 'irony)
@@ -214,8 +215,9 @@ Contains the absolute paths to the directories.")
 The compile options used by the compiler to build the current
 buffer file.")
 
-(defvar-local irony--extra-clang-options nil
-  "Extra options such as -x <lang>/-working-directory=<dir>.")
+;; TODO: Diagnose the missing stddef.h and append the directory
+;; https://github.com/Sarcasm/irony-mode/issues/28
+(defvar-local irony--extra-clang-options nil)
 
 (defconst irony--eot "\n;;EOT\n"
   "String sent by the server to signal the end of a response.")
@@ -267,7 +269,8 @@ Possible values are:
   ;;to `irony-locate-server-executable' if it has already be done once.
   (unless irony-server-executable-path
     (irony-locate-server-executable))
-  ;; TODO: init compilation database here
+  (unless irony--clang-options
+    (irony-cdb-load-compile-options))
   (when irony-server-executable-path
     (irony--initial-check-compile)))
 
@@ -278,6 +281,19 @@ Possible values are:
 ;; Utility functions & macros
 ;;
 
+(defmacro irony--aif (test if-expr &rest else-body)
+  (declare (indent 2))
+  `(let ((it ,test))
+     (if it
+         ,if-expr
+       (progn ,@else-body))))
+
+(defmacro irony--awhen (test &rest body)
+  (declare (indent 1))
+  `(let ((it ,test))
+     (when it
+       (progn ,@body))))
+
 (defmacro irony-without-narrowing (&rest body)
   "Remove the effect of narrowing for the current buffer.
 
@@ -287,10 +303,6 @@ before calling this macro."
   `(save-restriction
      (widen)
      (progn ,@body)))
-
-(defun irony-buffer-size-in-bytes ()
-  "Return the buffer size, in bytes."
-  (1- (position-bytes (point-max))))
 
 (defun irony-version (&optional show-version)
   "Return the version number of the file irony.el.
@@ -304,6 +316,34 @@ If called interactively display the version in the echo area."
       (when show-version
         (message "irony version: %s" v))
       v)))
+
+(defun irony-buffer-size-in-bytes ()
+  "Return the buffer size, in bytes."
+  (1- (position-bytes (point-max))))
+
+(defun irony--read-char-choice (prompt chars)
+  "Wrapper around `read-char-choice', available since Emacs 24."
+  (setq prompt (concat prompt " [" chars "]: "))
+  (if (fboundp 'read-char-choice)
+      (read-char-choice prompt chars)
+    (setq prompt (propertize prompt 'face 'minibuffer-prompt))
+    (let ((cursor-in-echo-area t)
+          k)
+      (while (not (member k chars))
+        (setq k (read-char-exclusive prompt)))
+      k)))
+
+(defun irony--shorten-path (path)
+  "Make PATH as short as possible.
+
+The given path can be considered understandable by human but not
+necessary a valid path string to use in code. Its only purpose is
+to be displayed to the user."
+  (let ((relative (file-relative-name path))
+        (abbreviated (abbreviate-file-name path)))
+    (if (< (string-width relative) (string-width abbreviated))
+        relative
+      abbreviated)))
 
 (defun irony-split-command-line-1 (quoted-str)
   "Remove the escaped quotes and backlash from a QUOTED-STR.
@@ -375,6 +415,52 @@ breaks with escaped quotes in compile_commands.json, such as in:
     (when cur-arg
       (setq args (cons (apply 'string (nreverse cur-arg)) args)))
     (nreverse args)))
+
+
+;;
+;; Compile options handling
+;;
+
+(defun irony-update-command-line-options (cmd-line-options
+                                          &optional
+                                          working-directory)
+  "Setup the command line options to pass down to libclang."
+  (setq irony--clang-options cmd-line-options
+        irony-clang-working-directory working-directory)
+  (run-hooks irony-clang-options-updated-hook))
+
+(defun irony--libclang-compile-options ()
+  "The compile options to send to libclang."
+  ;; TODO: if current buffer has no associated file (will be sent as '-') but is
+  ;; in an existing directory, we will want to add -I (directory-file-name
+  ;; buffer-file-name) to find the relative headers
+  (append
+   (irony--awhen (cdr-safe (assq major-mode irony-clang-lang-options-alist))
+     (list "-x" it))
+   (irony--awhen irony-clang-working-directory
+     (unless (irony--extract-working-directory-option irony--clang-options)
+       (list "-working-directory" it)))
+   irony-additional-clang-options
+   irony--extra-clang-options
+   irony--clang-options))
+
+(defun irony--extract-working-directory-option (flags)
+  "Look in FLAGS for the '-working-directory' option, if any."
+  (catch 'found
+    (while flags
+      (let ((flag (car flags)))
+        (cond
+         ((string= "-working-directory" flag)
+          (throw 'found (cadr flags)))
+         ((string-prefix-p "-working-directory=" flag)
+          (throw 'found (substring flag (length "-working-directory="))))
+         (t
+          (setq flags (cdr flags))))))))
+
+
+;;
+;; Irony-Server setup
+;;
 
 (defun irony-install-server-finish-function (buffer msg)
   (if (string= "finished\n" msg)
@@ -575,14 +661,16 @@ care of."
         (argv (append (list request
                             "--num-unsaved=1"
                             (irony--get-buffer-path-for-server))
-                      args)))
+                      args))
+        (compile-options (irony--libclang-compile-options)))
     (irony--server-process-push-callback process callback)
     ;; skip narrowing to compute buffer size and content
     (irony-without-narrowing
       (process-send-string process
-                           (format "%s\n%s\n%d\n"
-                                   (mapconcat 'shell-quote-argument argv " ")
-                                   (shell-quote-argument buffer-file-name)
+                           (format "%s\n%s\n%s\n%d\n"
+                                   (combine-and-quote-strings argv)
+                                   (combine-and-quote-strings compile-options)
+                                   buffer-file-name
                                    (irony-buffer-size-in-bytes)))
       (process-send-region process (point-min) (point-max))
       ;; always make sure to finis with a newline (required by irony-server to
@@ -600,29 +688,12 @@ care of."
                       (or (plist-get errors :errors) 0)
                       (or (plist-get errors :warnings) 0)))
 
-
-;;
-;; WIP CDB stubs
-
-;;;;;;;;;;;;;;;;;;
-
-;; Empty stubs (needs proper rewrite)
-;;;###autoload
-(defun irony-reload-flags ()
-  (interactive))
-(defun irony-user-search-paths-from-flags (compile-flags &optional work-dir))
-(defun irony-current-directory ())
-(defun irony-find-traverse-for-subpath (subpath dir)
-  ;; see dir-locals-find-file that checks the modification time
-  ;; see its use of locate-dominating-file (to be re-used for .clang_complete?)
-  ;; would also benefit from variable `locate-dominating-stop-dir-regexp'
-  )
-(defun irony-extract-working-dir-flag (flags))
-
-;;;;;;;;;;;;;;;;;;
-
 (provide 'irony)
 
 (require 'irony-cdb)
+
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
 
 ;;; irony.el ends here

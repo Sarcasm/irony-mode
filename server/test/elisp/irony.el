@@ -84,6 +84,21 @@ https://github.com/Sarcasm/irony-mode/issues/101"
              '("\\ clang -Wall\\")
              (irony-split-command-line cmd-line)))))
 
+(ert-deftest irony/extract-working-directory-option/not-specified ()
+  (let ((compile-flags '("-Wall")))
+    (should
+     (not (irony--extract-working-directory-option compile-flags)))))
+
+(ert-deftest irony/extract-working-directory-option/specified-1 ()
+  (let ((compile-flags '("-working-directory" "/tmp/lol")))
+    (should (equal "/tmp/lol"
+                   (irony--extract-working-directory-option compile-flags)))))
+
+(ert-deftest irony/extract-working-directory-option/specified-2 ()
+  (let ((compile-flags '("-Wall" "-working-directory=/tmp/lol" "-Wshadow")))
+    (should (equal "/tmp/lol"
+                   (irony--extract-working-directory-option compile-flags)))))
+
 ;; TODO: restore functionality
 ;; (ert-deftest irony/include-directories-1 ()
 ;;   (let ((irony-compile-flags '("-Iinclude" "-I/tmp/foo"))
@@ -99,18 +114,3 @@ https://github.com/Sarcasm/irony-mode/issues/101"
 ;;              '("/tmp/blah/include"
 ;;                "/tmp/blah/foo")
 ;;              (irony-user-search-paths)))))
-
-;; (ert-deftest irony/extract-working-dir-flag/none-present ()
-;;   (let ((compile-flags '("-Wall")))
-;;     (should
-;;      (not (irony-extract-working-dir-flag compile-flags)))))
-
-;; (ert-deftest irony/extract-working-dir-flag/present-1 ()
-;;   (let ((compile-flags '("-working-directory" "/tmp/lol")))
-;;     (should (equal "/tmp/lol"
-;;                    (irony-extract-working-dir-flag compile-flags)))))
-
-;; (ert-deftest irony/extract-working-dir-flag/present-2 ()
-;;   (let ((compile-flags '("-Wall" "-working-directory=/tmp/lol" "-Wshadow")))
-;;     (should (equal "/tmp/lol"
-;;                    (irony-extract-working-dir-flag compile-flags)))))
