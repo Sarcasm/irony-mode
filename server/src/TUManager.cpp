@@ -23,7 +23,7 @@ void Settings::merge(const Settings &other) {
   parseTUOptions |= other.parseTUOptions;
 }
 
-bool Settings::equal(const Settings &other) const {
+bool Settings::equals(const Settings &other) const {
   return parseTUOptions == other.parseTUOptions;
 }
 
@@ -45,28 +45,37 @@ TUManager::parse(const std::string &filename,
                  const std::vector<CXUnsavedFile> &unsavedFiles) {
   CXTranslationUnit &tu = translationUnits_[filename];
 
-  if (!tu) {
-    std::size_t nbArgs = flags.size();
-    const char **argv = 0;
-
-    if (nbArgs > 0) {
-      argv = new const char *[nbArgs + 1];
-
-      for (std::size_t i = 0; i < nbArgs; ++i)
-        argv[i] = flags[i].c_str();
-
-      argv[nbArgs] = 0;
+  // if the flags changed since the last time, invalidate the translation unit
+  auto &flagsCache = flagsPerFileCache_[filename];
+  if (flagsCache.size() != flags.size() ||
+      !std::equal(flagsCache.begin(), flagsCache.end(), flags.begin())) {
+    if (tu) {
+      clang_disposeTranslationUnit(tu);
+      tu = nullptr;
     }
+    // remember the flags for the next parse
+    flagsCache = flags;
+  }
+
+  if (tu == nullptr) {
+    std::size_t nbArgs = flags.size();
+    std::vector<const char *> argv(nbArgs + 1);
+
+    for (std::size_t i = 0; i < nbArgs; ++i) {
+      argv[i] = flags[i].c_str();
+    }
+    // don't think the ending null is necessary but that's how the argument
+    // vector from a main ends
+    argv.at(nbArgs) = nullptr;
 
     tu = clang_parseTranslationUnit(
         index_,
         filename.c_str(),
-        argv,
+        argv.data(),
         static_cast<int>(nbArgs),
         const_cast<CXUnsavedFile *>(unsavedFiles.data()),
         unsavedFiles.size(),
         effectiveSettings_.parseTUOptions);
-    delete[] argv;
   }
 
   if (!tu) {
@@ -116,7 +125,7 @@ void TUManager::unregisterSettings(SettingsID settingsID) {
 void TUManager::onSettingsChanged() {
   const Settings &newSettings = computeEffectiveSettings();
 
-  if (newSettings.equal(effectiveSettings_))
+  if (newSettings.equals(effectiveSettings_))
     return;
 
   effectiveSettings_ = newSettings;
@@ -131,6 +140,7 @@ Settings TUManager::computeEffectiveSettings() const {
   //      CXTranslationUnit_PrecompiledPreamble is used. We disable this option
   //      for old versions of libclang. As a result the completion will work but
   //      significantly slower.
+  // -- https://github.com/Sarcasm/irony-mode/issues/4
   settings.parseTUOptions =
 #if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
     (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)

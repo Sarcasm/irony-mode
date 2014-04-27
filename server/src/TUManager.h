@@ -2,8 +2,8 @@
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  *
- * \brief Translation Unit manager, this is used for "caching" a translation
- *        unit will be reparsed but not re-created if possible, etc.
+ * \brief Translation Unit manager. Keep a cache of translation units, reparsing
+ *        or recreating them as necessary.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -24,21 +24,14 @@
 class TUManager : public util::NonCopyable {
 public:
   /**
-   * \brief A structure configure/tune the TUManager settings.
+   * \brief A structure to configure/tune the parsing of translation units.
    *
-   * Those settings aimed to allow some modifications in the way the
-   * translation units are by default by the TUManager.
+   * No special settings are enabled by default.
    *
-   * Note that at construction time all values are zero/default
-   * initialized.
-   *
-   * The following example is a setting that enable some tunings on
-   * the translation unit parsing for the completion results. A use
-   * case of this can be for a completion plugin. If the completion
-   * plugin is activated, it will benefits from such settings.
+   * For example to tune completion requests:
    *
 \code
-TUManager           tuManager;
+TUManager tuManager;
 TUManager::Settings settings;
 
 settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
@@ -62,7 +55,7 @@ tuManager.unregisterSettings(settingsID);
      */
     void merge(const Settings &other);
 
-    bool equal(const Settings &other) const;
+    bool equals(const Settings &other) const;
   };
 
   /**
@@ -163,10 +156,12 @@ private:
 
 private:
   typedef std::map<const std::string, CXTranslationUnit> TranslationUnitsMap;
+  typedef std::map<const std::string, std::vector<std::string>> FilenameFlagsMap;
 
 private:
   CXIndex index_;
   TranslationUnitsMap translationUnits_; // cache variable
+  FilenameFlagsMap flagsPerFileCache_;
   Settings effectiveSettings_;
   std::list<Settings> settingsList_;
 };
