@@ -27,8 +27,7 @@
 
 (require 'irony)
 
-(eval-when-compile
-  (require 'cl))
+(require 'cl-lib)
 
 (defcustom irony-pp-compiler-executable (or (executable-find "clang")
                                             (executable-find "gcc"))
@@ -63,7 +62,7 @@
   "*internal variable* Contains the last subdirectory (or nil when
   there is no subdirectory) after a call to `irony-pp-completion-point'.")
 
-(defvar irony-pp-system-searth-paths-cache (make-hash-table :test 'equal)
+(defvar irony-pp-system-searth-paths-cache (make-hash-table :test 'eq)
   "*internal variable* Memoize compiler search paths.")
 
 ;; What's parsed:
@@ -77,13 +76,14 @@
 ;;  /usr/lib/gcc/x86_64-unknown-linux-gnu/4.6.2/include-fixed
 ;;  /usr/include
 ;; End of search list.
-(defun irony-pp-system-search-paths-1 (lang-flag)
+(defun irony-pp-system-search-paths-1 ()
   "*Internal function* Really retrieve compiler search paths.
 Please use `irony-pp-system-search-paths'."
   (when irony-pp-compiler-executable
     (with-temp-buffer
       (apply 'call-process irony-pp-compiler-executable nil t nil
-             (append lang-flag irony-pp-compiler-args))
+             (append (irony--libclang-lang-compile-options)
+                     irony-pp-compiler-args))
       (goto-char (point-min))
       (let (directories
             (start "#include \"...\" search starts here:")
@@ -106,13 +106,12 @@ Please use `irony-pp-system-search-paths'."
         directories))))
 
 (defun irony-pp-system-search-paths ()
-  "Retrieve compiler search paths for header files. Memoize the
-search in a hash table."
-  (let ((lang-flag (irony-language-option-flag)))
-    (or (gethash lang-flag irony-pp-system-searth-paths-cache)
-        (puthash lang-flag
-                 (irony-pp-system-search-paths-1 lang-flag) ;value is returned
-                 irony-pp-system-searth-paths-cache))))
+  "Retrieve compiler search paths for header files.
+
+Memoize the search in a hash table."
+  (or (gethash major-mode irony-pp-system-searth-paths-cache)
+      (puthash major-mode (irony-pp-system-search-paths-1) ;value is returned
+               irony-pp-system-searth-paths-cache)))
 
 (defun irony-pp-inside-include-stmt-p ()
   "Return t if the cursor is inside an include statement, such
@@ -136,8 +135,8 @@ Example:
               ^~~~ Completion point returned."
   (save-excursion
     (when (re-search-backward irony-pp-include-re nil t)
-      (let* ((slash-offset (position ?/ (string-to-vector (match-string 1))
-                                     :from-end t))
+      (let* ((slash-offset (cl-position ?/ (string-to-vector (match-string 1))
+                                        :from-end t))
              (begin (match-beginning 1))
              (end (+ begin (or (if slash-offset
                                    (+ slash-offset 1)) 0))))
@@ -190,5 +189,9 @@ filtered according to `irony-pp-header-allowed-extensions'."
             return completions)))))
 
 (provide 'irony-pp)
+
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
 
 ;;; irony-pp.el ends here

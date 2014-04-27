@@ -429,14 +429,17 @@ breaks with escaped quotes in compile_commands.json, such as in:
         irony-clang-working-directory working-directory)
   (run-hooks irony-clang-options-updated-hook))
 
+(defun irony--libclang-lang-compile-options ()
+  (irony--awhen (cdr-safe (assq major-mode irony-clang-lang-options-alist))
+    (list "-x" it)))
+
 (defun irony--libclang-compile-options ()
   "The compile options to send to libclang."
   ;; TODO: if current buffer has no associated file (will be sent as '-') but is
   ;; in an existing directory, we will want to add -I (directory-file-name
   ;; buffer-file-name) to find the relative headers
   (append
-   (irony--awhen (cdr-safe (assq major-mode irony-clang-lang-options-alist))
-     (list "-x" it))
+   (irony--libclang-lang-compile-options)
    (irony--awhen irony-clang-working-directory
      (unless (irony--extract-working-directory-option irony--clang-options)
        (list "-working-directory" it)))
@@ -687,6 +690,19 @@ care of."
                       (or (plist-get errors :fatals) 0)
                       (or (plist-get errors :errors) 0)
                       (or (plist-get errors :warnings) 0)))
+
+
+;;
+;; TODO
+;;
+
+(defun irony--request-completion (&rest args))
+
+(defun irony-current-directory ()
+  default-directory)
+
+(defun irony-user-search-paths ()
+  nil)
 
 (provide 'irony)
 
