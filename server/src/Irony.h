@@ -9,11 +9,13 @@ class Irony {
 public:
   Irony();
 
-  /// Commands
+  /// \name Commands
   /// @{
   ///
-  /// \brief Check if a file compiles. Can be used as a hint to know whether or
-  /// not the compile flags are correct.
+  /// \brief Check that a given file with a set of flags compiles.
+  ///
+  /// Can be used as a hint to know whether or not the compile flags are
+  /// correct.
   ///
   /// Example output:
   ///
@@ -27,7 +29,27 @@ public:
   void check(const std::string &file,
              const std::vector<std::string> &flags,
              const std::vector<CXUnsavedFile> &unsavedFiles);
-  /// }
+
+  /// \brief Perform code completion at a given location.
+  ///
+  /// Print the list of candidate if any. The empty list is printed on error.
+  ///
+  /// Example output:
+  ///
+  /// \verbatim
+  ///    (
+  ///     ("foo")
+  ///     ("bar")
+  ///     ("baz")
+  ///    )
+  /// \endverbatim
+  ///
+  void complete(const std::string &file,
+                unsigned line,
+                unsigned col,
+                const std::vector<std::string> &flags,
+                const std::vector<CXUnsavedFile> &unsavedFiles);
+  /// @}
 
 private:
   TUManager tuManager_;

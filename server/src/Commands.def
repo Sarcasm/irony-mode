@@ -14,6 +14,9 @@
 #endif
 
 X(CheckCompile, "check-compile", "FILE - check that a given file compiles")
+X(Complete,
+  "complete",
+  "FILE LINE COL - perform code completion at a given location")
 X(Help, "help", "show this message")
 X(Exit, "exit", "exit interactive mode, print nothing")
 

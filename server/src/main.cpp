@@ -125,6 +125,10 @@ int main(int ac, const char *av[]) {
       irony.check(c->file, c->flags, c->cxUnsavedFiles);
       break;
 
+    case Command::Complete:
+      irony.complete(c->file, c->line, c->column, c->flags, c->cxUnsavedFiles);
+      break;
+
     case Command::Exit:
       return 0;
 

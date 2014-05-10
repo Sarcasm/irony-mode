@@ -112,8 +112,14 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   switch (command_.action) {
   case Command::CheckCompile:
-    // file.cpp line column
     positionalArgs.push_back(StringConverter(&command_.file));
+    handleUnsaved = true;
+    break;
+
+  case Command::Complete:
+    positionalArgs.push_back(StringConverter(&command_.file));
+    positionalArgs.push_back(UnsignedIntConverter(&command_.line));
+    positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     handleUnsaved = true;
     break;
 

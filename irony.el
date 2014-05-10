@@ -30,6 +30,9 @@
 
 (autoload 'irony-cdb-load-compile-options "irony-cdb")
 
+(autoload 'irony-completion--enter "irony-completion")
+(autoload 'irony-completion--exit "irony-completion")
+
 (require 'cl-lib)
 
 (autoload 'find-library-name "find-func")
@@ -272,9 +275,11 @@ Possible values are:
   (unless irony--clang-options
     (irony-cdb-load-compile-options))
   (when irony-server-executable-path
+    (irony-completion--enter)
     (irony--initial-check-compile)))
 
-(defun irony-mode-exit ())
+(defun irony-mode-exit ()
+  (irony-completion--exit))
 
 
 ;;
@@ -427,7 +432,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
   "Setup the command line options to pass down to libclang."
   (setq irony--clang-options cmd-line-options
         irony-clang-working-directory working-directory)
-  (run-hooks irony-clang-options-updated-hook))
+  (run-hooks 'irony-clang-options-updated-hook))
 
 (defun irony--libclang-lang-compile-options ()
   (irony--awhen (cdr-safe (assq major-mode irony-clang-lang-options-alist))
