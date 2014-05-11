@@ -163,7 +163,7 @@ the current context."
 ;; Interface with irony-server
 ;;
 
-(defun irony-completion--send-request ()
+(defun irony-completion--send-request (&optional async-cb)
   (let (line column)
     (save-excursion
       (goto-char (irony-completion--beginning-of-symbol))
@@ -176,14 +176,17 @@ the current context."
     (irony--send-file-request
      "complete"
      (list 'irony-completion--request-handler
-           irony-completion--context-tick)
+           irony-completion--context-tick
+           async-cb)
      (number-to-string line)
      (number-to-string column))))
 
-(defun irony-completion--request-handler (candidates tick)
+(defun irony-completion--request-handler (candidates tick &optional async-cb)
   (when (eq tick irony-completion--context-tick)
     (setq irony-completion--context-candidates candidates)
-    (run-hooks 'irony-completion-hook)))
+    (run-hooks 'irony-completion-hook)
+    (when async-cb
+      (funcall async-cb))))
 
 
 ;;
@@ -196,6 +199,14 @@ the current context."
     (let ((symbol-bounds (irony-completion--symbol-bounds)))
       (list (car symbol-bounds) (cdr symbol-bounds)
             (mapcar 'car irony-completion--context-candidates)))))
+
+(defun irony-completion-at-point-async ()
+  (interactive)
+  (irony-completion--update-context)
+  (if irony-completion--context-candidates
+      (completion-at-point)
+    (when irony-completion--context-pos
+      (irony-completion--send-request 'completion-at-point))))
 
 (provide 'irony-completion)
 
