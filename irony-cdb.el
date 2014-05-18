@@ -99,9 +99,8 @@
         (desc (plist-get item :desc))
         (disabled (plist-get item :disabled))
         (info (plist-get item :info)))
-    ;;more than 3 keys will mess up the alignment
+    ;; more than 3 keys will mess up the alignment, see the format string below
     (when (> (length keys) 3)
-      ;; FIXME: is this just an arbitrary limit? if so remove this check
       (error "Irony-CDB: too many keys for one menu item"))
     (when (> (length desc) 70)
       (error "Irony-CDB: description too long for a menu item"))

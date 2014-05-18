@@ -64,6 +64,17 @@ please report a bug."
 
 (defvar-local irony-completion--context-pos nil)
 (defvar-local irony-completion--context-tick 0)
+
+;; Here is a description of the elements of the candidates:
+;;
+;; 0. The typed text. Multiple candidates can share the same string because of
+;;    overloaded functions, default arguments, etc.
+;; 1. The priority.
+;; 2. The [result-]type of the candidate, if any.
+;; 3. If non-nil, contains the Doxygen brief documentation of the candidate.
+;; 4. Prototype string excluding the result-type which is available separately
+;;    (i.e: "foo(int a, int b) const").
+;; 5. The annotation start, a 0-based index in the prototype string.
 (defvar-local irony-completion--context-candidates nil)
 
 
@@ -193,12 +204,21 @@ the current context."
 ;; Irony Completion Interface
 ;;
 
+(defun irony-completion--at-point-annotate (candidate)
+  (let ((props (get-text-property 0 'irony candidate)))
+    (substring (nth 3 props) (nth 4 props))))
+
 (defun irony-completion-at-point ()
   (irony-completion--update-context)
   (when irony-completion--context-candidates
     (let ((symbol-bounds (irony-completion--symbol-bounds)))
-      (list (car symbol-bounds) (cdr symbol-bounds)
-            (mapcar 'car irony-completion--context-candidates)))))
+      (list
+       (car symbol-bounds)              ;start
+       (cdr symbol-bounds)              ;end
+       (mapcar #'(lambda (candidate)    ;completion table
+                   (propertize (car candidate) 'irony (cdr candidate)))
+               irony-completion--context-candidates)
+       :annotation-function 'irony-completion--at-point-annotate))))
 
 (defun irony-completion-at-point-async ()
   (interactive)
