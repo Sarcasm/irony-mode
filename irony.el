@@ -701,8 +701,6 @@ care of."
 ;; TODO
 ;;
 
-(defun irony--request-completion (&rest args))
-
 (defun irony-current-directory ()
   default-directory)
 

@@ -124,7 +124,7 @@ please report a bug."
   (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t))
 
 (defun irony-completion--exit ()
-  (remove-hook 'post-command-hook 'irony-completion-post-command)
+  (remove-hook 'post-command-hook 'irony-completion-post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (setq irony-completion--context-pos nil
         irony-completion--context-candidates nil
