@@ -204,29 +204,35 @@ the current context."
 ;; Irony Completion Interface
 ;;
 
+(defun irony-completion-candidates-at-point ()
+  (when (eq (irony-completion--context-pos) irony-completion--context-pos)
+    irony-completion--context-candidates))
+
+(defun irony-completion-candidates-at-point-async (callback)
+  (irony-completion--update-context)
+  (if irony-completion--context-candidates
+      (funcall callback)
+    (when irony-completion--context-pos
+      (irony-completion--send-request callback))))
+
 (defun irony-completion--at-point-annotate (candidate)
   (let ((props (get-text-property 0 'irony candidate)))
     (substring (nth 3 props) (nth 4 props))))
 
 (defun irony-completion-at-point ()
-  (irony-completion--update-context)
-  (when irony-completion--context-candidates
+  (irony--awhen (irony-completion-candidates-at-point)
     (let ((symbol-bounds (irony-completion--symbol-bounds)))
       (list
        (car symbol-bounds)              ;start
        (cdr symbol-bounds)              ;end
        (mapcar #'(lambda (candidate)    ;completion table
                    (propertize (car candidate) 'irony (cdr candidate)))
-               irony-completion--context-candidates)
+               it)
        :annotation-function 'irony-completion--at-point-annotate))))
 
 (defun irony-completion-at-point-async ()
   (interactive)
-  (irony-completion--update-context)
-  (if irony-completion--context-candidates
-      (completion-at-point)
-    (when irony-completion--context-pos
-      (irony-completion--send-request 'completion-at-point))))
+  (irony-completion-candidates-at-point-async 'completion-at-point))
 
 (provide 'irony-completion)
 
