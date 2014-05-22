@@ -682,6 +682,7 @@ care of."
                                    (irony-buffer-size-in-bytes)))
       (process-send-region process (point-min) (point-max))
       ;; always make sure to finis with a newline (required by irony-server to
+      ;; always make sure to finish with a newline (required by irony-server to
       ;; play nice with line buffering even when the file doesn't end with a
       ;; newline)
       (process-send-string process "\n"))))

@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -34,6 +35,18 @@ static void printVersion() {
   // do not change the format for the first line, external programs should be
   // able to rely on it
   std::cout << "irony-server version 0.1.0\n";
+}
+
+static void dumpUnsavedFiles(Command &command) {
+  for (int i = 0; i < static_cast<int>(command.unsavedFiles.size()); ++i) {
+    std::clog << "unsaved file " << i + 1 << ": "
+              << command.unsavedFiles[i].first << "\n"
+              << "----\n";
+    std::copy(command.unsavedFiles[i].second.begin(),
+              command.unsavedFiles[i].second.end(),
+              std::ostream_iterator<char>(std::clog));
+    std::clog << "----\n";
+  }
 }
 
 struct CommandProviderInterface {
@@ -124,8 +137,13 @@ int main(int ac, const char *av[]) {
   }
 
   while (Command *c = commandParser.parse(commandProvider->nextCommand())) {
-    if (c->action != Command::Exit)
+    if (c->action != Command::Exit) {
       std::clog << "execute: " << *c << "\n";
+
+      if (irony.isDebugEnabled()) {
+        dumpUnsavedFiles(*c);
+      }
+    }
 
     switch (c->action) {
     case Command::Help:

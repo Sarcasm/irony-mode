@@ -30,8 +30,7 @@ std::string cxStringToStd(CXString cxString) {
 
 } // unnamed namespace
 
-
-Irony::Irony() {
+Irony::Irony() : debug_(false) {
 }
 
 void Irony::check(const std::string &file,
@@ -158,8 +157,8 @@ void Irony::complete(const std::string &file,
                                file.c_str(),
                                line,
                                col,
-                               0,
-                               0,
+                               const_cast<CXUnsavedFile *>(unsavedFiles.data()),
+                               unsavedFiles.size(),
                                (clang_defaultCodeCompleteOptions() &
                                 ~CXCodeComplete_IncludeCodePatterns)
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION

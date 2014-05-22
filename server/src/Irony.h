@@ -9,6 +9,10 @@ class Irony {
 public:
   Irony();
 
+  bool isDebugEnabled() const {
+    return debug_;
+  }
+
   /// \name Commands
   /// @{
 
