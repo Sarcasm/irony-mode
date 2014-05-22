@@ -85,26 +85,34 @@ int main(int ac, const char *av[]) {
     return 1;
   }
 
-  if (argv[0][0] == '-') {
-    if (argv[0] == "--help" || argv[0] == "-h") {
-      printHelp();
-      return 0;
-    }
+  int optCount = 0;
 
-    if (argv[0] == "--version" || argv[0] == "-v") {
-      printVersion();
-      return 0;
-    }
+  for (const std::string &opt : argv) {
+    if (opt[0] == '-') {
+      ++optCount;
 
-    if (argv[0] == "--interactive" || argv[0] == "-i") {
-      interactiveMode = true;
-    } else if (argv[0] == "--debug" || argv[0] == "-d") {
-      irony.setDebug(true);
-    } else {
-      std::cerr << "irony-server: '" << argv[0] << "' is not a valid command\n";
-      return 1;
+      if (opt == "--help" || opt == "-h") {
+        printHelp();
+        return 0;
+      }
+
+      if (opt == "--version" || opt == "-v") {
+        printVersion();
+        return 0;
+      }
+
+      if (opt == "--interactive" || opt == "-i") {
+        interactiveMode = true;
+      } else if (opt == "--debug" || opt == "-d") {
+        irony.setDebug(true);
+      } else {
+        std::cerr << "error: invalid option '" << opt << "'\n";
+        return 1;
+      }
     }
   }
+
+  argv.erase(argv.begin(), argv.begin() + optCount);
 
   CommandParser commandParser;
   std::unique_ptr<CommandProviderInterface> commandProvider;
