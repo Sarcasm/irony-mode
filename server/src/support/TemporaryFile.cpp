@@ -39,7 +39,7 @@ const std::string &TemporaryFile::getPath() {
 
     do {
       // exiting is better than infinite loop
-      if (i++ == TemporaryFile::MAX_ATTEMPS) {
+      if (++i > TemporaryFile::MAX_ATTEMPS) {
         std::cerr << "error: couldn't create temporary file, please check your "
                      "temporary file directory (" << tmpDir << ")\n";
         exit(EXIT_FAILURE);

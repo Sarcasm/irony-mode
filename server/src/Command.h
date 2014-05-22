@@ -33,6 +33,7 @@ struct Command {
     column = 0;
     unsavedFiles.clear();
     cxUnsavedFiles.clear();
+    opt = false;
   }
 
 #define X(sym, str, desc) sym,
@@ -47,6 +48,7 @@ struct Command {
   // pair of (filename, content)
   std::vector<std::pair<std::string, std::vector<char>>> unsavedFiles;
   std::vector<CXUnsavedFile> cxUnsavedFiles;
+  bool opt;
 };
 
 std::ostream &operator<<(std::ostream &os, const Command::Action &action);

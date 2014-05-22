@@ -43,6 +43,26 @@ private:
   unsigned *dest_;
 };
 
+/// Convert "on" and "off" to a boolean
+struct OptionConverter {
+  OptionConverter(bool *dest) : dest_(dest) {
+  }
+
+  bool operator()(const std::string &str) {
+    if (str == "on") {
+      *dest_ = true;
+    } else if (str == "off") {
+      *dest_ = false;
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+private:
+  bool *dest_;
+};
+
 } // unnamed namespace
 
 std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
@@ -61,17 +81,19 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
 std::ostream &operator<<(std::ostream &os, const Command &command) {
   os << "Command{action=" << command.action << ", "
      << "file='" << command.file << "', "
-     << "line='" << command.line << "', "
-     << "column='" << command.column << "', "
+     << "line=" << command.line << ", "
+     << "column=" << command.column << ", "
      << "flags=[";
   bool first = true;
   for (const std::string &flag : command.flags) {
     if (!first)
       os << ", ";
-    os << flag;
+    os << "'" << flag << "'";
     first = false;
   }
-  os << "]";
+  os << "], "
+     << "unsavedFiles.count=" << command.unsavedFiles.size() << ", "
+     << "opt=" << (command.opt ? "on" : "off");
 
   return os << "}";
 }
@@ -127,6 +149,10 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::Exit:
     break;
 
+  case Command::SetDebug:
+    positionalArgs.push_back(OptionConverter(&command_.opt));
+    break;
+
   case Command::Unknown:
     std::clog << "error: invalid command specified: " << actionStr << "\n";
     return 0;
@@ -168,8 +194,8 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   for (auto fn : positionalArgs) {
     if (!fn(*argIt)) {
-      std::clog << "error: invalid argument " << *argIt << " for '" << actionStr
-                << "\n";
+      std::clog << "error: parsing command '" << actionStr
+                << "': invalid argument '" << *argIt << "'\n";
       return 0;
     }
     ++argIt;

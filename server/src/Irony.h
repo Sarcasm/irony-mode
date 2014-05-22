@@ -11,7 +11,13 @@ public:
 
   /// \name Commands
   /// @{
-  ///
+
+  /// \brief Set or unset debugging of commands.
+  void setDebug(bool enable) {
+    if (enable)
+      debug_ = true;
+  }
+
   /// \brief Check that a given file with a set of flags compiles.
   ///
   /// Can be used as a hint to know whether or not the compile flags are
@@ -53,6 +59,7 @@ public:
 
 private:
   TUManager tuManager_;
+  bool debug_;
 };
 
 #endif // IRONY_MODE_SERVER_IRONY_H_

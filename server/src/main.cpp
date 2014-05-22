@@ -20,9 +20,9 @@
 #include <vector>
 
 static void printHelp() {
-  std::cout
-      << "usage: irony-server [--version|-v] [--help|-h] [--interactive|-i]\n"
-         "                    <command> [<argv>]\n\n";
+  std::cout << "usage: irony-server [--version|-v] [--help|-h] "
+               "[--interactive|-i] [--debug|-d]\n"
+               "                    <command> [<argv>]\n\n";
 
 #define X(sym, str, desc)                                                      \
   if (Command::sym != Command::Unknown)                                        \
@@ -78,6 +78,8 @@ int main(int ac, const char *av[]) {
 
   bool interactiveMode = false;
 
+  Irony irony;
+
   if (ac == 1) {
     printHelp();
     return 1;
@@ -96,13 +98,14 @@ int main(int ac, const char *av[]) {
 
     if (argv[0] == "--interactive" || argv[0] == "-i") {
       interactiveMode = true;
+    } else if (argv[0] == "--debug" || argv[0] == "-d") {
+      irony.setDebug(true);
     } else {
       std::cerr << "irony-server: '" << argv[0] << "' is not a valid command\n";
       return 1;
     }
   }
 
-  Irony irony;
   CommandParser commandParser;
   std::unique_ptr<CommandProviderInterface> commandProvider;
 
@@ -132,8 +135,12 @@ int main(int ac, const char *av[]) {
     case Command::Exit:
       return 0;
 
+    case Command::SetDebug:
+      irony.setDebug(c->opt);
+      break;
+
     case Command::Unknown:
-      assert("shouldn't go here");
+      assert(0 && "unreacheable code...reached!");
       break;
     }
     std::cout << "\n;;EOT\n";
