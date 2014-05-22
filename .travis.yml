@@ -24,3 +24,4 @@ after_script:
 branches:
   except:
     - master
+    - rewrite
