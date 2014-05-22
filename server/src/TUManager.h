@@ -97,6 +97,16 @@ public:
                           const std::vector<CXUnsavedFile> &unsavedFiles);
 
   /**
+   * \brief Retrieve, creating it if necessary the TU associated to filename.
+   *
+   * \return The translation unit. Will be NULL if the translation unit couldn't
+   *         be created.
+   */
+  CXTranslationUnit getOrCreateTU(const std::string &filename,
+                          const std::vector<std::string> &flags,
+                          const std::vector<CXUnsavedFile> &unsavedFiles);
+
+  /**
    * \brief Register some \c Settings for this particular TUManager instance.
    *
    * \param settings
@@ -153,6 +163,18 @@ private:
   void onSettingsChanged();
 
   Settings computeEffectiveSettings() const;
+
+  /**
+   * \brief Get a reference to the translation unit that matches \p filename
+   *        with the given set of flags.
+   *
+   * The TU will be null if it has never been parsed or if the flags have
+   * changed.
+   *
+   * \todo Find a proper name.
+   */
+  CXTranslationUnit &tuRef(const std::string &filename,
+                           const std::vector<std::string> &flags);
 
 private:
   typedef std::map<const std::string, CXTranslationUnit> TranslationUnitsMap;

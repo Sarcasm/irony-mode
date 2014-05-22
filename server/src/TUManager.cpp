@@ -39,10 +39,8 @@ TUManager::~TUManager() {
   clang_disposeIndex(index_);
 }
 
-CXTranslationUnit
-TUManager::parse(const std::string &filename,
-                 const std::vector<std::string> &flags,
-                 const std::vector<CXUnsavedFile> &unsavedFiles) {
+CXTranslationUnit &TUManager::tuRef(const std::string &filename,
+                                    const std::vector<std::string> &flags) {
   CXTranslationUnit &tu = translationUnits_[filename];
 
   // if the flags changed since the last time, invalidate the translation unit
@@ -56,6 +54,14 @@ TUManager::parse(const std::string &filename,
     // remember the flags for the next parse
     flagsCache = flags;
   }
+  return tu;
+}
+
+CXTranslationUnit
+TUManager::parse(const std::string &filename,
+                 const std::vector<std::string> &flags,
+                 const std::vector<CXUnsavedFile> &unsavedFiles) {
+  CXTranslationUnit &tu = tuRef(filename, flags);
 
   if (tu == nullptr) {
     std::size_t nbArgs = flags.size();
@@ -78,7 +84,7 @@ TUManager::parse(const std::string &filename,
         effectiveSettings_.parseTUOptions);
   }
 
-  if (!tu) {
+  if (tu == nullptr) {
     std::clog << "error: libclang couldn't parse '" << filename << "'\n";
     return 0;
   }
@@ -108,6 +114,16 @@ TUManager::parse(const std::string &filename,
   }
 
   return tu;
+}
+
+CXTranslationUnit
+TUManager::getOrCreateTU(const std::string &filename,
+                         const std::vector<std::string> &flags,
+                         const std::vector<CXUnsavedFile> &unsavedFiles) {
+  if (auto tu = tuRef(filename, flags))
+    return tu;
+
+  return parse(filename, flags, unsavedFiles);
 }
 
 SettingsID TUManager::registerSettings(const Settings &settings) {

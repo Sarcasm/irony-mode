@@ -145,9 +145,9 @@ void Irony::complete(const std::string &file,
 
   std::cout << "(\n";
 
-  CXTranslationUnit tu = tuManager_.parse(file, flags, unsavedFiles);
+  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
 
-  if (!tu) {
+  if (tu == nullptr) {
     std::cout << ")\n";
     return;
   }
