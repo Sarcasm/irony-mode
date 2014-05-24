@@ -59,6 +59,17 @@ please report a bug."
 
 
 ;;
+;; Public variables
+;;
+
+(defvar-local irony-completion-mode nil
+  "Non-nil when irony-mode completion is enabled.
+
+This is usually true when irony-mode is enabled but can be
+disable if irony-server isn't available.")
+
+
+;;
 ;; Internal variables
 ;;
 
@@ -72,9 +83,15 @@ please report a bug."
 ;; 1. The priority.
 ;; 2. The [result-]type of the candidate, if any.
 ;; 3. If non-nil, contains the Doxygen brief documentation of the candidate.
-;; 4. Prototype string excluding the result-type which is available separately
-;;    (i.e: "foo(int a, int b) const").
+;; 4. The signature of the candidate excluding the result-type which is
+;;    available separately.
+;;    Example:
+;;       "foo(int a, int b) const"
 ;; 5. The annotation start, a 0-based index in the prototype string.
+;; 6. Post-completion data. The text to insert followed by 0 or more indices.
+;;    These indices work by pairs and describe ranges of placeholder text.
+;;    Example:
+;;        ("(int a, int b)" 1 6 8 13)
 (defvar-local irony-completion--context-candidates nil)
 
 
@@ -121,9 +138,11 @@ please report a bug."
 
 (defun irony-completion--enter ()
   (add-hook 'post-command-hook 'irony-completion-post-command nil t)
-  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t))
+  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t)
+  (setq irony-completion-mode t))
 
 (defun irony-completion--exit ()
+  (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (setq irony-completion--context-pos nil
@@ -169,6 +188,25 @@ the current context."
                              "::")))   ;scope operator
        nil t))))
 
+(defun irony-completion--post-complete-yas-snippet (str placeholders)
+  (let ((ph-count 0)
+        (from 0)
+        to snippet)
+    (while
+        (setq to (car placeholders)
+              snippet (concat
+                       snippet
+                       (substring str from to)
+                       (format "${%d:%s}"
+                               (cl-incf ph-count)
+                               (substring str
+                                          (car placeholders)
+                                          (cadr placeholders))))
+              from (cadr placeholders)
+              placeholders (cddr placeholders)))
+    ;; handle the remaining non-snippet string, if any.
+    (concat snippet (substring str from) "$0")))
+
 
 ;;
 ;; Interface with irony-server
@@ -204,6 +242,18 @@ the current context."
 ;; Irony Completion Interface
 ;;
 
+(defsubst irony-completion-annotation (candidate)
+  (substring (nth 4 candidate) (nth 5 candidate)))
+
+(defsubst irony-completion-brief (candidate)
+  (nth 3 candidate))
+
+(defsubst irony-completion-post-comp-str (candidate)
+  (car (nth 6 candidate)))
+
+(defsubst irony-completion-post-comp-placeholders (candidate)
+  (cdr (nth 6 candidate)))
+
 (defun irony-completion-candidates-at-point ()
   (when (eq (irony-completion--context-pos) irony-completion--context-pos)
     irony-completion--context-candidates))
@@ -215,9 +265,22 @@ the current context."
     (when irony-completion--context-pos
       (irony-completion--send-request callback))))
 
+(defun irony-completion-post-complete (candidate)
+  (let ((str (irony-completion-post-comp-str candidate))
+        (placeholders (irony-completion-post-comp-placeholders candidate)))
+    (if (and placeholders (irony-snippet-available-p))
+        (irony-snippet-expand
+         (irony-completion--post-complete-yas-snippet str placeholders))
+      (insert (substring str 0 (car placeholders))))))
+
+
+;;
+;; Irony CAPF
+;;
+
 (defun irony-completion--at-point-annotate (candidate)
-  (let ((props (get-text-property 0 'irony candidate)))
-    (substring (nth 3 props) (nth 4 props))))
+  (irony-completion-annotation
+   (get-text-property 0 'irony-capf candidate)))
 
 (defun irony-completion-at-point ()
   (irony--awhen (irony-completion-candidates-at-point)
@@ -226,7 +289,7 @@ the current context."
        (car symbol-bounds)              ;start
        (cdr symbol-bounds)              ;end
        (mapcar #'(lambda (candidate)    ;completion table
-                   (propertize (car candidate) 'irony (cdr candidate)))
+                   (propertize (car candidate) 'irony-capf candidate))
                it)
        :annotation-function 'irony-completion--at-point-annotate))))
 

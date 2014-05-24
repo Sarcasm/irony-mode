@@ -171,7 +171,8 @@ void Irony::complete(const std::string &file,
                                     completions->NumResults);
 
     // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype;
+    std::string typedtext, brief, resultType, prototype, postCompCar;
+    std::vector<unsigned> postCompCdr;
 
     for (unsigned i = 0; i < completions->NumResults; ++i) {
       CXCompletionResult candidate = completions->Results[i];
@@ -179,11 +180,14 @@ void Irony::complete(const std::string &file,
       unsigned priority =
           clang_getCompletionPriority(candidate.CompletionString);
       unsigned annotationStart = 0;
+      bool typedTextSet = false;
 
       typedtext.clear();
       brief.clear();
       resultType.clear();
       prototype.clear();
+      postCompCar.clear();
+      postCompCdr.clear();
 
       for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
            chunk.next()) {
@@ -226,10 +230,26 @@ void Irony::complete(const std::string &file,
 
         if (ch != 0) {
           prototype += ch;
-
           // commas look better followed by a space
           if (ch == ',') {
             prototype += ' ';
+          }
+        }
+
+        if (typedTextSet) {
+          if (ch != 0) {
+            postCompCar += ch;
+            if (ch == ',') {
+              postCompCar += ' ';
+            }
+          } else if (chunkKind == CXCompletionChunk_Text ||
+                     chunkKind == CXCompletionChunk_TypedText) {
+            postCompCar += chunk.text();
+          } else if (chunkKind == CXCompletionChunk_Placeholder ||
+                     chunkKind == CXCompletionChunk_CurrentParameter) {
+            postCompCdr.push_back(postCompCar.size());
+            postCompCar += chunk.text();
+            postCompCdr.push_back(postCompCar.size());
           }
         }
 
@@ -237,10 +257,11 @@ void Irony::complete(const std::string &file,
         // doc suggests that exactly one typed text will be given but at least
         // in Objective-C it seems that more than one can appear, see:
         // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
-        if (chunkKind == CXCompletionChunk_TypedText && typedtext.empty()) {
+        if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
           typedtext = chunk.text();
           // annotation is what comes after the typedtext
           annotationStart = prototype.size();
+          typedTextSet = true;
         }
       }
 
@@ -256,6 +277,10 @@ void Irony::complete(const std::string &file,
                 << ' ' << support::quoted(brief)      //
                 << ' ' << support::quoted(prototype)  //
                 << ' ' << annotationStart             //
+                << " (" << support::quoted(postCompCar);
+      for (unsigned index : postCompCdr)
+        std::cout << ' ' << index;
+      std::cout << ")"
                 << ")\n";
     }
 
