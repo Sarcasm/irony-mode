@@ -270,7 +270,7 @@ void Irony::complete(const std::string &file,
           clang_getCompletionBriefComment(candidate.CompletionString));
 #endif
 
-      // see irony-completion.el#irony-completion--context-candidates
+      // see irony-completion.el#irony-completion-candidates
       std::cout << '(' << support::quoted(typedtext)  //
                 << ' ' << priority                    //
                 << ' ' << support::quoted(resultType) //

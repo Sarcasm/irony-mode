@@ -73,26 +73,10 @@ disable if irony-server isn't available.")
 ;; Internal variables
 ;;
 
-(defvar-local irony-completion--context-pos nil)
+(defvar-local irony-completion--context nil)
 (defvar-local irony-completion--context-tick 0)
-
-;; Here is a description of the elements of the candidates:
-;;
-;; 0. The typed text. Multiple candidates can share the same string because of
-;;    overloaded functions, default arguments, etc.
-;; 1. The priority.
-;; 2. The [result-]type of the candidate, if any.
-;; 3. If non-nil, contains the Doxygen brief documentation of the candidate.
-;; 4. The signature of the candidate excluding the result-type which is
-;;    available separately.
-;;    Example:
-;;       "foo(int a, int b) const"
-;; 5. The annotation start, a 0-based index in the prototype string.
-;; 6. Post-completion data. The text to insert followed by 0 or more indices.
-;;    These indices work by pairs and describe ranges of placeholder text.
-;;    Example:
-;;        ("(int a, int b)" 1 6 8 13)
-(defvar-local irony-completion--context-candidates nil)
+(defvar-local irony-completion--candidates nil)
+(defvar-local irony-completion--candidates-tick 0)
 
 
 ;;
@@ -145,9 +129,10 @@ disable if irony-server isn't available.")
   (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
-  (setq irony-completion--context-pos nil
-        irony-completion--context-candidates nil
-        irony-completion--context-tick 0))
+  (setq irony-completion--context nil
+        irony-completion--candidates nil
+        irony-completion--context-tick 0
+        irony-completion--candidates-tick 0))
 
 (defun irony-completion-post-command ()
   (when (and (irony-completion-trigger-command-p this-command)
@@ -167,20 +152,20 @@ Stolen from `auto-complete` package."
   "Update the completion context variables based on the current position.
 
 Return t if the context has been updated, nil otherwise."
-  (let ((ctx-pos (irony-completion--context-pos)))
-    (if (eq ctx-pos irony-completion--context-pos)
+  (let ((ctx (irony-completion--context-pos)))
+    (if (eq ctx irony-completion--context)
         nil
-      (setq irony-completion--context-pos ctx-pos
-            irony-completion--context-candidates nil
+      (setq irony-completion--context ctx
+            irony-completion--candidates nil
             irony-completion--context-tick (1+ irony-completion--context-tick))
       t)))
 
 (defun irony-completion--trigger-context-p ()
   "Whether or not completion is expected to be triggered for the
 the current context."
-  (when irony-completion--context-pos
+  (when irony-completion--context
     (save-excursion
-      (goto-char irony-completion--context-pos)
+      (goto-char irony-completion--context)
       (re-search-backward
        (format "%s\\="                 ;see Info node `(elisp) Regexp-Backslash'
                (regexp-opt '("."       ;object member access
@@ -232,7 +217,9 @@ the current context."
 
 (defun irony-completion--request-handler (candidates tick &optional async-cb)
   (when (eq tick irony-completion--context-tick)
-    (setq irony-completion--context-candidates candidates)
+    (setq
+     irony-completion--candidates-tick tick
+     irony-completion--candidates candidates)
     (run-hooks 'irony-completion-hook)
     (when async-cb
       (funcall async-cb))))
@@ -254,15 +241,46 @@ the current context."
 (defsubst irony-completion-post-comp-placeholders (candidate)
   (cdr (nth 6 candidate)))
 
-(defun irony-completion-candidates-at-point ()
-  (when (eq (irony-completion--context-pos) irony-completion--context-pos)
-    irony-completion--context-candidates))
+(defun irony-completion-candidates-available-p ()
+  (and (eq (irony-completion--context-pos) irony-completion--context)
+       (eq irony-completion--candidates-tick irony-completion--context-tick)))
 
-(defun irony-completion-candidates-at-point-async (callback)
+(defun irony-completion-candidates ()
+  "Return the list of candidates at point, if available.
+
+Use the function `irony-completion-candidates-available-p' to
+know if the candidate list is available.
+
+A candidate is composed of the following elements:
+ 0. The typed text. Multiple candidates can share the same string
+    because of overloaded functions, default arguments, etc.
+ 1. The priority.
+ 2. The [result-]type of the candidate, if any.
+ 3. If non-nil, contains the Doxygen brief documentation of the
+    candidate.
+ 4. The signature of the candidate excluding the result-type
+    which is available separately.
+    Example: \"foo(int a, int b) const\"
+ 5. The annotation start, a 0-based index in the prototype string.
+ 6. Post-completion data. The text to insert followed by 0 or
+    more indices. These indices work by pairs and describe ranges
+    of placeholder text.
+    Example: (\"(int a, int b)\" 1 6 8 13)"
+  (and (irony-completion-candidates-available-p)
+       irony-completion--candidates))
+
+(defun irony-completion-candidates-async (callback)
+  "Call CALLBACK when asynchronous completion is available.
+
+Note that:
+ - If the candidates are already available, CALLBACK is called
+   immediately.
+ - In some circumstances, CALLBACK may not be called. i.e: no
+   completion context, irony-server crashes, ..."
   (irony-completion--update-context)
-  (if irony-completion--context-candidates
+  (if irony-completion--candidates
       (funcall callback)
-    (when irony-completion--context-pos
+    (when irony-completion--context
       (irony-completion--send-request callback))))
 
 (defun irony-completion-post-complete (candidate)
@@ -283,19 +301,19 @@ the current context."
    (get-text-property 0 'irony-capf candidate)))
 
 (defun irony-completion-at-point ()
-  (irony--awhen (irony-completion-candidates-at-point)
+  (when (irony-completion-candidates-available-p)
     (let ((symbol-bounds (irony-completion--symbol-bounds)))
       (list
        (car symbol-bounds)              ;start
        (cdr symbol-bounds)              ;end
        (mapcar #'(lambda (candidate)    ;completion table
                    (propertize (car candidate) 'irony-capf candidate))
-               it)
+               (irony-completion-candidates))
        :annotation-function 'irony-completion--at-point-annotate))))
 
 (defun irony-completion-at-point-async ()
   (interactive)
-  (irony-completion-candidates-at-point-async 'completion-at-point))
+  (irony-completion-candidates-async 'completion-at-point))
 
 (provide 'irony-completion)
 
