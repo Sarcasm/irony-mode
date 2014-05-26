@@ -539,7 +539,8 @@ The installation requires CMake and the libclang developpement package."
 Ideally this is done only once, when the buffer is first
 opened (or irony-mode first started), just to inform the user if
 he forgot to provide the flags for the current buffer."
-  (unless irony--initial-compile-check-status
+  (unless (or irony--initial-compile-check-status
+              (zerop (buffer-size)))
     (setq irony--initial-compile-check-status 'requested)
     (irony-request-check-compile)))
 

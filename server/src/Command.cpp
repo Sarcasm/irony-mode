@@ -29,7 +29,7 @@ struct UnsignedIntConverter {
   bool operator()(const std::string &str) {
     try {
       int num = std::stoi(str);
-      if (num > 0) {
+      if (num >= 0) {
         *dest_ = num;
         return true;
       }
