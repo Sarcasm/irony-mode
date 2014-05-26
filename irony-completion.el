@@ -75,6 +75,8 @@ disable if irony-server isn't available.")
 
 (defvar-local irony-completion--context nil)
 (defvar-local irony-completion--context-tick 0)
+(defvar-local irony-completion--request-callbacks nil)
+(defvar-local irony-completion--request-tick 0)
 (defvar-local irony-completion--candidates nil)
 (defvar-local irony-completion--candidates-tick 0)
 
@@ -132,6 +134,8 @@ disable if irony-server isn't available.")
   (setq irony-completion--context nil
         irony-completion--candidates nil
         irony-completion--context-tick 0
+        irony-completion--request-tick 0
+        irony-completion--request-callbacks nil
         irony-completion--candidates-tick 0))
 
 (defun irony-completion-post-command ()
@@ -158,6 +162,13 @@ Return t if the context has been updated, nil otherwise."
       (setq irony-completion--context ctx
             irony-completion--candidates nil
             irony-completion--context-tick (1+ irony-completion--context-tick))
+      (unless irony-completion--context
+        ;; when there is no context, assume that the candidates are available
+        ;; even though they are nil
+        irony-completion--request-tick irony-completion--context-tick
+        irony-completion--request-callbacks nil
+        irony-completion--candidates nil
+        irony-completion--candidates-tick irony-completion--context-tick)
       t)))
 
 (defun irony-completion--trigger-context-p ()
@@ -197,7 +208,7 @@ the current context."
 ;; Interface with irony-server
 ;;
 
-(defun irony-completion--send-request (&optional async-cb)
+(defun irony-completion--send-request ()
   (let (line column)
     (save-excursion
       (goto-char (irony-completion--beginning-of-symbol))
@@ -207,22 +218,25 @@ the current context."
         (setq line (line-number-at-pos)
               column (1+ (- (position-bytes (point))
                             (position-bytes (point-at-bol)))))))
+    (setq irony-completion--request-callbacks nil
+          irony-completion--request-tick irony-completion--context-tick)
     (irony--send-file-request
      "complete"
-     (list 'irony-completion--request-handler
-           irony-completion--context-tick
-           async-cb)
+     (list 'irony-completion--request-handler irony-completion--context-tick)
      (number-to-string line)
      (number-to-string column))))
 
-(defun irony-completion--request-handler (candidates tick &optional async-cb)
+(defun irony-completion--request-handler (candidates tick)
   (when (eq tick irony-completion--context-tick)
     (setq
      irony-completion--candidates-tick tick
      irony-completion--candidates candidates)
     (run-hooks 'irony-completion-hook)
-    (when async-cb
-      (funcall async-cb))))
+    (mapc 'funcall irony-completion--request-callbacks)))
+
+(defun irony-completion--still-completing-p ()
+  (unless (irony-completion-candidates-available-p)
+    (eq irony-completion--request-tick irony-completion--context-tick)))
 
 
 ;;
@@ -275,13 +289,16 @@ A candidate is composed of the following elements:
 Note that:
  - If the candidates are already available, CALLBACK is called
    immediately.
- - In some circumstances, CALLBACK may not be called. i.e: no
-   completion context, irony-server crashes, ..."
+ - In some circumstances, CALLBACK may not be called. i.e:
+   irony-server crashes, ..."
   (irony-completion--update-context)
-  (if irony-completion--candidates
+  (if (irony-completion-candidates-available-p)
       (funcall callback)
     (when irony-completion--context
-      (irony-completion--send-request callback))))
+      (unless (irony-completion--still-completing-p)
+        (irony-completion--send-request))
+      (setq irony-completion--request-callbacks
+            (cons callback irony-completion--request-callbacks)))))
 
 (defun irony-completion-post-complete (candidate)
   (let ((str (irony-completion-post-comp-str candidate))
