@@ -85,37 +85,37 @@ disable if irony-server isn't available.")
 ;; Utility functions
 ;;
 
-(defun irony-completion--symbol-bounds ()
-  (let ((pt (point)))
-    (save-excursion
-      (skip-chars-backward "_a-zA-Z0-9")
-      (let ((ch (char-after)))
-        (if (and (>= ch ?0) (<= ch ?9)) ;symbols can't start with a digit
-            (cons pt pt)
-          (setq pt (point))
-          (skip-chars-forward "_a-zA-Z0-9")
-          (cons pt (point)))))))
-
-(defun irony-completion--beginning-of-symbol ()
-  (car (irony-completion--symbol-bounds)))
-
-(defun irony-completion--end-of-symbol ()
-  (cdr (irony-completion--symbol-bounds)))
-
-(defun irony-completion--context-pos ()
-  (let ((syntax (syntax-ppss)))
-    ;; no context in strings and comments
+(defun irony-completion-symbol-bounds ()
+  (let ((pt (point))
+        (syntax (syntax-ppss)))
+    ;; no prefix for strings or comments
     ;; TODO: Use fontlock faces instead? at least
     ;;     #warning In the middle of a warning|
-    ;; will be handled properly but things like the link will be messed-up
-    ;; (`goto-address-prog-mode' feature):
+    ;; will be handled properly but things like links when
+    ;; `goto-address-prog-mode' is enabled will mess up things:
     ;;     #error see bug report XY: http://example.com/XY
-    (unless (or (nth 3 syntax)          ;strings
-                (nth 4 syntax))         ;comments
+    (unless (or (nth 3 syntax)          ;skip strings
+                (nth 4 syntax))         ;skip comments
       (save-excursion
-        (goto-char (irony-completion--beginning-of-symbol))
-        (skip-chars-backward " \t\n\r")
-        (point)))))
+        (skip-chars-backward "_a-zA-Z0-9")
+        (let ((ch (char-after)))
+          (unless (and ch (>= ch ?0) (<= ch ?9)) ;skip numbers
+            (setq pt (point))
+            (skip-chars-forward "_a-zA-Z0-9")
+            (cons pt (point))))))))
+
+(defun irony-completion-beginning-of-symbol ()
+  (car (irony-completion-symbol-bounds)))
+
+(defun irony-completion-end-of-symbol ()
+  (cdr (irony-completion-symbol-bounds)))
+
+(defun irony-completion--context-pos ()
+  (irony--awhen (irony-completion-beginning-of-symbol)
+    (save-excursion
+      (goto-char it)
+      (skip-chars-backward " \t\n\r")   ;TODO: use `skip-syntax-backward'?
+      (point))))
 
 
 ;;
@@ -211,7 +211,7 @@ the current context."
 (defun irony-completion--send-request ()
   (let (line column)
     (save-excursion
-      (goto-char (irony-completion--beginning-of-symbol))
+      (goto-char (irony-completion-beginning-of-symbol))
       ;; `position-bytes' to handle multibytes and 'multicolumns' (i.e
       ;; tabulations) characters properly
       (irony-without-narrowing
@@ -319,7 +319,7 @@ Note that:
 
 (defun irony-completion-at-point ()
   (when (irony-completion-candidates-available-p)
-    (let ((symbol-bounds (irony-completion--symbol-bounds)))
+    (let ((symbol-bounds (irony-completion-symbol-bounds)))
       (list
        (car symbol-bounds)              ;start
        (cdr symbol-bounds)              ;end
