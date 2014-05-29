@@ -41,7 +41,17 @@
 (defcustom irony-completion-trigger-commands '(self-insert-command
                                                newline-and-indent
                                                c-context-line-break
-                                               c-scope-operator)
+                                               c-scope-operator
+                                               ;; electric commands
+                                               c-electric-backspace
+                                               c-electric-brace
+                                               c-electric-colon
+                                               c-electric-lt-gt
+                                               c-electric-paren
+                                               c-electric-pound
+                                               c-electric-semi&comma
+                                               c-electric-slash
+                                               c-electric-star)
   "List of commands to watch for asynchronous completion triggering.
 
 There are actually some hard-coded regexp as well in
@@ -139,18 +149,10 @@ disable if irony-server isn't available.")
         irony-completion--candidates-tick 0))
 
 (defun irony-completion-post-command ()
-  (when (and (irony-completion-trigger-command-p this-command)
+  (when (and (memq this-command irony-completion-trigger-commands)
              (irony-completion--update-context)
-             (irony-completion--trigger-context-p))
+             (irony-completion-at-trigger-point-p))
     (irony-completion--send-request)))
-
-(defun irony-completion-trigger-command-p (command)
-  "Whether or not COMMAND is a completion trigger command.
-
-Stolen from `auto-complete` package."
-  (and (symbolp command)
-       (or (memq command irony-completion-trigger-commands)
-           (string-match-p "^c-electric-" (symbol-name command)))))
 
 (defun irony-completion--update-context ()
   "Update the completion context variables based on the current position.
@@ -170,19 +172,6 @@ Return t if the context has been updated, nil otherwise."
         irony-completion--candidates nil
         irony-completion--candidates-tick irony-completion--context-tick)
       t)))
-
-(defun irony-completion--trigger-context-p ()
-  "Whether or not completion is expected to be triggered for the
-the current context."
-  (when irony-completion--context
-    (save-excursion
-      (goto-char irony-completion--context)
-      (re-search-backward
-       (format "%s\\="                 ;see Info node `(elisp) Regexp-Backslash'
-               (regexp-opt '("."       ;object member access
-                             "->"      ;pointer member access
-                             "::")))   ;scope operator
-       nil t))))
 
 (defun irony-completion--post-complete-yas-snippet (str placeholders)
   (let ((ph-count 0)
@@ -307,6 +296,16 @@ Note that:
         (irony-snippet-expand
          (irony-completion--post-complete-yas-snippet str placeholders))
       (insert (substring str 0 (car placeholders))))))
+
+(defun irony-completion-at-trigger-point-p ()
+  (when (eq (point) (irony-completion-beginning-of-symbol))
+    (save-excursion
+      (re-search-backward
+       (format "%s\\="                 ;see Info node `(elisp) Regexp-Backslash'
+               (regexp-opt '("."       ;object member access
+                             "->"      ;pointer member access
+                             "::")))   ;scope operator
+       nil t))))
 
 
 ;;
