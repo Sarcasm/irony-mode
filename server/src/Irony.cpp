@@ -167,6 +167,21 @@ void Irony::complete(const std::string &file,
 #endif
                                )) {
 
+    if (debug_) {
+      unsigned numDiags = clang_codeCompleteGetNumDiagnostics(completions);
+      std::clog << "debug: complete: " << numDiags << " diagnostic(s)\n";
+      for (unsigned i = 0; i < numDiags; ++i) {
+        CXDiagnostic diagnostic =
+            clang_codeCompleteGetDiagnostic(completions, i);
+        CXString s = clang_formatDiagnostic(
+            diagnostic, clang_defaultDiagnosticDisplayOptions());
+
+        std::clog << clang_getCString(s) << std::endl;
+        clang_disposeString(s);
+        clang_disposeDiagnostic(diagnostic);
+      }
+    }
+
     clang_sortCodeCompletionResults(completions->Results,
                                     completions->NumResults);
 
