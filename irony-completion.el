@@ -107,8 +107,10 @@ disable if irony-server isn't available.")
         (skip-chars-backward "_a-zA-Z0-9")
         (let ((ch (char-after)))
           (unless (and ch (>= ch ?0) (<= ch ?9)) ;skip numbers
+            (when (eq (char-before) ?~)
+              (backward-char))
             (setq pt (point))
-            (skip-chars-forward "_a-zA-Z0-9")
+            (skip-chars-forward "_a-zA-Z0-9~")
             (cons pt (point))))))))
 
 (defun irony-completion-beginning-of-symbol ()
