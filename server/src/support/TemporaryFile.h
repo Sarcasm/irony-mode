@@ -1,8 +1,11 @@
-/**
+/**-*-C++-*-
  * \file
+ * \author Guillaume Papin <guillaume.papin@epitech.eu>
  *
  * \brief Not the best piece of code out there.
  *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  */
 
 #ifndef IRONY_MODE_SERVER_SUPPORT_TEMPORARY_FILE_H_

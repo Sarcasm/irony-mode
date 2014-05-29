@@ -1,8 +1,10 @@
-/**
+/**-*-C++-*-
  * \file
+ * \brief Dumb implementation of something that might look like C++14
+ * std::quoted.
  *
- * \brief Incomlete/very-limited implementation of C++14 std::quoted.
- *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
  */
 
 #ifndef IRONY_MODE_SERVER_SUPPORT_IOMANIP_QUOTED_H_

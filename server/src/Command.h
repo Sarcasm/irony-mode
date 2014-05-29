@@ -2,9 +2,10 @@
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  *
+ * \brief Command parser declarations.
+ *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
- *
  */
 
 #ifndef IRONY_MODE_SERVER_COMMAND_H_

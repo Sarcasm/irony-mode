@@ -2,8 +2,10 @@
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
  *
- * \brief Translation Unit manager. Keep a cache of translation units, reparsing
- *        or recreating them as necessary.
+ * \brief Translation Unit manager.
+ *
+ * Keeps a cache of translation units, reparsing or recreating them as
+ * necessary.
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
@@ -85,9 +87,6 @@ public:
    * if (! tu)
    *   std::cerr << "parsing translation unit failed\n";
    * \endcode
-   *
-   * \param filename    The filename to parse.
-   * \param flags       The compiler flags (typically -I dir).
    *
    * \return The translation unit, if the parsing failed the translation unit
    *         will be \c NULL.

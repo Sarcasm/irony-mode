@@ -1,3 +1,13 @@
+/**
+ * \file
+ * \author Guillaume Papin <guillaume.papin@epitech.eu>
+ * 
+ * \brief Command parser definitions.
+ *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ */
+
 #include "Command.h"
 
 #include "support/CommandLineParser.h"

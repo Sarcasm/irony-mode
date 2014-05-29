@@ -97,12 +97,10 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../server/ \
-                         @CMAKE_CURRENT_SOURCE_DIR@/../lib/util \
-                         @CMAKE_CURRENT_SOURCE_DIR@/../lib/str
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../src
 
 INPUT_ENCODING         = UTF-8
-FILE_PATTERNS          =
+FILE_PATTERNS          = *.cpp *.h *.def
 RECURSIVE              = YES
 EXCLUDE                =
 EXCLUDE_SYMLINKS       = NO
@@ -262,7 +260,7 @@ PERL_PATH              = /usr/bin/perl
 #---------------------------------------------------------------------------
 CLASS_DIAGRAMS         = YES
 MSCGEN_PATH            =
-HIDE_UNDOC_RELATIONS   = NO
+HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = @HAS_DOT_VALUE@
 DOT_NUM_THREADS        = 0
 DOT_FONTNAME           = Helvetica
@@ -273,7 +271,7 @@ COLLABORATION_GRAPH    = YES
 GROUP_GRAPHS           = YES
 UML_LOOK               = NO
 UML_LIMIT_NUM_FIELDS   = 10
-TEMPLATE_RELATIONS     = YES
+TEMPLATE_RELATIONS     = NO
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
 CALL_GRAPH             = NO

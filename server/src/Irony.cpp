@@ -1,3 +1,15 @@
+/**
+ * \file
+ * \author Guillaume Papin <guillaume.papin@epitech.eu>
+ * 
+ * \brief irony-server "API" definitions.
+ *
+ * \sa Irony.h for more information.
+ * 
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ */
+
 #include "Irony.h"
 
 #include "support/iomanip_quoted.h"

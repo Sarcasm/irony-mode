@@ -6,11 +6,10 @@
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
- *
  */
 
 #ifndef X
-#error X macro should be define before inclusion!
+#error Please define the 'X(id, command, description)' macro before inclusion!
 #endif
 
 X(CheckCompile, "check-compile", "FILE - check that a given file compiles")

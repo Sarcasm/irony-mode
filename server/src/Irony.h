@@ -1,3 +1,18 @@
+/**-*-C++-*-
+ * \file
+ * \author Guillaume Papin <guillaume.papin@epitech.eu>
+ *
+ * \brief irony-server "API" declarations.
+ *
+ * Contains the commands that the Emacs package relies on. These commands are
+ * mostly wrappers around a subset of the features provided by libclang. Command
+ * results are printed to \c std::cout as s-expr, in order to make it easy for
+ * Emacs to consume.
+ *
+ * This file is distributed under the GNU General Public License. See
+ * COPYING for details.
+ */
+
 #ifndef IRONY_MODE_SERVER_IRONY_H_
 #define IRONY_MODE_SERVER_IRONY_H_
 
@@ -29,13 +44,14 @@ public:
   ///
   /// Example output:
   ///
-  /// \verbatim
+  /// \code{.el}
   ///   ()
   ///   (:fatals 1)
   ///   (:errors 3)
   ///   (:warnings 5)
   ///   (:errors 3 :warnings 5)
-  /// \endverbatim
+  /// \endcode
+  ///
   void check(const std::string &file,
              const std::vector<std::string> &flags,
              const std::vector<CXUnsavedFile> &unsavedFiles);
@@ -46,13 +62,13 @@ public:
   ///
   /// Example output:
   ///
-  /// \verbatim
+  /// \code{.el}
   ///    (
   ///     ("foo")
   ///     ("bar")
   ///     ("baz")
   ///    )
-  /// \endverbatim
+  /// \endcode
   ///
   void complete(const std::string &file,
                 unsigned line,

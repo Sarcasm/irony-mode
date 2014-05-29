@@ -8,7 +8,6 @@
  *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
- *
  */
 
 #ifndef IRONY_MODE_SERVER_SUPPORT_NONCOPYABLE_H_
