@@ -137,13 +137,11 @@ disable if irony-server isn't available.")
 
 (defun irony-completion--enter ()
   (add-hook 'post-command-hook 'irony-completion-post-command nil t)
-  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t)
   (setq irony-completion-mode t))
 
 (defun irony-completion--exit ()
   (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
-  (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (setq irony-completion--context nil
         irony-completion--candidates nil
         irony-completion--context-tick 0
@@ -351,7 +349,8 @@ Note that:
    (get-text-property 0 'irony-capf candidate)))
 
 (defun irony-completion-at-point ()
-  (when (irony-completion-candidates-available-p)
+  (when (and irony-completion-mode
+             (irony-completion-candidates-available-p))
     (let ((symbol-bounds (irony-completion-symbol-bounds)))
       (list
        (car symbol-bounds)              ;start
