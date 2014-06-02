@@ -157,7 +157,7 @@ The irony-server executable is expected to be in
 
 (defcustom irony-check-compile-functions
   '(irony--process-initial-check-compile)
-  "Abnormal hook run when new check-compile results are available.
+  "Special hook run when check-compile results are available.
 
 Takes as an argument the number of fatal errors (usually 0 or 1),
 the number of errors and the number of warnings.

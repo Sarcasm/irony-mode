@@ -35,6 +35,10 @@
 ;; Customizable variables
 ;;
 
+(defgroup irony-completion nil
+  "Irony's completion interface."
+  :group 'irony)
+
 (defcustom irony-completion-trigger-commands '(self-insert-command
                                                newline-and-indent
                                                c-context-line-break
@@ -55,14 +59,14 @@ There are actually some hard-coded regexp as well in
 `irony-completion-trigger-command-p', if it causes any trouble
 please report a bug."
   :type '(repeat function)
-  :group 'irony)
+  :group 'irony-completion)
 
 ;;;###autoload
 (defcustom irony-completion-hook nil
   ;; TODO: proper documentation
   "Function called when new completion data are available."
   :type 'hook
-  :group 'irony)
+  :group 'irony-completion)
 
 
 ;;

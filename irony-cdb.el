@@ -158,7 +158,7 @@ Removes OCCUPIED-LEN from the "
     ;; (autoload (cons '("-std=c++11") nil))
     (menu-entry
      (list :desc "Preferences"
-           :keys '((?p customize-apropos-options "irony"))))))
+           :keys '((?p customize-group "irony"))))))
 
 
 ;;
