@@ -218,10 +218,6 @@ Contains the absolute paths to the directories.")
 The compile options used by the compiler to build the current
 buffer file.")
 
-;; TODO: Diagnose the missing stddef.h and append the directory
-;; https://github.com/Sarcasm/irony-mode/issues/28
-(defvar-local irony--extra-clang-options nil)
-
 (defconst irony--eot "\n;;EOT\n"
   "String sent by the server to signal the end of a response.")
 
@@ -449,7 +445,6 @@ breaks with escaped quotes in compile_commands.json, such as in:
      (unless (irony--extract-working-directory-option irony--clang-options)
        (list "-working-directory" it)))
    irony-additional-clang-options
-   irony--extra-clang-options
    irony--clang-options))
 
 (defun irony--extract-working-directory-option (flags)
