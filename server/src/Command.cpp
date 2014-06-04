@@ -124,12 +124,7 @@ CommandParser::CommandParser() : tempFile_("irony-server") {
 Command *CommandParser::parse(const std::vector<std::string> &argv) {
   command_.clear();
 
-  auto end = std::find(argv.begin(), argv.end(), "--");
-
-  if (end != argv.end())
-    command_.flags.assign(end + 1, argv.end());
-
-  if (argv.begin() == end) {
+  if (argv.begin() == argv.end()) {
     std::clog << "error: no command specified.\n"
                  "See 'irony-server help' to list available commands\n";
     return 0;
@@ -169,10 +164,10 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   }
 
   auto argIt = argv.begin() + 1;
-  int argCount = std::distance(argIt, end);
+  int argCount = std::distance(argIt, argv.end());
 
   // parse optional arguments come first
-  while (argIt != end) {
+  while (argIt != argv.end()) {
     // '-' is allowed as a "default" file, this isn't an option but a positional
     // argument
     if ((*argIt)[0] != '-' || *argIt == "-")
