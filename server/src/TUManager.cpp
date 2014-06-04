@@ -64,21 +64,32 @@ TUManager::parse(const std::string &filename,
   CXTranslationUnit &tu = tuRef(filename, flags);
 
   if (tu == nullptr) {
-    std::size_t nbArgs = flags.size();
-    std::vector<const char *> argv(nbArgs + 1);
+    std::vector<const char *> argv;
 
-    for (std::size_t i = 0; i < nbArgs; ++i) {
-      argv[i] = flags[i].c_str();
+#ifdef CLANG_BUILTIN_HEADERS_DIR
+    // Make sure libclang find its builtin headers, this is a known issue with
+    // libclang, see:
+    // - http://lists.cs.uiuc.edu/pipermail/cfe-dev/2012-July/022893.html
+    //
+    // > Make sure that Clang is using its own . It will be in a directory
+    // > ending in clang/3.2/include/ where 3.2 is the version of clang that you
+    // > are using. You may need to explicitly add it to your header search.
+    // > Usually clang finds this directory relative to the executable with
+    // > CompilerInvocation::GetResourcesPath(Argv0, MainAddr), but using just
+    // > the libraries, it can't automatically find it.
+    argv.push_back("-isystem");
+    argv.push_back(CLANG_BUILTIN_HEADERS_DIR);
+#endif
+
+    for (auto &flag : flags) {
+      argv.push_back(flag.c_str());
     }
-    // don't think the ending null is necessary but that's how the argument
-    // vector from a main ends
-    argv.at(nbArgs) = nullptr;
 
     tu = clang_parseTranslationUnit(
         index_,
         filename.c_str(),
         argv.data(),
-        static_cast<int>(nbArgs),
+        static_cast<int>(argv.size()),
         const_cast<CXUnsavedFile *>(unsavedFiles.data()),
         unsavedFiles.size(),
         effectiveSettings_.parseTUOptions);
