@@ -3,9 +3,11 @@
 
 *Note:* This is a work in progress:
 
-* documentation might not be up-to-date
-* use at your own risk!
-* open issues, fork-it and create pull-requests!
+* **Right now the package is not yet installable using a package manager, even if
+  the doc says so.** This will come soon in the meantime, be patient.
+* Documentation might not be up-to-date.
+* Use at your own risk!
+* Open issues, fork-it and create pull-requests!
 
 
 ## Features
