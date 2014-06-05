@@ -10,8 +10,8 @@ For formatting it is highly suggested to use
 [Clang-Format](http://clang.llvm.org/docs/ClangFormat.html), a configuration
 file is provided, the hidden file *.clang-format* at the root of the project.
 
-Apart from some differences written in the .clang-format configuration file and
-in the example that follows it's safe to follow the
+Apart from some differences written in the *.clang-format* configuration file
+and in the example that follows it's safe to follow the
 [LLVM Coding Standards](http://llvm.org/docs/CodingStandards.html).
 
 ```cpp
