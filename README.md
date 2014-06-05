@@ -1,8 +1,6 @@
 # Irony-Mode
 ## A C/C++ minor mode powered by [libclang][libclang-ref]
 
-[![Build Status](https://api.travis-ci.org/Sarcasm/irony-mode.png?branch=master)](https://travis-ci.org/Sarcasm/irony-mode)
-
 *Note:* This is a work in progress:
 
 * documentation might not be up-to-date
