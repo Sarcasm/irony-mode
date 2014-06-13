@@ -93,6 +93,8 @@ with minimum user input.
 
 Type `M-x irony-cdb-menu RET` to display the build configuration menu.
 
+![Compilation DB demo](screenshots/cdb.gif)
+
 The menu should be self explanatory, it will let you chose amongst a list of
 *compilation databases*. It works great with the following ones:
 
@@ -118,8 +120,6 @@ may reference some new tools in the future that supports the
 `compile_commands.json` format. `irony-mode` support that file format and
 hopefully it should work *out-of-the-box* for any of such tools.
 -->
-
-![Compilation DB demo](screenshots/cdb.gif)
 
 
 ## FAQ
