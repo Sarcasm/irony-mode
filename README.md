@@ -20,11 +20,25 @@
 
 ## Dependencies
 
-This package depends on:
+### Elisp dependencies
 
-| Package               | Version  | Status       | Comment                                               |
-| --------------------- | -------- | ------------ | ----------------------------------------------------- |
-| [YASnippet][yas-ref]  | All      | recommended  | Used only when available to provide dynamic snippets  |
+These dependencies will be installed automatically when using the
+[standard installation][#installation] described below.
+
+| Package               | Comment                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| [cl-lib][cl-lib-ref]  | Built-in since Emacs 24.3                                                                |
+| [YASnippet][yas-ref]  | Optional. Used only when available to provide snippets expansion of completion arguments |
+
+
+### Irony-Server prerequisites
+
+`irony-server` is an executable that provides an interface to
+[libclang][libclang-ref] to `irony-mode`. This server, written in C++, requires
+the following system packages to be installed on your system:
+
+* [CMake][cmake-ref] >= 2.8.3
+* [libclang][libclang-ref]
 
 
 ## Installation
@@ -57,10 +71,18 @@ package manager.
 
 ## Usage
 
-If you want the completion to work on a project you will probably need give some
-information about the flags necessary to compile a file. The best way to achieve
-this is to use a [Compilation Database](#compilation-database). Otherwise you
-can always use the customizable variables: `M-x customize-group RET irony RET`.
+On the first run, `irony-mode` will ask you to build and install `irony-server`
+using: `M-x irony-install-server RET`.
+
+In order to provide context sensitive and accurate information, `irony-mode`
+needs to know about the compiler flags used to parse the current buffer. The
+best way to achieve this is to use a
+[Compilation Database](#compilation-database).
+
+To tune `irony-mode`, use `customize`:
+
+
+    M-x customize-group RET irony RET
 
 
 ## Compilation Database
@@ -69,8 +91,7 @@ In order to work correctly, `irony-mode` needs to know the compile flags. This
 plugin allow aims to provide *as automatic as possible* compile flags discovery,
 with minimum user input.
 
-Just hit `C-c C-b` (aka `irony-cdb-menu`) to display the build configuration
-menu.
+Just hit `M-x irony-cdb-menu RET`) to display the build configuration menu.
 
 The menu should be self explanatory, if it's not the case please open an issue.
 
@@ -134,6 +155,7 @@ command:
 [company-irony-ref]: https://github.com/Sarcasm/company-irony "Company Irony"
 [ac-irony-ref]: https://github.com/Sarcasm/ac-irony "AC Irony"
 [yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"
+[cl-lib-ref]: http://elpa.gnu.org/packages/cl-lib.html "cl-lib"
 [clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
 [cmake-ref]: http://www.cmake.org "CMake"
 [ninja-ref]: http://martine.github.io/ninja/ "Ninja"
