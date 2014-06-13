@@ -33,9 +33,9 @@ These dependencies will be installed automatically when using the
 
 ### Irony-Server prerequisites
 
-`irony-server` is an executable that provides an interface to
-[libclang][libclang-ref] to `irony-mode`. This server, written in C++, requires
-the following system packages to be installed on your system:
+`irony-server` provides the [libclang][libclang-ref] interface to `irony-mode`,
+it uses a simple protocol based on S-expression. This server, written in C++,
+requires the following packages to be installed on your system:
 
 * [CMake][cmake-ref] >= 2.8.3
 * [libclang][libclang-ref]
@@ -71,8 +71,8 @@ package manager.
 
 ## Usage
 
-On the first run, `irony-mode` will ask you to build and install `irony-server`
-using: `M-x irony-install-server RET`.
+On the first run, `irony-mode` will ask you to build and install `irony-server`.
+To do so, type `M-x irony-install-server RET`.
 
 In order to provide context sensitive and accurate information, `irony-mode`
 needs to know about the compiler flags used to parse the current buffer. The
@@ -87,15 +87,14 @@ To tune `irony-mode`, use `customize`:
 
 ## Compilation Database
 
-In order to work correctly, `irony-mode` needs to know the compile flags. This
-plugin allow aims to provide *as automatic as possible* compile flags discovery,
+In order to work correctly, `irony-mode` needs to know the compile flags.
+`irony-cdb` aims to provide *as automatic as possible* compile flags discovery,
 with minimum user input.
 
-Just hit `M-x irony-cdb-menu RET`) to display the build configuration menu.
+Type `M-x irony-cdb-menu RET` to display the build configuration menu.
 
-The menu should be self explanatory, if it's not the case please open an issue.
-
-This plugin works great with the following tools:
+The menu should be self explanatory, it will let you chose amongst a list of
+*compilation databases*. It works great with the following ones:
 
 - [.clang_complete][clang_complete-doc-ref] - A file at the root of your project
   containing the compilation flags, one per line. This is compatible with the
