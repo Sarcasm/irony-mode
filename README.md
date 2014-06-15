@@ -20,7 +20,7 @@ combination of an Emacs package and a C++ program (`irony-server`) that uses
 ### Elisp dependencies
 
 These dependencies will be installed automatically when using the
-[standard installation][#installation] procedure described below.
+[standard installation](#installation) procedure described below.
 
 | Package               | Comment                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------- |
