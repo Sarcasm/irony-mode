@@ -27,14 +27,14 @@
 ;; This file provides `irony-mode', a minor mode for C, C++ and Objective-C.
 ;;
 ;; Usage:
-;;      (defun my-irony-mode-enable ()
-;;        ;; avoid enabling irony in modes that inherits c-mode, e.g: php-mode
-;;        (when (memq major-mode irony-supported-major-modes)
-;;          (irony-mode 1)))
+;;     (defun my-irony-mode-enable ()
+;;       ;; avoid enabling irony in modes that inherits c-mode, e.g: php-mode
+;;       (when (memq major-mode irony-supported-major-modes)
+;;         (irony-mode 1)))
 ;;
-;;      (add-hook 'c++-mode-hook 'my-irony-mode-enable)
-;;      (add-hook 'c-mode-hook 'my-irony-mode-enable)
-;;      (add-hook 'objc-mode-hook 'my-irony-mode-enable)
+;;     (add-hook 'c++-mode-hook 'my-irony-mode-enable)
+;;     (add-hook 'c-mode-hook 'my-irony-mode-enable)
+;;     (add-hook 'objc-mode-hook 'my-irony-mode-enable)
 ;; 
 ;;     ;; replace the `completion-at-point' and `complete-symbol' bindings in
 ;;     ;; irony-mode's buffers by irony-mode's asynchronous function
