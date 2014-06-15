@@ -1,21 +1,18 @@
 # Irony-Mode
+
 ## A C/C++ minor mode powered by [libclang][libclang-ref]
 
-*Note:* This is a work in progress:
+`irony-mode` is an Emacs minor-mode that aims at improving the editing
+experience for the C, C++ and Objective-C languages. It works by using a
+combination of an Emacs package and a C++ program (`irony-server`) that uses
+[libclang][libclang-ref].
 
-* **Right now the package is not yet installable using a package manager, even if
-  the doc says so.** This will come soon in the meantime, be patient.
-* Documentation might not be up-to-date.
-* Use at your own risk!
-* Open issues, fork-it and create pull-requests!
-
-
-## Features
+**Features:**
 
 * Code completion:
-  * Using `completion-at-point-functions`
-  * Using [company-irony][company-irony-ref]
-  * Using [ac-irony][ac-irony-ref]
+  * With Emacs' built-in `completion-at-point-functions`
+  * With [company-mode][company-ref]'s backend: [company-irony][company-irony-ref]
+  * With [auto-complete][ac-ref]' source: [ac-irony][ac-irony-ref]
 
 
 ## Dependencies
@@ -23,7 +20,7 @@
 ### Elisp dependencies
 
 These dependencies will be installed automatically when using the
-[standard installation][#installation] described below.
+[standard installation][#installation] procedure described below.
 
 | Package               | Comment                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------- |
@@ -33,8 +30,8 @@ These dependencies will be installed automatically when using the
 
 ### Irony-Server prerequisites
 
-`irony-server` provides the [libclang][libclang-ref] interface to `irony-mode`,
-it uses a simple protocol based on S-expression. This server, written in C++,
+`irony-server` provides the [libclang][libclang-ref] interface to `irony-mode`.
+It uses a simple protocol based on S-expression. This server, written in C++ and
 requires the following packages to be installed on your system:
 
 * [CMake][cmake-ref] >= 2.8.3
@@ -66,6 +63,15 @@ package manager.
 (add-hook 'c++-mode-hook 'my-irony-mode-enable)
 (add-hook 'c-mode-hook 'my-irony-mode-enable)
 (add-hook 'objc-mode-hook 'my-irony-mode-enable)
+
+;; replace the `completion-at-point' and `complete-symbol' bindings in
+;; irony-mode's buffers by irony-mode's function
+(defun my-irony-mode-hook ()
+  (define-key irony-mode-map [remap completion-at-point]
+    'irony-completion-at-point-async)
+  (define-key irony-mode-map [remap complete-symbol]
+    'irony-completion-at-point-async))
+(add-hook 'irony-mode-hook 'my-irony-mode-hook)
 ~~~
 
 
@@ -74,22 +80,22 @@ package manager.
 On the first run, `irony-mode` will ask you to build and install `irony-server`.
 To do so, type `M-x irony-install-server RET`.
 
-In order to provide context sensitive and accurate information, `irony-mode`
-needs to know about the compiler flags used to parse the current buffer. The
-best way to achieve this is to use a
-[Compilation Database](#compilation-database).
-
 To tune `irony-mode`, use `customize`:
 
 
     M-x customize-group RET irony RET
+
+In order to provide context sensitive and accurate information, `irony-mode`
+needs to know about the compiler flags used to parse the current buffer. The
+best way to achieve this is to use a
+[Compilation Database](#compilation-database).
 
 
 ## Compilation Database
 
 In order to work correctly, `irony-mode` needs to know the compile flags.
 `irony-cdb` aims to provide *as automatic as possible* compile flags discovery,
-with minimum user input.
+with minimal user input.
 
 Type `M-x irony-cdb-menu RET` to display the build configuration menu.
 
@@ -150,15 +156,17 @@ command:
     cmake -DUSE_RPATH=ON ..
 
 
-[libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
-[company-irony-ref]: https://github.com/Sarcasm/company-irony "Company Irony"
 [ac-irony-ref]: https://github.com/Sarcasm/ac-irony "AC Irony"
-[yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"
+[ac-ref]: https://github.com/auto-complete/auto-complete "Auto Complete"
+[bear-ref]: https://github.com/rizsotto/Bear "Bear"
+[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L270 "cc_args.py documentation"
 [cl-lib-ref]: http://elpa.gnu.org/packages/cl-lib.html "cl-lib"
 [clang-compile-db-ref]: http://clang.llvm.org/docs/JSONCompilationDatabase.html "Clang: JSONCompilationDatabase"
-[cmake-ref]: http://www.cmake.org "CMake"
-[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
-[bear-ref]: https://github.com/rizsotto/Bear "Bear"
-[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
 [clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L55 ".clang_complete"
-[cc_args-py-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L270 "cc_args.py documentation"
+[clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
+[cmake-ref]: http://www.cmake.org "CMake"
+[company-irony-ref]: https://github.com/Sarcasm/company-irony "Company Irony"
+[company-ref]: https://github.com/company-mode/company-mode "Company-Mode"
+[libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
+[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
+[yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"

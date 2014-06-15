@@ -53,11 +53,7 @@
                                                c-electric-semi&comma
                                                c-electric-slash
                                                c-electric-star)
-  "List of commands to watch for asynchronous completion triggering.
-
-There are actually some hard-coded regexp as well in
-`irony-completion-trigger-command-p', if it causes any trouble
-please report a bug."
+  "List of commands to watch for asynchronous completion triggering."
   :type '(repeat function)
   :group 'irony-completion)
 
@@ -141,11 +137,13 @@ disable if irony-server isn't available.")
 
 (defun irony-completion--enter ()
   (add-hook 'post-command-hook 'irony-completion-post-command nil t)
+  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t)
   (setq irony-completion-mode t))
 
 (defun irony-completion--exit ()
   (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
+  (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (setq irony-completion--context nil
         irony-completion--candidates nil
         irony-completion--context-tick 0
@@ -352,6 +350,7 @@ Note that:
   (irony-completion-annotation
    (get-text-property 0 'irony-capf candidate)))
 
+;;;###autoload
 (defun irony-completion-at-point ()
   (when (and irony-completion-mode
              (irony-completion-candidates-available-p))
@@ -364,6 +363,7 @@ Note that:
                (irony-completion-candidates))
        :annotation-function 'irony-completion--at-point-annotate))))
 
+;;;###autoload
 (defun irony-completion-at-point-async ()
   (interactive)
   (irony-completion-candidates-async 'completion-at-point))
