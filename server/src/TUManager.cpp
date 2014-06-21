@@ -85,14 +85,13 @@ TUManager::parse(const std::string &filename,
       argv.push_back(flag.c_str());
     }
 
-    tu = clang_parseTranslationUnit(
+    tu = clang_createTranslationUnitFromSourceFile(
         index_,
         filename.c_str(),
-        argv.data(),
         static_cast<int>(argv.size()),
-        const_cast<CXUnsavedFile *>(unsavedFiles.data()),
+        argv.data(),
         unsavedFiles.size(),
-        effectiveSettings_.parseTUOptions);
+        const_cast<CXUnsavedFile *>(unsavedFiles.data()));
   }
 
   if (tu == nullptr) {
