@@ -244,11 +244,6 @@ buffer file.")
 
 (defvar irony-install-server-initiating-buffer)
 
-(defvar-local irony-server-executable-path nil
-  "Path to the irony-server executable to use for the current buffer.
-
-Set to nil if not found.")
-
 (defvar-local irony--initial-compile-check-status nil
   "Non-nil when an initial compile check as already been requested.
 
@@ -282,15 +277,9 @@ Possible values are:
     ;; warn the user about modes such as php-mode who inherits c-mode
     (display-warning 'irony "Irony mode is aimed to work with a\
  major mode present in `irony-supported-major-modes'."))
-  ;;c-mode-hook and c++-mode-hook appears to run twice, avoid unecessary call
-  ;;to `irony-locate-server-executable' if it has already be done once.
-  (unless irony-server-executable-path
-    (irony-locate-server-executable))
   (unless irony--clang-options
     (irony-cdb-load-compile-options))
-  (when irony-server-executable-path
-    (irony-completion--enter)
-    (irony--initial-check-compile)))
+  (irony-completion--enter))
 
 (defun irony-mode-exit ()
   (irony-completion--exit))
@@ -483,24 +472,6 @@ breaks with escaped quotes in compile_commands.json, such as in:
 ;; Irony-Server setup
 ;;
 
-(defun irony-install-server-finish-function (buffer msg)
-  (if (string= "finished\n" msg)
-      (progn
-        (message "irony-server installed successfully!")
-        (with-current-buffer buffer
-          (if (buffer-live-p irony-install-server-initiating-buffer)
-              (with-current-buffer irony-install-server-initiating-buffer
-                (if irony-mode
-                    (irony-locate-server-executable))))))
-    ;; failed to build/install
-    ;; TODO: detect common issues:
-    ;; - cmake not installed, or installed in a specific place
-    ;;   could be detected before compilation and the user can be prompted to
-    ;;   customize `irony-cmake-executable'
-    ;; - libclang not found
-    ;; - ...
-    (message "Failed to build irony-server, you are on your own buddy!")))
-
 (defun irony-install-server ()
   "Install or reinstall the Irony server.
 
@@ -521,9 +492,21 @@ The installation requires CMake and the libclang developpement package."
                                                         "*irony-server build*"))
       (setq-local irony-install-server-initiating-buffer cur-buf)
       (setq-local compilation-finish-functions
-                  '(irony-install-server-finish-function)))))
+                  '(irony--server-install-finish-function)))))
 
-(defun irony-locate-server-executable ()
+(defun irony--server-install-finish-function (buffer msg)
+  (if (string= "finished\n" msg)
+      (message "irony-server installed successfully!")
+    ;; failed to build/install
+    ;; TODO: detect common issues:
+    ;; - cmake not installed, or installed in a specific place
+    ;;   could be detected before compilation and the user can be prompted to
+    ;;   customize `irony-cmake-executable'
+    ;; - libclang not found
+    ;; - ...
+    (message "Failed to build irony-server, you are on your own buddy!")))
+
+(defun irony--locate-server-executable ()
   "Check if an irony-server exists for the current buffer."
   (let ((exe (expand-file-name "bin/irony-server" irony-server-install-prefix)))
     (condition-case err
@@ -533,9 +516,10 @@ The installation requires CMake and the libclang developpement package."
                              (substring irony-server-version
                                         (length "irony-server version "))))
               ;; irony-server is working and up-to-date!
-              (setq irony-server-executable-path exe)
-            (message "irony versions mismatch, forgot to call\
- 'M-x irony-install-server'?") ))
+              exe
+            (message "irony-server version mismatch: %s"
+                     (substitute-command-keys
+                      "type `\\[irony-install-server]' to reinstall"))))
       (error
        (if (file-executable-p exe)
            ;; failed to execute due to a runtime problem, i.e: libclang.so isn't
@@ -544,72 +528,44 @@ The installation requires CMake and the libclang developpement package."
                     (error-message-string err))
          ;; irony-server doesn't exists, first time irony-mode is used? inform
          ;; the user about how to build the executable
-         (message "Please install irony-server: M-x irony-install-server"))))))
-
-(defun irony--initial-check-compile ()
-  "Check that the current buffer compiles, hinting the user if not.
-
-Ideally this is done only once, when the buffer is first
-opened (or irony-mode first started), just to inform the user if
-he forgot to provide the flags for the current buffer."
-  (unless (or irony--initial-compile-check-status
-              (zerop (buffer-size)))
-    (setq irony--initial-compile-check-status 'requested)
-    (irony-request-check-compile)))
-
-(defun irony--process-initial-check-compile (nfatals nerrors nwarnings)
-  "Display a one-time hint to the user to configure the compile options.
-
-See `irony-check-compile-functions'."
-  (when (and (eq irony--initial-compile-check-status 'requested)
-             (not (zerop (+ nfatals nerrors nwarnings))))
-    (setq irony--initial-compile-check-status 'done)
-    (let ((help-msg (substitute-command-keys
-                     "Type `\\[irony-cdb-menu]' to configure project"))
-          stats-strings)
-      (unless (zerop nwarnings)
-        (push (concat (number-to-string nwarnings)
-                      " warning"
-                      (unless (eq nwarnings 1) ;plural
-                        "s"))
-              stats-strings))
-      (setq nerrors (+ nfatals nerrors))
-      (unless (zerop nerrors)
-        (push (concat (number-to-string nerrors)
-                      " error"
-                      (unless (eq nerrors 1) ;plural
-                        "s"))
-              stats-strings))
-      (message "[%s] %s" (mapconcat 'identity stats-strings " | ")
-               help-msg))))
+         (message "%s"
+                  (substitute-command-keys
+                   "Type `\\[irony-install-server]' to install irony-server")))
+       ;; return nil on error
+       nil))))
 
 
 ;;
 ;; irony-server process management.
 ;;
 
-(defun irony--server-command ()
-  "Shell command used to start the irony-server process."
-  (format "%s -i 2>> %s/irony.$$.log"
-          (shell-quote-argument irony-server-executable-path)
-          temporary-file-directory))
-
+(defvar irony--server-executable nil)
 (defvar irony--server-process nil)
+
+(defun irony--server-command ()
+  "Shell command to use to start the irony-server process, if any."
+  (when (setq irony--server-executable (or irony--server-executable
+                                           (irony--locate-server-executable)))
+    (format "%s -i 2>> %s/irony.$$.log"
+            (shell-quote-argument irony--server-executable)
+            temporary-file-directory)))
 
 (defun irony--get-server-process ()
   (if (and irony--server-process
            (process-live-p irony--server-process))
       irony--server-process
-    (let ((process-connection-type nil)
+    (let ((server-cmd (irony--server-command))
+          (process-connection-type nil)
           process)
-      (setq process (start-process-shell-command
-                     "Irony"                   ;process name
-                     "*Irony*"                 ;buffer
-                     (irony--server-command))) ;command
-      (set-process-query-on-exit-flag process nil)
-      (set-process-sentinel process 'irony--server-process-sentinel)
-      (set-process-filter process 'irony--server-process-filter)
-      (setq irony--server-process process))))
+      (when server-cmd
+        (setq process (start-process-shell-command
+                       "Irony"                   ;process name
+                       "*Irony*"                 ;buffer
+                       server-cmd))              ;command
+        (set-process-query-on-exit-flag process nil)
+        (set-process-sentinel process 'irony--server-process-sentinel)
+        (set-process-filter process 'irony--server-process-filter)
+        (setq irony--server-process process)))))
 
 (defun irony--server-process-sentinel (process event)
   (unless (process-live-p process)
@@ -685,21 +641,22 @@ care of."
                             (irony--get-buffer-path-for-server))
                       args))
         (compile-options (irony--libclang-compile-options)))
-    (irony--server-process-push-callback process callback)
-    ;; skip narrowing to compute buffer size and content
-    (irony-without-narrowing
-      (process-send-string process
-                           (format "%s\n%s\n%s\n%d\n"
-                                   (combine-and-quote-strings argv)
-                                   (combine-and-quote-strings compile-options)
-                                   buffer-file-name
-                                   (irony-buffer-size-in-bytes)))
-      (process-send-region process (point-min) (point-max))
-      ;; always make sure to finis with a newline (required by irony-server to
-      ;; always make sure to finish with a newline (required by irony-server to
-      ;; play nice with line buffering even when the file doesn't end with a
-      ;; newline)
-      (process-send-string process "\n"))))
+    (when process
+      (irony--server-process-push-callback process callback)
+      ;; skip narrowing to compute buffer size and content
+      (irony-without-narrowing
+        (process-send-string process
+                             (format "%s\n%s\n%s\n%d\n"
+                                     (combine-and-quote-strings argv)
+                                     (combine-and-quote-strings compile-options)
+                                     buffer-file-name
+                                     (irony-buffer-size-in-bytes)))
+        (process-send-region process (point-min) (point-max))
+        ;; always make sure to finis with a newline (required by irony-server to
+        ;; always make sure to finish with a newline (required by irony-server
+        ;; to play nice with line buffering even when the file doesn't end with
+        ;; a newline)
+        (process-send-string process "\n")))))
 
 (defun irony-request-check-compile ()
   (irony--send-file-request "check-compile"
@@ -710,6 +667,43 @@ care of."
                       (or (plist-get errors :fatals) 0)
                       (or (plist-get errors :errors) 0)
                       (or (plist-get errors :warnings) 0)))
+
+(defun irony--initial-check-compile ()
+  "Check that the current buffer compiles, hinting the user if not.
+
+Ideally this is done only once, when the buffer is first
+opened (or irony-mode first started), just to inform the user if
+he forgot to provide the flags for the current buffer."
+  (unless (or irony--initial-compile-check-status
+              (zerop (buffer-size)))
+    (setq irony--initial-compile-check-status 'requested)
+    (irony-request-check-compile)))
+
+(defun irony--process-initial-check-compile (nfatals nerrors nwarnings)
+  "Display a one-time hint to the user to configure the compile options.
+
+See `irony-check-compile-functions'."
+  (when (and (eq irony--initial-compile-check-status 'requested)
+             (not (zerop (+ nfatals nerrors nwarnings))))
+    (setq irony--initial-compile-check-status 'done)
+    (let ((help-msg (substitute-command-keys
+                     "Type `\\[irony-cdb-menu]' to configure project"))
+          stats-strings)
+      (unless (zerop nwarnings)
+        (push (concat (number-to-string nwarnings)
+                      " warning"
+                      (unless (eq nwarnings 1) ;plural
+                        "s"))
+              stats-strings))
+      (setq nerrors (+ nfatals nerrors))
+      (unless (zerop nerrors)
+        (push (concat (number-to-string nerrors)
+                      " error"
+                      (unless (eq nerrors 1) ;plural
+                        "s"))
+              stats-strings))
+      (message "[%s] %s" (mapconcat 'identity stats-strings " | ")
+               help-msg))))
 
 
 ;;
