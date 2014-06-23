@@ -519,7 +519,8 @@ The installation requires CMake and the libclang developpement package."
               exe
             (message "irony-server version mismatch: %s"
                      (substitute-command-keys
-                      "type `\\[irony-install-server]' to reinstall"))))
+                      "type `\\[irony-install-server]' to reinstall"))
+            nil))
       (error
        (if (file-executable-p exe)
            ;; failed to execute due to a runtime problem, i.e: libclang.so isn't
