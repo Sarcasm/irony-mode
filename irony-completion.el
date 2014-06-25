@@ -138,12 +138,16 @@ disable if irony-server isn't available.")
 (defun irony-completion--enter ()
   (add-hook 'post-command-hook 'irony-completion-post-command nil t)
   (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t)
+  (add-hook 'irony-clang-options-updated-hook
+            'irony-completion--clang-options-updated nil t)
   (setq irony-completion-mode t))
 
 (defun irony-completion--exit ()
   (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
+  (remove-hook 'irony-clang-options-updated-hook
+               'irony-completion--clang-options-updated nil t)
   (setq irony-completion--context nil
         irony-completion--candidates nil
         irony-completion--context-tick 0
@@ -156,6 +160,16 @@ disable if irony-server isn't available.")
              (irony-completion--update-context)
              (irony-completion-at-trigger-point-p))
     (irony-completion--send-request)))
+
+(defun irony-completion--clang-options-updated ()
+  (let ((had-candidates (or (irony-completion-candidates-available-p)
+                            (irony-completion--still-completing-p))))
+    ;; change the context so that candidates are no longer available
+    (setq irony-completion--context nil)
+    (when had-candidates
+      (irony-completion--update-context)
+      (when irony-completion--context
+        (irony-completion--send-request)))))
 
 (defun irony-completion--update-context ()
   "Update the completion context variables based on the current position.
