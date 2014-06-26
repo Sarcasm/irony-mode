@@ -147,7 +147,7 @@ disable if irony-server isn't available.")
   (remove-hook 'post-command-hook 'irony-completion-post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (remove-hook 'irony-clang-options-updated-hook
-               'irony-completion--clang-options-updated nil t)
+               'irony-completion--clang-options-updated t)
   (setq irony-completion--context nil
         irony-completion--candidates nil
         irony-completion--context-tick 0
