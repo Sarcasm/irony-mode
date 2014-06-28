@@ -33,7 +33,7 @@ static void printHelp() {
 static void printVersion() {
   // do not change the format for the first line, external programs should be
   // able to rely on it
-  std::cout << "irony-server version 0.1.0\n";
+  std::cout << "irony-server version " IRONY_PACKAGE_VERSION "\n";
 }
 
 static void dumpUnsavedFiles(Command &command) {
