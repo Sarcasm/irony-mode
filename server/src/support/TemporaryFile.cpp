@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <random>
 
 static std::string getTemporaryFileDirectory() {
   for (const char *envVar : {"TMPDIR", "TMP", "TEMP", "TEMPDIR"}) {
