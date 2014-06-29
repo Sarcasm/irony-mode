@@ -209,7 +209,13 @@ Removes OCCUPIED-LEN from the "
         compile-flags)
     (with-temp-buffer
       (insert-file-contents cc-file)
-      (setq compile-flags (split-string (buffer-string) "\n" t)))
+      (setq compile-flags
+            ;; remove whitespaces at the end of each line, if any
+            (mapcar #'(lambda (line)
+                        (if (string-match "[ \t]+$" line)
+                            (replace-match "" t t line)
+                          line))
+                    (split-string (buffer-string) "\n" t))))
     ;; keep track of the directory where the .clang_complete has been found to
     ;; load it automatically in other files/sessions.
     (add-to-list 'irony-cdb--clang-complete-cached-directories invocation-dir)
