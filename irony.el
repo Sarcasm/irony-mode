@@ -685,7 +685,7 @@ he forgot to provide the flags for the current buffer."
 
 See `irony-check-compile-functions'."
   (when (and (eq irony--initial-compile-check-status 'requested)
-             (not (zerop (+ nfatals nerrors nwarnings))))
+             (not (zerop (+ nfatals nerrors))))
     (setq irony--initial-compile-check-status 'done)
     (let ((help-msg (substitute-command-keys
                      "Type `\\[irony-cdb-menu]' to configure project"))
