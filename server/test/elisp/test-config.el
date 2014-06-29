@@ -1,3 +1,4 @@
+;; -*-no-byte-compile: t; -*-
 (defvar test-dir (if load-file-name
                      (file-name-as-directory
                       (expand-file-name (concat (file-name-directory
@@ -15,5 +16,3 @@
   (let ((load-path (cons (expand-file-name "support" test-dir)
                          load-path)))
     (require 'ert)))
-
-(require 'cl)

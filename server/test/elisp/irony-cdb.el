@@ -1,3 +1,4 @@
+;; -*-no-byte-compile: t; -*-
 (load (concat (file-name-directory (or load-file-name
                                        buffer-file-name))
               "test-config"))
