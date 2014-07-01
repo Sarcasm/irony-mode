@@ -45,7 +45,7 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     # LLVM MacPorts
     "/opt/local/libexec/llvm-${version}/include"
     # LLVM Homebrew
-    "usr/local/Cellar/llvm/${version}/include"
+    "/usr/local/Cellar/llvm/${version}/include"
     )
 
   list(APPEND libclang_llvm_lib_search_paths
