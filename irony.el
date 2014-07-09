@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.1.2
+;; Version: 0.2.0-cvs
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -136,8 +136,7 @@ database."
 
 This hook is run when the variables
 `irony-header-search-directories',
-`irony-clang-working-directory', etc, have been updated."
-  ;; TODO: no etc...
+`irony-compiler-invocation-directory', etc, have been updated."
   :type 'hook
   ;; TODO: :options '(ff-find-other-file/ff-search-directories)
   :group 'irony)
@@ -217,12 +216,12 @@ Header files extensions should NOT take part of this list."
 ;; read.
 ;;
 
-(defvar irony-header-search-directories nil
+(defvar-local irony-header-search-directories nil
   "Header search directories list for the current buffer.
 
 Contains the absolute paths to the directories.")
 
-(defvar-local irony-clang-working-directory nil
+(defvar-local irony-compiler-invocation-directory nil
   "The working directory to pass to libclang, if any.")
 
 
@@ -447,7 +446,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
                                           working-directory)
   "Setup the command line options to pass down to libclang."
   (setq irony--clang-options cmd-line-options
-        irony-clang-working-directory working-directory)
+        irony-compiler-invocation-directory working-directory)
   (run-hooks 'irony-clang-options-updated-hook))
 
 (defun irony--libclang-lang-compile-options ()
@@ -461,7 +460,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
   ;; buffer-file-name) to find the relative headers
   (append
    (irony--libclang-lang-compile-options)
-   (irony--awhen irony-clang-working-directory
+   (irony--awhen irony-compiler-invocation-directory
      (unless (irony--extract-working-directory-option irony--clang-options)
        (list "-working-directory" it)))
    irony-additional-clang-options
