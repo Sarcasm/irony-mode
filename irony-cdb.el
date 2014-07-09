@@ -1,4 +1,4 @@
-;;; irony-cdb.el --- `irony-mode` compilation database
+;;; irony-cdb.el --- compilation databases support for irony-mode
 
 ;; Copyright (C) 2012-2014  Guillaume Papin
 
@@ -28,26 +28,25 @@
 
 
 ;;
-;; Internal variables
+;; Customizable variables
 ;;
 
-;; TODO: doc
-;; Modeled after company-mode backends.
-(defvar irony-cdb--compilation-databases '(irony-cdb-customize
-                                           irony-cdb-clang-complete))
+(defgroup irony-cdb nil
+  "Irony's compilation database interface."
+  :group 'irony)
+
+(defcustom irony-cdb--compilation-databases '(irony-cdb-customize
+                                              irony-cdb-clang-complete)
+  "List of active compilation databases."
+  :group 'irony-cdb)
 
 
 ;;
 ;; CDB
 ;;
-;; TODO: add support accross sessions by restoring/saving ok values in
-;; ~/.emacs.d/irony/cdb.el add a per-compilation db a load-cache/save-cache /
-;; serialization methods
-;; see ido-{save,wash,load}-history
-;;
 ;; Note: entries that look for a specific file, such as .clang_complete,
 ;; compile_commands.json, ...should preferrably use `locate-dominating-file' as
-;; it may be configured by the user to do the right thing, see
+;; it may be configured by the user to do "the Right Thing (TM)", see
 ;; `locate-dominating-stop-dir-regexp' for example.
 
 ;;;###autoload
