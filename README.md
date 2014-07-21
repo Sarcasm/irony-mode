@@ -141,14 +141,12 @@ to run the `irony-server` executable:
 
     'irony-server: error while loading shared libraries: libclang.so: cannot open shared object file: No such file or directory
 
-Maybe it's due to a non-standard location for your installation of `libclang`. A
-path such as `/usr/local/lib` might not be in the path list of the dynamic
-loader (see ld.so.conf).
+When `libclang` is installed in a non-standard location (one that is missing
+from the path list of the dynamic loader, see *ld.so.conf*) you can tell CMake
+to use the [rpath][rpath-ref] when installing the target `irony-server`. To
+enable rpath in CMake use the following command:
 
-To solve this issue you can try to build `irony-server` with the following
-command:
-
-    cmake -DUSE_RPATH=ON ..
+    cmake -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON <args...>
 
 
 [ac-irony-ref]: https://github.com/Sarcasm/ac-irony "AC Irony"
@@ -164,4 +162,5 @@ command:
 [company-ref]: https://github.com/company-mode/company-mode "Company-Mode"
 [libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
 [ninja-ref]: http://martine.github.io/ninja/ "Ninja"
+[rpath-ref]: http://en.wikipedia.org/wiki/Rpath "rpath Wikipedia article"
 [yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"

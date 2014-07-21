@@ -1,4 +1,4 @@
-if (BUILD_DOXYGEN)
+if (GENERATE_DOXYGEN)
   find_package (Doxygen REQUIRED)
 
   set (HAS_DOT_VALUE "NO")
