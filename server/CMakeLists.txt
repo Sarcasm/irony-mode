@@ -12,7 +12,17 @@ include(utils)
 check_for_in_source_build()
 release_as_default_build_type()
 enable_colored_diagnotics()
-enable_cxx11_compile_options()
+check_cxx11_options()
+
+if (CXX11_COMPILE_OPTIONS)
+  add_compile_options_(${CXX11_COMPILE_OPTIONS})
+endif()
+
+foreach (link_option ${CXX11_LINK_OPTIONS})
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${link_option}")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${link_option}")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${link_option}")
+endforeach()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options_(-Wall -Wextra)
