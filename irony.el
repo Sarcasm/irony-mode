@@ -316,7 +316,7 @@ before calling this macro."
   "Return the version number of the file irony.el.
 
 If called interactively display the version in the echo area."
-  (interactive "P")
+  (interactive (list t))
   ;; Shamelessly stolen from `company-mode'.
   (with-temp-buffer
     (insert-file-contents (find-library-name "irony"))
