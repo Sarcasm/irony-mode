@@ -110,7 +110,7 @@ public:
    *
    * \param settings
    *
-   * \return An object representing this registration, aims to be use by
+   * \return An object representing this registration, aims to be used by
    *         \c unregisterSettings() when the settings are no longer required.
    *
    * \sa unregisterSettings()

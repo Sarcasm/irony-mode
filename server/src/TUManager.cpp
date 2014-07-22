@@ -85,13 +85,14 @@ TUManager::parse(const std::string &filename,
       argv.push_back(flag.c_str());
     }
 
-    tu = clang_createTranslationUnitFromSourceFile(
+    tu = clang_parseTranslationUnit(
         index_,
         filename.c_str(),
-        static_cast<int>(argv.size()),
         argv.data(),
+        static_cast<int>(argv.size()),
+        const_cast<CXUnsavedFile *>(unsavedFiles.data()),
         unsavedFiles.size(),
-        const_cast<CXUnsavedFile *>(unsavedFiles.data()));
+        effectiveSettings_.parseTUOptions);
   }
 
   if (tu == nullptr) {
@@ -161,21 +162,21 @@ void TUManager::onSettingsChanged() {
 Settings TUManager::computeEffectiveSettings() const {
   Settings settings;
 
-  // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
-  //      to fail on the standard library types when
-  //      CXTranslationUnit_PrecompiledPreamble is used. We disable this option
-  //      for old versions of libclang. As a result the completion will work but
-  //      significantly slower.
-  // -- https://github.com/Sarcasm/irony-mode/issues/4
-  settings.parseTUOptions =
-#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
-    (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
-      (clang_defaultEditingTranslationUnitOptions() |
-       CXTranslationUnit_PrecompiledPreamble);
-#else
-      (clang_defaultEditingTranslationUnitOptions() &
-       ~CXTranslationUnit_PrecompiledPreamble);
-#endif
+  settings.parseTUOptions = clang_defaultEditingTranslationUnitOptions();
+
+  // this seems necessary to trigger "correct" reparse (/codeCompleteAt)
+  // clang_reparseTranslationUnit documentation states:
+  //
+  // >  * \param TU The translation unit whose contents will be re-parsed. The
+  // >  * translation unit must originally have been built with
+  // >  * \c clang_createTranslationUnitFromSourceFile().
+  //
+  // clang_createTranslationUnitFromSourceFile() is just a call to
+  // clang_parseTranslationUnit() with
+  // CXTranslationUnit_DetailedPreprocessingRecord enabled but because we
+  // want some other flags to be set we can't just call
+  // clang_createTranslationUnitFromSourceFile()
+  settings.parseTUOptions |= CXTranslationUnit_DetailedPreprocessingRecord;
 
   for (std::list<Settings>::const_iterator it = settingsList_.begin(),
                                            end = settingsList_.end();
@@ -183,6 +184,22 @@ Settings TUManager::computeEffectiveSettings() const {
        ++it) {
     settings.merge(*it);
   }
+
+#if !defined(CINDEX_VERSION_MAJOR) || !defined(CINDEX_VERSION_MINOR) ||        \
+    (CINDEX_VERSION_MAJOR == 0 && CINDEX_VERSION_MINOR < 6)
+  // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
+  //      to fail on the standard library types when
+  //      CXTranslationUnit_PrecompiledPreamble is used. We disable this option
+  //      for old versions of libclang. As a result the completion will work but
+  //      significantly slower.
+  // -- https://github.com/Sarcasm/irony-mode/issues/4
+  settings.parseTUOptions &= ~CXTranslationUnit_PrecompiledPreamble;
+#endif
+
+  // Completion results caching doesn't seem to work right, changes at the top
+  // of the file (i.e: new declarations) aren't detected and do not appear in
+  // completion results.
+  settings.parseTUOptions &= ~CXTranslationUnit_CacheCompletionResults;
 
   return settings;
 }
