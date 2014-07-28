@@ -80,30 +80,33 @@
   "*Internal function* Really retrieve compiler search paths.
 Please use `irony-pp-system-search-paths'."
   (when irony-pp-compiler-executable
-    (with-temp-buffer
-      (apply 'call-process irony-pp-compiler-executable nil t nil
-             (append (irony--libclang-lang-compile-options)
-                     irony-pp-compiler-args))
-      (goto-char (point-min))
-      (let (directories
-            (start "#include \"...\" search starts here:")
-            (second-start "#include <...> search starts here:")
-            (stop "End of search list."))
-        (when (search-forward start nil t)
-          (forward-line 1)
-          (while (not (looking-at-p second-start))
-            ;; skip whitespace at the begining of the line
-            (skip-chars-forward "[:blank:]" (point-at-eol))
-            (push (buffer-substring (point) (point-at-eol)) directories)
-            (forward-line 1))
-          (forward-line 1)
-          (while (not (or (looking-at-p stop)
-                          (eolp)))
-            ;; skip whitespace at the begining of the line
-            (skip-chars-forward "[:blank:]" (point-at-eol))
-            (push (buffer-substring (point) (point-at-eol)) directories)
-            (forward-line 1)))
-        directories))))
+    ;; `irony--libclang-lang-compile-options' should be called out of `with-temp-buffer'
+    (let ((lang-options (irony--libclang-lang-compile-options)))
+      (with-temp-buffer
+        (apply 'call-process irony-pp-compiler-executable nil t nil
+               (append
+                lang-options
+                irony-pp-compiler-args))
+        (goto-char (point-min))
+        (let (directories
+              (start "#include \"...\" search starts here:")
+              (second-start "#include <...> search starts here:")
+              (stop "End of search list."))
+          (when (search-forward start nil t)
+            (forward-line 1)
+            (while (not (looking-at-p second-start))
+              ;; skip whitespace at the begining of the line
+              (skip-chars-forward "[:blank:]" (point-at-eol))
+              (push (buffer-substring (point) (point-at-eol)) directories)
+              (forward-line 1))
+            (forward-line 1)
+            (while (not (or (looking-at-p stop)
+                            (eolp)))
+              ;; skip whitespace at the begining of the line
+              (skip-chars-forward "[:blank:]" (point-at-eol))
+              (push (buffer-substring (point) (point-at-eol)) directories)
+              (forward-line 1)))
+          directories)))))
 
 (defun irony-pp-system-search-paths ()
   "Retrieve compiler search paths for header files.
