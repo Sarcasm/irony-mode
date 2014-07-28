@@ -249,25 +249,25 @@ Return t if the context has been updated, nil otherwise."
 ;; Irony Completion Interface
 ;;
 
-(defsubst irony-completion-typed-text (candidate)
+(defun irony-completion-typed-text (candidate)
   (nth 0 candidate))
 
-(defsubst irony-completion-priority (candidate)
+(defun irony-completion-priority (candidate)
   (nth 1 candidate))
 
-(defsubst irony-completion-type (candidate)
+(defun irony-completion-type (candidate)
   (nth 2 candidate))
 
-(defsubst irony-completion-brief (candidate)
+(defun irony-completion-brief (candidate)
   (nth 3 candidate))
 
-(defsubst irony-completion-annotation (candidate)
+(defun irony-completion-annotation (candidate)
   (substring (nth 4 candidate) (nth 5 candidate)))
 
-(defsubst irony-completion-post-comp-str (candidate)
+(defun irony-completion-post-comp-str (candidate)
   (car (nth 6 candidate)))
 
-(defsubst irony-completion-post-comp-placeholders (candidate)
+(defun irony-completion-post-comp-placeholders (candidate)
   (cdr (nth 6 candidate)))
 
 (defun irony-completion-candidates-available-p ()
