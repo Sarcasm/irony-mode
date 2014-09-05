@@ -30,8 +30,8 @@
 #           -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ <args...>
 
 # most recent versions come first
-set(LIBCLANG_KNOWN_LLVM_VERSIONS 3.5
-  3.4.2 3.4.1 3.4 3.3 3.2 3.1)
+set(LIBCLANG_KNOWN_LLVM_VERSIONS 3.6
+  3.5 3.4.2 3.4.1 3.4 3.3 3.2 3.1)
 
 set(libclang_llvm_header_search_paths)
 set(libclang_llvm_lib_search_paths
