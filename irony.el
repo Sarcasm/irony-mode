@@ -441,13 +441,15 @@ breaks with escaped quotes in compile_commands.json, such as in:
 ;; Compile options handling
 ;;
 
-(defun irony-update-command-line-options (cmd-line-options
-                                          &optional
-                                          working-directory)
+(defun irony--update-compile-options (compile-options
+                                      &optional working-directory)
   "Setup the command line options to pass down to libclang."
-  (setq irony--clang-options cmd-line-options
+  (setq irony--clang-options compile-options
         irony-compiler-invocation-directory working-directory)
   (run-hooks 'irony-clang-options-updated-hook))
+
+(define-obsolete-function-alias 'irony-update-command-line-options
+  'irony--update-compile-options "0.2.0")
 
 (defun irony--libclang-lang-compile-options ()
   (irony--awhen (cdr-safe (assq major-mode irony-clang-lang-options-alist))

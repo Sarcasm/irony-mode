@@ -38,6 +38,7 @@
 (defcustom irony-cdb--compilation-databases '(irony-cdb-customize
                                               irony-cdb-clang-complete)
   "List of active compilation databases."
+  :type '(repeat function)
   :group 'irony-cdb)
 
 
@@ -52,19 +53,18 @@
 ;;;###autoload
 (defun irony-cdb-load-compile-options ()
   (catch 'found
-    (mapc #'(lambda (compilation-database)
-              (irony--awhen (funcall compilation-database 'autoload)
-                (irony-update-command-line-options (car it) (cdr it))
-                (throw 'found t)))
-          irony-cdb--compilation-databases)))
+    (dolist (compilation-database irony-cdb--compilation-databases)
+      (irony--awhen (funcall compilation-database 'autoload)
+        (irony--update-compile-options (car it) (cdr it))
+        (throw 'found t)))))
 
 ;;;###autoload
 (defun irony-cdb-menu ()
   "Open the compilation database menu."
   (interactive)
   (let* ((items (irony-cdb--menu-entries))
-         (items-str (mapcar 'irony-cdb-menu-make-item-str items))
-         (keys (irony-cdb-menu-list-keys items))
+         (items-str (mapcar 'irony-cdb--menu-make-item-str items))
+         (keys (irony-cdb--menu-list-keys items))
          k cmd)
     (save-excursion
       (save-window-excursion
@@ -93,7 +93,7 @@
               (funcall compilation-database 'menu-entry))
           irony-cdb--compilation-databases))
 
-(defun irony-cdb-menu-make-item-str (item)
+(defun irony-cdb--menu-make-item-str (item)
   (let ((keys (plist-get item :keys))
         (desc (plist-get item :desc))
         (disabled (plist-get item :disabled))
@@ -122,7 +122,7 @@
         (setq item-str (propertize item-str 'help-echo info)))
       item-str)))
 
-(defun irony-cdb-menu-list-keys (items)
+(defun irony-cdb--menu-list-keys (items)
   "Return an assoc list of key . action for the active menu items."
   (cl-loop for item in items
            unless (plist-get item :disabled)
@@ -151,10 +151,9 @@ Removes OCCUPIED-LEN from the "
 ;;
 ;; Preferences
 ;;
+
 (defun irony-cdb-customize (command &rest args)
-  ;; Modeled after company-mode backends.
   (cl-case command
-    ;; (autoload (cons '("-std=c++11") nil))
     (menu-entry
      (list :desc "Preferences"
            :keys '((?p customize-group "irony"))))))
@@ -222,7 +221,7 @@ Removes OCCUPIED-LEN from the "
 
 (defun irony-cdb--clang-complete-load-file (cc-file)
   (let ((flags-dir (irony-cdb--clang-complete-load-file-1 cc-file)))
-    (irony-update-command-line-options (car flags-dir) (cdr flags-dir))))
+    (irony--update-compile-options (car flags-dir) (cdr flags-dir))))
 
 (provide 'irony-cdb)
 
