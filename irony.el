@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.1.1
+;; Version: 0.1.2-cvs
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -30,7 +30,7 @@
 ;;     (add-hook 'c++-mode-hook 'irony-mode)
 ;;     (add-hook 'c-mode-hook 'irony-mode)
 ;;     (add-hook 'objc-mode-hook 'irony-mode)
-;; 
+;;
 ;;     ;; replace the `completion-at-point' and `complete-symbol' bindings in
 ;;     ;; irony-mode's buffers by irony-mode's asynchronous function
 ;;     (defun my-irony-mode-hook ()
@@ -547,9 +547,10 @@ The installation requires CMake and the libclang developpement package."
   "Shell command to use to start the irony-server process, if any."
   (when (setq irony--server-executable (or irony--server-executable
                                            (irony--locate-server-executable)))
-    (format "%s -i 2>> %s/irony.$$.log"
+    (format "%s -i 2>> %s/irony.%s.log"
             (shell-quote-argument irony--server-executable)
-            temporary-file-directory)))
+            temporary-file-directory
+            (format-time-string "%Y-%m_%Hh-%Mm-%Ss"))))
 
 (defun irony--get-server-process ()
   (if (and irony--server-process
