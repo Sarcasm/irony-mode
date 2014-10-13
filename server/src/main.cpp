@@ -168,7 +168,8 @@ int main(int ac, const char *av[]) {
       assert(0 && "unreacheable code...reached!");
       break;
     }
-    std::cout << "\n;;EOT\n";
+
+    std::cout << "\n;;EOT\n" << std::flush;
   }
 
   return 1;
