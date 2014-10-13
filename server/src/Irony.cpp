@@ -1,11 +1,11 @@
 /**
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * 
+ *
  * \brief irony-server "API" definitions.
  *
  * \sa Irony.h for more information.
- * 
+ *
  * This file is distributed under the GNU General Public License. See
  * COPYING for details.
  */
@@ -155,12 +155,10 @@ void Irony::complete(const std::string &file,
 
   (void)tuManager_.registerSettings(settings);
 
-  std::cout << "(\n";
-
   CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
 
   if (tu == nullptr) {
-    std::cout << ")\n";
+    std::cout << "nil\n";
     return;
   }
 
@@ -196,6 +194,8 @@ void Irony::complete(const std::string &file,
 
     clang_sortCodeCompletionResults(completions->Results,
                                     completions->NumResults);
+
+    std::cout << "(\n";
 
     // re-use the same buffers to avoid unnecessary allocations
     std::string typedtext, brief, resultType, prototype, postCompCar;
@@ -312,6 +312,6 @@ void Irony::complete(const std::string &file,
     }
 
     clang_disposeCodeCompleteResults(completions);
+    std::cout << ")\n";
   }
-  std::cout << ")\n";
 }
