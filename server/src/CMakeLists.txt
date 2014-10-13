@@ -12,6 +12,9 @@ if (LIBCLANG_BUILTIN_HEADERS_DIR)
   add_definitions(-DCLANG_BUILTIN_HEADERS_DIR=\"${LIBCLANG_BUILTIN_HEADERS_DIR}\")
 endif()
 
+# not to be taken as a module-definition file to link on Windows
+set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
+
 add_executable(irony-server
   support/arraysize.h
   support/CommandLineParser.cpp
