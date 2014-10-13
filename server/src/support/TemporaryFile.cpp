@@ -16,10 +16,13 @@
 #include <random>
 
 static std::string getTemporaryFileDirectory() {
-  for (const char *envVar : {"TMPDIR", "TMP", "TEMP", "TEMPDIR"}) {
+  const char *temporaryDirEnvVars[] = {"TMPDIR", "TMP", "TEMP", "TEMPDIR"};
+
+  for (const char *envVar : temporaryDirEnvVars) {
     if (const char *dir = std::getenv(envVar))
       return dir;
   }
+
   return "/tmp";
 }
 
