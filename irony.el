@@ -480,11 +480,12 @@ The installation requires CMake and the libclang developpement package."
   (let ((cur-buf (current-buffer))
         (default-directory irony-server-build-dir)
         (cmd (format
-              (concat "%s -DCMAKE_INSTALL_PREFIX=%s %s && %s --build . "
+              (concat "%s %s %s && %s --build . "
                       "--use-stderr --config Release --target install")
               (shell-quote-argument irony-cmake-executable)
-              (shell-quote-argument (expand-file-name
-                                     irony-server-install-prefix))
+              (shell-quote-argument (concat "-DCMAKE_INSTALL_PREFIX="
+                                            (expand-file-name
+                                             irony-server-install-prefix)))
               (shell-quote-argument irony-server-source-dir)
               (shell-quote-argument irony-cmake-executable))))
     (make-directory irony-server-build-dir t)
