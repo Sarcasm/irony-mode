@@ -228,11 +228,15 @@ Return t if the context has been updated, nil otherwise."
           irony-completion--request-tick irony-completion--context-tick)
     (irony--send-file-request
      "complete"
-     (list 'irony-completion--request-handler irony-completion--context-tick)
+     (list 'irony-completion--request-handler irony-completion--context-tick (current-time))
      (number-to-string line)
      (number-to-string column))))
 
-(defun irony-completion--request-handler (candidates tick)
+(defun irony-completion--request-handler (candidates tick start-time)
+  (with-current-buffer (get-buffer-create "*Irony Completion Times*")
+    (insert (format "Request %d completed in %f seconds\n"
+                    tick
+                    (float-time (time-subtract (current-time) start-time)))))
   (when (eq tick irony-completion--context-tick)
     (setq
      irony-completion--candidates-tick tick
