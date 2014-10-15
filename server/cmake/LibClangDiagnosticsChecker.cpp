@@ -11,6 +11,10 @@
 #include <stdio.h>
 
 int main(int argc, const char *argv[]) {
+  for (int i = 1; i < argc; ++i) {
+    fprintf(stdout, "argv[%d]: %s\n", i, argv[i]);
+  }
+
   CXIndex Idx = clang_createIndex(0, 0);
   CXTranslationUnit TU = clang_parseTranslationUnit(
       Idx, NULL, &argv[1], argc - 1, 0, 0, CXTranslationUnit_None);

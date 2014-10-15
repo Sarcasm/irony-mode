@@ -3,31 +3,15 @@
 #
 # Once done this will define:
 # - LIBCLANG_FOUND
-#               System has libclang
+#               System has libclang.
 # - LIBCLANG_INCLUDE_DIRS
-#               The libclang include directories
+#               The libclang include directories.
 # - LIBCLANG_LIBRARIES
-#               The libraries needed to use libclang
+#               The libraries needed to use libclang.
 # - LIBCLANG_LIBRARY_DIR
 #               The path to the directory containing libclang.
 # - LIBCLANG_KNOWN_LLVM_VERSIONS
 #               Known LLVM release numbers.
-#
-# At the CMake invocation level it is possible to specify some hints for the
-# libclang installation, e.g: for non-standard libclang installations.
-#
-# To specify the include directory use:
-#   -DLIBCLANG_INCLUDE_PATH=/path/to/libclang/include-dir
-# The specified directory should contain the header file 'clang-c/Index.h'
-#
-# To specify the library directory use:
-#   -DLIBCLANG_LIBRARY_PATH=/path/to/libclang/libraries
-# The specified directory should contain the libclang library, e.g: libclang.so
-# on Linux.
-#
-# CMake invocation example with a custom libclang installation:
-#     cmake -DLIBCLANG_INCLUDE_PATH=~/llvm-3.4/include/ \
-#           -DLIBCLANG_LIBRARY_PATH=~/llvm-3.4/lib/ <args...>
 
 # most recent versions come first
 set(LIBCLANG_KNOWN_LLVM_VERSIONS 3.6
@@ -66,12 +50,22 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
 endforeach()
 
 find_path(LIBCLANG_INCLUDE_DIR clang-c/Index.h
-  HINTS ${LIBCLANG_INCLUDE_PATH}
-  PATHS ${libclang_llvm_header_search_paths})
+  PATHS ${libclang_llvm_header_search_paths}
+  PATH_SUFFIXES LLVM/include #Windows package from http://llvm.org/releases/
+  DOC "The path to the directory that contains clang-c/Index.h")
 
-find_library(LIBCLANG_LIBRARY NAMES clang libclang
-  HINTS ${LIBCLANG_LIBRARY_PATH}
-  PATHS ${libclang_llvm_lib_search_paths})
+# On Windows with MSVC, the import library uses the ".imp" file extension
+# instead of the comon ".lib"
+if (MSVC)
+  find_file(LIBCLANG_LIBRARY libclang.imp
+    PATH_SUFFIXES LLVM/lib
+    DOC "The file that corresponds to the libclang library.")
+endif()
+
+find_library(LIBCLANG_LIBRARY NAMES libclang.imp libclang clang
+  PATHS ${libclang_llvm_lib_search_paths}
+  PATH_SUFFIXES LLVM/lib #Windows package from http://llvm.org/releases/
+  DOC "The file that corresponds to the libclang library.")
 
 get_filename_component(LIBCLANG_LIBRARY_DIR ${LIBCLANG_LIBRARY} PATH)
 

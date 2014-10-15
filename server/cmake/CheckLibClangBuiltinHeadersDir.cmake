@@ -5,7 +5,7 @@
 # - LIBCLANG_BUILTIN_HEADERS_DIR
 #
 set(CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_CHECKER_CODE_IN
-  ${CMAKE_CURRENT_LIST_DIR}/LibClangDiagnosticsChecker.c)
+  ${CMAKE_CURRENT_LIST_DIR}/LibClangDiagnosticsChecker.cpp)
 
 function(check_libclang_builtin_headers_dir)
   if (LIBCLANG_BUILTIN_HEADERS_DIR)
@@ -16,9 +16,9 @@ function(check_libclang_builtin_headers_dir)
   find_package (LibClang REQUIRED)
   
   set(checker_code
-    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/LibClangDiagnosticsChecker.c)
+    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/LibClangDiagnosticsChecker.cpp)
   set(checked_file
-    "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/check-libclang-stddef.c")
+    "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/check-libclang-stddef.cpp")
 
   configure_file(${CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_CHECKER_CODE_IN}
     ${checker_code} COPYONLY)
@@ -36,21 +36,23 @@ function(check_libclang_builtin_headers_dir)
     HINTS "${LIBCLANG_LIBRARY_DIR}/../lib/clang"
     # other, distribution specific, paths
     PATHS
-    "${LIBCLANG_LIBRARY_DIR}/../clang" # gentoo
-    "${LIBCLANG_LIBRARY_DIR}/clang"    # opensuse
+    "${LIBCLANG_LIBRARY_DIR}/../clang" # Gentoo
+    "${LIBCLANG_LIBRARY_DIR}/clang"    # openSUSE, Windows
     "${LIBCLANG_LIBRARY_DIR}/"         # Google
-    "/usr/lib64/clang"                 # x86_64 (openSUSE Fedora)
+    "/usr/lib64/clang"                 # x86_64 (openSUSE, Fedora)
     "/usr/lib/clang"
     PATH_SUFFIXES ${builtin_include_dir_suffixes}
     )
 
   if (CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR)
-    list(APPEND run_args -isystem "${CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR}")
+    # On Windows the paths weren't escaped correctly, similar to:
+    # http://public.kitware.com/pipermail/cmake/2006-February/008473.html
+    list(APPEND run_args -isystem \"${CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR}\")
   endif()
 
   list(APPEND run_args ${checked_file})
 
-  try_run (
+  try_run(
     CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_NUM_DIAGNOSTICS
     CHECK_LIBCLANG_BUILTIN_HEADERS_COMPILE_RESULT
     ${CMAKE_BINARY_DIR}
