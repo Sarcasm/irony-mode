@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -114,7 +115,8 @@ public:
 
   void next() {
     if (!hasNext()) {
-      throw std::out_of_range("out of range completion chunk");
+      assert(0 && "out of range completion chunk");
+      abort();
     }
 
     ++chunkIdx_;

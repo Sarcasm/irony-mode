@@ -95,8 +95,6 @@ function(check_cxx11_options)
       check_cxx_compiler_flag("-std=c++0x" HAS_STDCXX0X)
       if (HAS_STDCXX0X)
         set(compile_options -std=c++0x)
-      else()
-        message(FATAL_ERROR "Basic C++11 support is required!")
       endif()
     endif()
 

@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
 
@@ -37,16 +38,24 @@ struct UnsignedIntConverter {
   }
 
   bool operator()(const std::string &str) {
-    try {
-      int num = std::stoi(str);
-      if (num >= 0) {
-        *dest_ = num;
-        return true;
-      }
-    }
-    catch (...) {
-    }
-    return false;
+    char *end;
+    long num = std::strtol(str.c_str(), &end, 10);
+
+    if (end != (str.c_str() + str.size()))
+      return false;
+
+    if (errno == ERANGE)
+      return false;
+
+    if (num < 0)
+      return false;
+
+    unsigned long unum = static_cast<unsigned long>(num);
+    if (unum > std::numeric_limits<unsigned>::max())
+      return false;
+
+    *dest_ = unum;
+    return true;
   }
 
 private:

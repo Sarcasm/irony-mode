@@ -11,6 +11,25 @@ include(utils)
 
 check_for_in_source_build()
 release_as_default_build_type()
+
+# Disable exception, we aren't using them and right now clang-cl needs them
+# disabled to parse Windows headers.
+#
+# Logic stolen from LLVM
+if (CMAKE_COMPILER_IS_GNUCXX)
+  set(IRONY_COMPILER_IS_GCC_COMPATIBLE ON)
+elseif (MSVC)
+  set(IRONY_COMPILER_IS_GCC_COMPATIBLE OFF)
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(IRONY_COMPILER_IS_GCC_COMPATIBLE ON)
+endif()
+	
+if(IRONY_COMPILER_IS_GCC_COMPATIBLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+elseif(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /D_HAS_EXCEPTIONS=0")
+endif()
+
 enable_colored_diagnotics()
 check_cxx11_options()
 
