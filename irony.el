@@ -555,7 +555,7 @@ The installation requires CMake and the libclang developpement package."
     (format "%s -i 2>> %s/irony.%s.log"
             (shell-quote-argument irony--server-executable)
             temporary-file-directory
-            (format-time-string "%Y-%m_%Hh-%Mm-%Ss"))))
+            (format-time-string "%Y-%m-%d_%Hh-%Mm-%Ss"))))
 
 (defun irony--server-kill-process ()
   (when (and irony--server-process (process-live-p irony--server-process))
