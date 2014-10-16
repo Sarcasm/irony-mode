@@ -242,7 +242,6 @@ buffer file.")
 (defconst irony-server-eot "\nEOT\n"
   "The string to send to the server to finish a transmission.")
 
-(defvar irony-install-server-initiating-buffer)
 
 (defvar-local irony--initial-compile-check-status nil
   "Non-nil when an initial compile check as already been requested.
@@ -491,7 +490,6 @@ The installation requires CMake and the libclang developpement package."
     (make-directory irony-server-build-dir t)
     (with-current-buffer (compilation-start cmd nil #'(lambda (maj-mode)
                                                         "*irony-server build*"))
-      (setq-local irony-install-server-initiating-buffer cur-buf)
       (setq-local compilation-finish-functions
                   '(irony--server-install-finish-function)))))
 
