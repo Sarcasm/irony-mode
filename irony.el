@@ -242,6 +242,7 @@ buffer file.")
 (defconst irony-server-eot "\nEOT\n"
   "The string to send to the server to finish a transmission.")
 
+(defvar irony--server-install-command-history nil)
 
 (defvar-local irony--initial-compile-check-status nil
   "Non-nil when an initial compile check as already been requested.
@@ -471,38 +472,43 @@ breaks with escaped quotes in compile_commands.json, such as in:
 ;; Irony-Server setup
 ;;
 
-(defun irony-install-server ()
+(defun irony--install-server-read-command (command)
+  (read-shell-command
+   "Install command: " command
+   (if (equal (car irony--server-install-command-history) command)
+       '(irony--server-install-command-history . 1)
+     'irony--server-install-command-history)))
+
+(defun irony-install-server (command)
   "Install or reinstall the Irony server.
 
 The installation requires CMake and the libclang developpement package."
-  (interactive)
-  (let ((cur-buf (current-buffer))
-        (default-directory irony-server-build-dir)
-        (cmd (format
-              (concat "%s %s %s && %s --build . "
-                      "--use-stderr --config Release --target install")
-              (shell-quote-argument irony-cmake-executable)
-              (shell-quote-argument (concat "-DCMAKE_INSTALL_PREFIX="
-                                            (expand-file-name
-                                             irony-server-install-prefix)))
-              (shell-quote-argument irony-server-source-dir)
-              (shell-quote-argument irony-cmake-executable))))
-    (make-directory irony-server-build-dir t)
-    (with-current-buffer (compilation-start cmd nil #'(lambda (maj-mode)
-                                                        "*irony-server build*"))
+  (interactive
+   (list (let ((command
+                (format
+                 (concat "%s %s %s && %s --build . "
+                         "--use-stderr --config Release --target install")
+                 (shell-quote-argument irony-cmake-executable)
+                 (shell-quote-argument (concat "-DCMAKE_INSTALL_PREFIX="
+                                               (expand-file-name
+                                                irony-server-install-prefix)))
+                 (shell-quote-argument irony-server-source-dir)
+                 (shell-quote-argument irony-cmake-executable))))
+           (irony--install-server-read-command command))))
+  ;; we need to kill the process to be able to install a new one, at least on
+  ;; Windows
+  (make-directory irony-server-build-dir t)
+  (let ((default-directory irony-server-build-dir))
+    (irony--server-kill-process)
+    (with-current-buffer (compilation-start command nil
+                                            #'(lambda (maj-mode)
+                                                "*irony-server build*"))
       (setq-local compilation-finish-functions
                   '(irony--server-install-finish-function)))))
 
 (defun irony--server-install-finish-function (buffer msg)
   (if (string= "finished\n" msg)
       (message "irony-server installed successfully!")
-    ;; failed to build/install
-    ;; TODO: detect common issues:
-    ;; - cmake not installed, or installed in a specific place
-    ;;   could be detected before compilation and the user can be prompted to
-    ;;   customize `irony-cmake-executable'
-    ;; - libclang not found
-    ;; - ...
     (message "Failed to build irony-server, you are on your own buddy!")))
 
 (defun irony--locate-server-executable ()
@@ -550,6 +556,11 @@ The installation requires CMake and the libclang developpement package."
             (shell-quote-argument irony--server-executable)
             temporary-file-directory
             (format-time-string "%Y-%m_%Hh-%Mm-%Ss"))))
+
+(defun irony--server-kill-process ()
+  (when (and irony--server-process (process-live-p irony--server-process))
+    (kill-process irony--server-process)
+    (setq irony--server-process nil)))
 
 (defun irony--get-server-process ()
   (if (and irony--server-process
