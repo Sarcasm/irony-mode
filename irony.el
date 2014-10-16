@@ -547,7 +547,11 @@ The installation requires CMake and the libclang developpement package."
 
 (defvar irony--server-executable nil)
 (defvar irony--server-process nil)
-(defvar irony--server-buffer "*Irony*")
+(defvar irony--server-buffer " *Irony*"
+  "The name of the buffer for the irony process to run in.
+
+When using a leading space, the buffer is hidden from the buffer
+list (and undo information is not kept).")
 
 (defun irony--server-command ()
   "Shell command to use to start the irony-server process, if any."
