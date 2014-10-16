@@ -547,6 +547,7 @@ The installation requires CMake and the libclang developpement package."
 
 (defvar irony--server-executable nil)
 (defvar irony--server-process nil)
+(defvar irony--server-buffer "*Irony*")
 
 (defun irony--server-command ()
   "Shell command to use to start the irony-server process, if any."
@@ -562,7 +563,7 @@ The installation requires CMake and the libclang developpement package."
     (kill-process irony--server-process)
     (setq irony--server-process nil)))
 
-(defun irony--get-server-process ()
+(defun irony--get-server-process-create ()
   (if (and irony--server-process
            (process-live-p irony--server-process))
       irony--server-process
@@ -572,8 +573,9 @@ The installation requires CMake and the libclang developpement package."
       (when server-cmd
         (setq process (start-process-shell-command
                        "Irony"                   ;process name
-                       "*Irony*"                 ;buffer
+                       irony--server-buffer      ;buffer
                        server-cmd))              ;command
+        (buffer-disable-undo irony--server-buffer)
         (set-process-query-on-exit-flag process nil)
         (set-process-sentinel process 'irony--server-process-sentinel)
         (set-process-filter process 'irony--server-process-filter)
@@ -647,7 +649,7 @@ If no such file exists on the filesystem the special file '-' is
 This concerns mainly irony-server commands that do some work on a
 translation unit for libclang, the unsaved buffer data are taken
 care of."
-  (let ((process (irony--get-server-process))
+  (let ((process (irony--get-server-process-create))
         (argv (append (list request
                             "--num-unsaved=1"
                             (irony--get-buffer-path-for-server))
