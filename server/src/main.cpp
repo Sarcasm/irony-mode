@@ -95,6 +95,12 @@ struct InteractiveCommandProvider : CommandProviderInterface {
 int main(int ac, const char *av[]) {
   std::vector<std::string> argv(&av[1], &av[ac]);
 
+  // stick to STL streams, no mix of C and C++ for IO operations
+  std::cin.sync_with_stdio(false);
+  std::cout.sync_with_stdio(false);
+  std::cerr.sync_with_stdio(false);
+  std::clog.sync_with_stdio(false);
+
   bool interactiveMode = false;
 
   Irony irony;
