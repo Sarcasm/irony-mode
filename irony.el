@@ -557,6 +557,7 @@ list (and undo information is not kept).")
   (when (setq irony--server-executable (or irony--server-executable
                                            (irony--locate-server-executable)))
     (let ((process-connection-type nil)
+          (process-adaptive-read-buffering nil)
           process)
       (setq process
             (start-process "Irony" irony--server-buffer
