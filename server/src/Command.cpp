@@ -13,7 +13,6 @@
 #include "support/CommandLineParser.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstdlib>
 #include <functional>
 #include <iostream>

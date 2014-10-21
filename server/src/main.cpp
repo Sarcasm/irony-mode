@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -20,9 +21,15 @@
 #include <vector>
 
 static void printHelp() {
-  std::cout << "usage: irony-server [--version|-v] [--help|-h] "
-               "[--interactive|-i] [--debug|-d]\n"
-               "                    <command> [<argv>]\n\n";
+  std::cout << "usage: irony-server [OPTIONS...] [COMMAND] [ARGS...]\n"
+    "Options:\n"
+    "  -v, --version\n"
+    "  -h, --help\n"
+    "  -i, --interactive\n"
+    "  -d, --debug\n"
+    "  --log-file PATH\n"
+    "\n"
+    "Commands:\n";
 
 #define X(sym, str, desc)                                                      \
   if (Command::sym != Command::Unknown)                                        \
@@ -97,31 +104,39 @@ int main(int ac, const char *av[]) {
     return 1;
   }
 
-  int optCount = 0;
+  std::ofstream logFile;
 
-  for (const std::string &opt : argv) {
-    if (opt[0] == '-') {
-      ++optCount;
+  unsigned optCount = 0;
+  while (optCount < argv.size()) {
+    const std::string &opt = argv[optCount];
 
-      if (opt == "--help" || opt == "-h") {
-        printHelp();
-        return 0;
-      }
+    if (opt.c_str()[0] != '-')
+      break;
 
-      if (opt == "--version" || opt == "-v") {
-        printVersion();
-        return 0;
-      }
-
-      if (opt == "--interactive" || opt == "-i") {
-        interactiveMode = true;
-      } else if (opt == "--debug" || opt == "-d") {
-        irony.setDebug(true);
-      } else {
-        std::cerr << "error: invalid option '" << opt << "'\n";
-        return 1;
-      }
+    if (opt == "--help" || opt == "-h") {
+      printHelp();
+      return 0;
     }
+
+    if (opt == "--version" || opt == "-v") {
+      printVersion();
+      return 0;
+    }
+
+    if (opt == "--interactive" || opt == "-i") {
+      interactiveMode = true;
+    } else if (opt == "--debug" || opt == "-d") {
+      irony.setDebug(true);
+    } else if (opt == "--log-file" && (optCount + 1) < argv.size()) {
+      ++optCount;
+      logFile.open(argv[optCount]);
+      std::clog.rdbuf(logFile.rdbuf());
+    } else {
+      std::cerr << "error: invalid option '" << opt << "'\n";
+      return 1;
+    }
+
+    ++optCount;
   }
 
   argv.erase(argv.begin(), argv.begin() + optCount);

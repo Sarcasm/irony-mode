@@ -553,14 +553,24 @@ The installation requires CMake and the libclang developpement package."
 When using a leading space, the buffer is hidden from the buffer
 list (and undo information is not kept).")
 
-(defun irony--server-command ()
-  "Shell command to use to start the irony-server process, if any."
+(defun irony--start-server-process ()
   (when (setq irony--server-executable (or irony--server-executable
                                            (irony--locate-server-executable)))
-    (format "%s -i 2>> %s/irony.%s.log"
-            (shell-quote-argument irony--server-executable)
-            temporary-file-directory
-            (format-time-string "%Y-%m-%d_%Hh-%Mm-%Ss"))))
+    (let ((process-connection-type nil)
+          process)
+      (setq process
+            (start-process "Irony" irony--server-buffer
+                           irony--server-executable
+                           "-i"
+                           "--log-file"
+                           (expand-file-name
+                            (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
+                            temporary-file-directory)))
+      (buffer-disable-undo irony--server-buffer)
+      (set-process-query-on-exit-flag process nil)
+      (set-process-sentinel process 'irony--server-process-sentinel)
+      (set-process-filter process 'irony--server-process-filter)
+      process)))
 
 (defun irony--server-kill-process ()
   (when (and irony--server-process (process-live-p irony--server-process))
@@ -571,19 +581,7 @@ list (and undo information is not kept).")
   (if (and irony--server-process
            (process-live-p irony--server-process))
       irony--server-process
-    (let ((server-cmd (irony--server-command))
-          (process-connection-type nil)
-          process)
-      (when server-cmd
-        (setq process (start-process-shell-command
-                       "Irony"                   ;process name
-                       irony--server-buffer      ;buffer
-                       server-cmd))              ;command
-        (buffer-disable-undo irony--server-buffer)
-        (set-process-query-on-exit-flag process nil)
-        (set-process-sentinel process 'irony--server-process-sentinel)
-        (set-process-filter process 'irony--server-process-filter)
-        (setq irony--server-process process)))))
+    (setq irony--server-process (irony--start-server-process))))
 
 (defun irony--server-process-sentinel (process event)
   (unless (process-live-p process)
@@ -659,7 +657,7 @@ care of."
                             (irony--get-buffer-path-for-server))
                       args))
         (compile-options (irony--libclang-compile-options)))
-    (when process
+    (when (and process (process-live-p process))
       (irony--server-process-push-callback process callback)
       ;; skip narrowing to compute buffer size and content
       (irony-without-narrowing
