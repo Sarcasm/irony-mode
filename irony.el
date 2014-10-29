@@ -273,10 +273,19 @@ Possible values are:
     (irony-mode-exit)))
 
 (defun irony-mode-enter ()
+  ;; warn the user about modes such as php-mode who inherits c-mode
   (when (not (memq major-mode irony-supported-major-modes))
-    ;; warn the user about modes such as php-mode who inherits c-mode
-    (display-warning 'irony "Irony mode is aimed to work with a\
- major mode present in `irony-supported-major-modes'."))
+    (display-warning 'irony "Major mode is unknown to Irony,\
+ see `irony-supported-major-modes'."))
+  ;; warn the user about Windows-specific issues
+  (when (eq system-type 'windows-nt)
+    (cond
+     ((version< emacs-version "24.4")
+      (display-warning 'irony "Emacs >= 24.4 expected on Windows."))
+     ((> w32-pipe-read-delay 0)
+      (display-warning 'irony "Performance will be bad because a\
+ pipe delay is set for this platform (see variable\
+ `w32-pipe-read-delay')."))))
   (unless irony--clang-options
     (irony-cdb-load-compile-options))
   (irony-completion--enter))

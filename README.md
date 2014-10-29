@@ -70,6 +70,26 @@ package manager.
 ~~~
 
 
+## Windows considerations
+
+`irony-mode` should work fine on Windows but there are some things to take care
+of first.
+
+* `libclang.dll` is expected to be available in the `PATH` or in Emacs'
+  `exec-path`.
+
+* **Emacs >= 24.4 is required.** A bug in previous versions makes irony
+  unuseable (Emacs bug #18420).
+
+* `w32-pipe-read-delay` default value of `50` should be changed. This should not
+  cause any issue on today's version of Windows. The default value of `50` may
+  be lowered in mainline Emacs in future versions, until then please add the
+  following to your `irony-mode` configuration:
+
+        ```el
+        (setq w32-pipe-read-delay 0)
+        ```
+
 ## Usage
 
 On the first run, `irony-mode` will ask you to build and install `irony-server`.
