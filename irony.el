@@ -369,9 +369,9 @@ to be consumed by `irony-split-command-line'."
                             (aref quoted-str (1+ i)))))
           (when (member next-ch '(?\\ ?\"))
             (setq ch next-ch)
-            (incf i))))
+            (cl-incf i))))
       (push ch result)
-      (incf i))
+      (cl-incf i))
     result))
 
 (defun irony-split-command-line (cmd-line)
@@ -417,9 +417,9 @@ breaks with escaped quotes in compile_commands.json, such as in:
             (when (or (member next-ch '(?\\ ?\"))
                       (member next-ch spaces))
               (setq ch next-ch)
-              (incf i))))
+              (cl-incf i))))
         (push ch cur-arg)
-        (incf i))))
+        (cl-incf i))))
     (when cur-arg
       (setq args (cons (apply 'string (nreverse cur-arg)) args)))
     (nreverse args)))
