@@ -86,9 +86,8 @@ of first.
   be lowered in mainline Emacs in future versions, until then please add the
   following to your `irony-mode` configuration:
 
-        ```el
-        (setq w32-pipe-read-delay 0)
-        ```
+      (setq w32-pipe-read-delay 0)
+
 
 ## Usage
 
