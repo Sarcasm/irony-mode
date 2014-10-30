@@ -40,6 +40,10 @@
 ;;         'irony-completion-at-point-async))
 ;;     (add-hook 'irony-mode-hook 'my-irony-mode-hook)
 ;;
+;;     ;; Only needed on Windows
+;;     (when (eq system-type 'windows-nt)
+;;       (setq w32-pipe-read-delay 0))
+;;
 ;; See also:
 ;; - https://github.com/Sarcasm/company-irony
 ;; - https://github.com/Sarcasm/ac-irony
