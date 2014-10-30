@@ -286,7 +286,7 @@ Possible values are:
     (cond
      ((version< emacs-version "24.4")
       (display-warning 'irony "Emacs >= 24.4 expected on Windows."))
-     ((> w32-pipe-read-delay 0)
+     ((and (boundp 'w32-pipe-read-delay) (> w32-pipe-read-delay 0))
       (display-warning 'irony "Performance will be bad because a\
  pipe delay is set for this platform (see variable\
  `w32-pipe-read-delay')."))))
