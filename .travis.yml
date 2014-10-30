@@ -6,7 +6,7 @@ compiler:
 
 before_install:
   - git submodule update --init --recursive
-  - sudo apt-get install libclang-dev -qq
+  - sudo apt-get install emacs libclang-dev -qq
 
 before_script:
   - mkdir build
@@ -14,13 +14,8 @@ before_script:
 
 script:
   - cmake ../server
-  - make -k -j4
+  - make -k
   - ctest --output-on-failure 
 
 after_script:
-  - cd ..
-
-# ATM the master branch doesn't build and it doesn't matter
-branches:
-  except:
-    - master
+  - cd -
