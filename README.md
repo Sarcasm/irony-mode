@@ -67,6 +67,7 @@ package manager.
   (define-key irony-mode-map [remap complete-symbol]
     'irony-completion-at-point-async))
 (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 ~~~
 
 
@@ -111,17 +112,15 @@ In order to work correctly, `irony-mode` needs to know the compile flags.
 `irony-cdb` aims to provide *as automatic as possible* compile flags discovery,
 with minimal user input.
 
-Type `M-x irony-cdb-menu RET` to display the build configuration menu.
+Please refer to `irony-cdb-autosetup-compile-options` and
+`irony-cdb-compilation-databases`.
 
-![Compilation DB demo](screenshots/cdb.gif)
-
-The menu should be self explanatory, it will let you chose amongst a list of
-*compilation databases*. It works great with the following ones:
+Right now `irony-cdb` supports the following compilation databases:
 
 - [.clang_complete][clang_complete-doc-ref] - A file at the root of your project
   containing the compilation flags, one per line. This is compatible with the
   with plugin [Rip-Rip/clang_complete][clang_complete-vim-ref]. If you want to
-  generate the `.clang_complete` automatically, take a look there:
+  generate the `.clang_complete` automatically, take a look at the
   [cc_args.py documentation][cc_args-py-doc-ref].
 
 <!---
