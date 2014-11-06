@@ -59,6 +59,13 @@ for files that it cannot handle."
 
 
 ;;
+;; Internal variables
+;;
+
+(defvar-local irony-cdb--compilation-database nil)
+
+
+;;
 ;; Irony Compilation Database Interface
 ;;
 
@@ -66,12 +73,35 @@ for files that it cannot handle."
 (defun irony-cdb-autosetup-compile-options ()
   (interactive)
   (irony--awhen (irony-cdb--autodetect-compile-options)
-    (irony-cdb--update-compile-options (caar it) (cdar it))))
+    (setq irony-cdb--compilation-database (nth 0 it))
+    (irony-cdb--update-compile-options (nth 1 it) (nth 2 it))))
 
 ;;;###autoload
 (defun irony-cdb-menu ()
   (interactive)
-  (message "This functionality has been removed from irony-mode."))
+  (let ((compilation-database irony-cdb--compilation-database)
+        (working-directory irony--working-directory)
+        (compile-options irony--compile-options))
+    (save-excursion
+      (save-window-excursion
+        (delete-other-windows)
+        (let ((buffer (get-buffer-create "*Irony/Compilation DB Menu*")))
+          (with-current-buffer buffer
+            (erase-buffer)
+            (if (null compilation-database)
+                (insert "No compilation database in use.\n")
+              (insert (format "Compilation Database: %s\n"
+                              (symbol-name compilation-database)))
+              (insert (format "- Working Directory: %s\n" working-directory))
+              (insert (format "- Compile Options  : %s\n"
+                              (mapconcat 'identity compile-options " "))))
+            (insert "\n[q] to quit"))
+          (let ((pop-up-windows t))
+            (display-buffer buffer t))
+          (fit-window-to-buffer (get-buffer-window buffer))
+          (irony--read-char-choice "Irony CDB Buffer" (list ?q)))))
+    ;; clear `read-char-choice' prompt
+    (message "")))
 
 
 ;;
@@ -87,7 +117,9 @@ for files that it cannot handle."
   (catch 'found
     (dolist (compilation-database irony-cdb-compilation-databases)
       (irony--awhen (funcall compilation-database 'get-compile-options)
-        (throw 'found it)))))
+        (throw 'found (list compilation-database
+                            (caar it)
+                            (cdar it)))))))
 
 
 ;;
