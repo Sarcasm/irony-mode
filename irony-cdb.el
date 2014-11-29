@@ -1,4 +1,4 @@
-;;; irony-cdb.el --- compilation databases support for irony-mode
+;;; irony-cdb.el --- compilation databases support for irony
 
 ;; Copyright (C) 2012-2014  Guillaume Papin
 
@@ -20,9 +20,9 @@
 
 ;;; Commentary:
 ;;
-;; This file defines the default compilation databases for irony-mode.
+;; This file defines the compilation database interface of irony-mode.
 ;;
-;; Note: For compilation database that looks for a specific file, such as
+;; Note:For compilation database that looks for a specific file, such as
 ;; .clang_complete or compile_commands.json, favor `locate-dominating-file' to a
 ;; handwritten logic if possible as it may be configured by the user to do "the
 ;; Right Thing (TM)". See `locate-dominating-stop-dir-regexp'.
@@ -33,6 +33,8 @@
 (require 'irony)
 
 (require 'cl-lib)
+
+(autoload 'irony-cdb-clang-complete "irony-cdb-clang-complete")
 
 
 ;;
@@ -120,39 +122,6 @@ for files that it cannot handle."
         (throw 'found (list compilation-database
                             (caar it)
                             (cdar it)))))))
-
-
-;;
-;; .clang_complete
-;;
-
-;;;###autoload
-(defun irony-cdb-clang-complete (command &rest args)
-  (cl-case command
-    (get-compile-options (irony-cdb--clang-complete-get-compile-options))))
-
-(defun irony-cdb--clang-complete-get-compile-options ()
-  (irony--awhen (irony-cdb--clang-complete-locate-config)
-    (irony-cdb--clang-complete-read-file it)))
-
-(defun irony-cdb--clang-complete-locate-config ()
-  (when buffer-file-name
-    (irony--awhen (locate-dominating-file buffer-file-name ".clang_complete")
-      (concat (file-name-as-directory it) ".clang_complete"))))
-
-(defun irony-cdb--clang-complete-read-file (cc-file)
-  (with-temp-buffer
-    (insert-file-contents cc-file)
-    (list
-     (cons
-      ;; compile options (trailing whitespaces are removed)
-      (mapcar #'(lambda (line)
-                  (if (string-match "[ \t]+$" line)
-                      (replace-match "" t t line)
-                    line))
-              (split-string (buffer-string) "\n" t))
-      ;; working directory
-      (expand-file-name (file-name-directory cc-file))))))
 
 (provide 'irony-cdb)
 
