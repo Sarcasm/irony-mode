@@ -36,4 +36,4 @@ function(ert_test name test_file)
 endfunction()
 
 ert_test(irony-el irony.el)
-ert_test(irony-cdb-el irony-cdb.el)
+ert_test(irony-cdb-json-el irony-cdb-json.el)

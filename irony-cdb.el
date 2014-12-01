@@ -35,6 +35,7 @@
 (require 'cl-lib)
 
 (autoload 'irony-cdb-clang-complete "irony-cdb-clang-complete")
+(autoload 'irony-cdb-json "irony-cdb-json")
 
 
 ;;
@@ -45,7 +46,8 @@
   "Irony's compilation database interface."
   :group 'irony)
 
-(defcustom irony-cdb-compilation-databases '(irony-cdb-clang-complete)
+(defcustom irony-cdb-compilation-databases '(irony-cdb-clang-complete
+                                             irony-cdb-json)
   "List of active compilation databases.
 
 The compilation database should respond for the following commands:

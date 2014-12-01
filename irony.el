@@ -7,7 +7,7 @@
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((cl-lib "0.5") (json "1.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -248,6 +248,12 @@ Possible values are:
      (when it
        (progn ,@body))))
 
+(defun irony--assoc-all (key list)
+  (delq nil (mapcar #'(lambda (c)
+                        (when (equal (car c) key)
+                          c))
+                    list)))
+
 (defmacro irony--without-narrowing (&rest body)
   "Remove the effect of narrowing for the current buffer.
 
@@ -308,6 +314,9 @@ Only to be consumed by `irony--split-command-line'."
       (cl-incf i))
     result))
 
+;; TODO: rewrite the function correctly to handle things like the following:
+;;
+;; "/usr/bin/clang++ -Irelative -DSOMEDEF=\"With spaces, quotes and \\-es.\" <args...>"
 (defun irony--split-command-line (cmd-line)
   "Split CMD-LINE into a list of arguments.
 
@@ -445,6 +454,34 @@ any."
        (list "-working-directory" it)))
    irony-additional-clang-options
    irony--compile-options))
+
+(defun irony--extract-user-search-paths (compile-options work-dir)
+  "Retrieve the user search paths present in COMPILE-OPTIONS.
+
+Relative paths are expanded to be relative to WORK-DIR.
+
+The returned paths are returned as
+directory (`file-name-as-directory').
+
+Note: WORK-DIR is not used when the compile option
+'-working-directory=<directory>' is detected in COMPILE-OPTIONS."
+  (setq work-dir (or (irony--extract-working-directory-option compile-options)
+                     work-dir))
+  (let (include-dirs opt)
+    (while (setq opt (car compile-options))
+      (cond
+       ((string= "-I" opt)
+        (add-to-list 'include-dirs (nth 1 compile-options) t)
+        (setq compile-options (cddr compile-options)))
+       ((string-prefix-p "-I" opt)
+        (add-to-list 'include-dirs (substring opt 2) t)
+        (setq compile-options (cdr compile-options)))
+       (t
+        (setq compile-options (cdr compile-options)))))
+    (delete-dups (mapcar #'(lambda (path)
+                             (file-name-as-directory
+                              (expand-file-name path work-dir)))
+                         include-dirs))))
 
 
 ;;
