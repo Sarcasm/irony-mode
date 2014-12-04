@@ -94,10 +94,10 @@ for files that it cannot handle."
             (erase-buffer)
             (if (null compilation-database)
                 (insert "No compilation database in use.\n")
-              (insert (format "Compilation Database: %s\n"
+              (insert (format "Compilation Database: %s\n\n"
                               (symbol-name compilation-database)))
-              (insert (format "- Working Directory: %s\n" working-directory))
-              (insert (format "- Compile Options  : %s\n"
+              (insert (format "  Working Directory: %s\n" working-directory))
+              (insert (format "  Compile Options:   %s\n"
                               (mapconcat 'identity compile-options " "))))
             (insert "\n[q] to quit"))
           (let ((pop-up-windows t))
