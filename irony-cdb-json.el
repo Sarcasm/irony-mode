@@ -47,15 +47,24 @@ source directory.")
   (cl-case command
     (get-compile-options (irony-cdb-json--get-compile-options))))
 
+;;;###autoload
 (defun irony-cdb-json-add-compile-commands-path (project-root
-                                                 compile-command-path)
+                                                 compile-commands-path)
+  "Add an out-of-source compilation database.
+
+Files below the PROJECT-ROOT directory will use the JSON
+Compilation Database as specified by COMPILE-COMMANDS-PATH.
+
+The JSON Compilation Database are often generated in the build
+directory. This functions helps mapping out-of-source build
+directories to project directory."
   (interactive
    (progn
      (let ((proot (read-directory-name "Project root:" nil nil t)))
        (list proot (read-file-name "Compile commands:" proot nil t
                                    "compile_commands.json")))))
   (add-to-list 'irony-cdb-json--project-alist
-               (cons project-root compile-command-path))
+               (cons project-root compile-commands-path))
   (irony-cdb-json--save-project-alist))
 
 (defun irony-cdb-json--get-compile-options ()
