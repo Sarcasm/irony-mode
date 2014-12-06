@@ -163,25 +163,6 @@ The irony-server executable is expected to be in
   :type 'directory
   :group 'irony)
 
-(defcustom irony-check-compile-functions
-  '(irony--process-initial-check-compile)
-  "Special hook run when check-compile results are available.
-
-Takes as an argument the number of fatal errors (usually 0 or 1),
-the number of errors and the number of warnings.
-
-Example function:
-
-  (defun my-irony-check-compile-function (nfatals nerrors nwarnings)
-    (message \"%d error(s) and %d warning(s)\" (+ nfatals nerrors)\
- nwarnings))
-
-  (add-hook 'irony-check-compile-functions\
- 'my-irony-check-compile-function)"
-  :type 'hook
-  :options '(irony--process-initial-check-compile)
-  :group 'irony)
-
 
 ;;
 ;; Public/API variables
@@ -215,9 +196,6 @@ buffer file.")
 
 (defconst irony--eot "\n;;EOT\n"
   "String sent by the server to signal the end of a response.")
-
-(defconst irony-server-eot "\nEOT\n"
-  "The string to send to the server to finish a transmission.")
 
 (defvar irony--server-install-command-history nil)
 
@@ -693,53 +671,6 @@ care of."
         ;; to play nice with line buffering even when the file doesn't end with
         ;; a newline)
         (process-send-string process "\n")))))
-
-(defun irony-request-check-compile ()
-  (irony--send-file-request "check-compile"
-                            (list 'irony-check-compile-handler)))
-
-(defun irony-check-compile-handler (errors)
-  (run-hook-with-args 'irony-check-compile-functions
-                      (or (plist-get errors :fatals) 0)
-                      (or (plist-get errors :errors) 0)
-                      (or (plist-get errors :warnings) 0)))
-
-(defun irony--initial-check-compile ()
-  "Check that the current buffer compiles, hinting the user if not.
-
-Ideally this is done only once, when the buffer is first
-opened (or irony-mode first started), just to inform the user if
-he forgot to provide the flags for the current buffer."
-  (unless (or irony--initial-compile-check-status
-              (zerop (buffer-size)))
-    (setq irony--initial-compile-check-status 'requested)
-    (irony-request-check-compile)))
-
-(defun irony--process-initial-check-compile (nfatals nerrors nwarnings)
-  "Display a one-time hint to the user to configure the compile options.
-
-See `irony-check-compile-functions'."
-  (when (and (eq irony--initial-compile-check-status 'requested)
-             (not (zerop (+ nfatals nerrors))))
-    (setq irony--initial-compile-check-status 'done)
-    (let ((help-msg (substitute-command-keys
-                     "Type `\\[irony-cdb-menu]' to configure project"))
-          stats-strings)
-      (unless (zerop nwarnings)
-        (push (concat (number-to-string nwarnings)
-                      " warning"
-                      (unless (eq nwarnings 1) ;plural
-                        "s"))
-              stats-strings))
-      (setq nerrors (+ nfatals nerrors))
-      (unless (zerop nerrors)
-        (push (concat (number-to-string nerrors)
-                      " error"
-                      (unless (eq nerrors 1) ;plural
-                        "s"))
-              stats-strings))
-      (message "[%s] %s" (mapconcat 'identity stats-strings " | ")
-               help-msg))))
 
 (provide 'irony)
 
