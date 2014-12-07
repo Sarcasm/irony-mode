@@ -515,7 +515,7 @@ The installation requires CMake and the libclang developpement package."
   ;; Windows
   (make-directory irony-server-build-dir t)
   (let ((default-directory irony-server-build-dir))
-    (irony--server-kill-process)
+    (irony-server-kill)
     (with-current-buffer (compilation-start command nil
                                             #'(lambda (maj-mode)
                                                 "*irony-server build*"))
@@ -589,8 +589,11 @@ list (and undo information is not kept).")
       (set-process-filter process 'irony--server-process-filter)
       process)))
 
-(defun irony--server-kill-process ()
-  (when (and irony--server-process (process-live-p irony--server-process))
+;;;###autoload
+(defun irony-server-kill ()
+  "Kill the running irony-server process, if any."
+  (interactive)
+  (when (process-live-p irony--server-process)
     (kill-process irony--server-process)
     (setq irony--server-process nil)))
 
