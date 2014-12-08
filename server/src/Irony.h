@@ -33,8 +33,7 @@ public:
 
   /// \brief Set or unset debugging of commands.
   void setDebug(bool enable) {
-    if (enable)
-      debug_ = true;
+    debug_ = enable;
   }
 
   /// \brief Check that a given file with a set of flags compiles.
