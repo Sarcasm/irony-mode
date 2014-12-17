@@ -28,9 +28,7 @@
 #define HAS_BRIEF_COMMENTS_IN_COMPLETION 0
 #endif
 
-namespace {
-
-std::string cxStringToStd(CXString cxString) {
+static std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
 
   if (const char *cstr = clang_getCString(cxString)) {
@@ -41,62 +39,89 @@ std::string cxStringToStd(CXString cxString) {
   return stdStr;
 }
 
-} // unnamed namespace
-
 Irony::Irony() : debug_(false) {
 }
 
-void Irony::check(const std::string &file,
-                  const std::vector<std::string> &flags,
-                  const std::vector<CXUnsavedFile> &unsavedFiles) {
-  std::cout << "(";
-
-  unsigned numDiag = 0;
-  int fatals = 0;
-  int errors = 0;
-  int warnings = 0;
-
-  CXTranslationUnit tu = tuManager_.parse(file, flags, unsavedFiles);
-
-  if (tu) {
-    numDiag = clang_getNumDiagnostics(tu);
-  } else {
-    fatals = 1;
+static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
+  switch (clang_getDiagnosticSeverity(diagnostic)) {
+  case CXDiagnostic_Ignored:
+    return "ignored";
+  case CXDiagnostic_Note:
+    return "note";
+  case CXDiagnostic_Warning:
+    return "warning";
+  case CXDiagnostic_Error:
+    return "error";
+  case CXDiagnostic_Fatal:
+    return "fatal";
   }
 
-  for (unsigned i = 0; i < numDiag; ++i) {
+  return "unknown";
+}
+
+static void dumpDiagnostics(const CXTranslationUnit &tu) {
+  std::cout << "(\n";
+
+  std::string file;
+
+  for (unsigned i = 0, diagnosticCount = clang_getNumDiagnostics(tu);
+       i < diagnosticCount;
+       ++i) {
     CXDiagnostic diagnostic = clang_getDiagnostic(tu, i);
 
-    switch (clang_getDiagnosticSeverity(diagnostic)) {
-    case CXDiagnostic_Fatal:
-      fatals++;
-      break;
+    CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
 
-    case CXDiagnostic_Error:
-      errors++;
-      break;
+    unsigned line, column, offset;
+    if (clang_equalLocations(location, clang_getNullLocation())) {
+      file.clear();
+      line = 0;
+      column = 0;
+      offset = 0;
+    } else {
+      CXFile cxFile;
 
-    case CXDiagnostic_Warning:
-      warnings++;
-      break;
+// clang_getInstantiationLocation() has been marked deprecated and
+// is aimed to be replaced by clang_getExpansionLocation().
+#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
+    (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+      clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
+#else
+      clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
+#endif
 
-    default:
-      break;
+      file = cxStringToStd(clang_getFileName(cxFile));
     }
+
+    const char *severity = diagnosticSeverity(diagnostic);
+
+    std::string message =
+        cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
+
+    std::cout << '(' << support::quoted(file)    //
+              << ' ' << line                     //
+              << ' ' << column                   //
+              << ' ' << offset                   //
+              << ' ' << severity                 //
+              << ' ' << support::quoted(message) //
+              << ")\n";
 
     clang_disposeDiagnostic(diagnostic);
   }
 
-  if (fatals > 0)
-    std::cout << " :fatals " << fatals;
-
-  if (errors > 0)
-    std::cout << " :errors " << errors;
-
-  if (warnings > 0)
-    std::cout << " :warnings " << warnings;
-
   std::cout << ")\n";
+}
+
+void Irony::diagnostics(const std::string &file,
+                        const std::vector<std::string> &flags,
+                        const std::vector<CXUnsavedFile> &unsavedFiles) {
+  CXTranslationUnit tu = tuManager_.parse(file, flags, unsavedFiles);
+
+  if (tu == nullptr) {
+    std::cout << "nil\n";
+    return;
+  }
+
+  dumpDiagnostics(tu);
 }
 
 namespace {

@@ -36,24 +36,10 @@ public:
     debug_ = enable;
   }
 
-  /// \brief Check that a given file with a set of flags compiles.
-  ///
-  /// Can be used as a hint to know whether or not the compile flags are
-  /// correct.
-  ///
-  /// Example output:
-  ///
-  /// \code{.el}
-  ///   ()
-  ///   (:fatals 1)
-  ///   (:errors 3)
-  ///   (:warnings 5)
-  ///   (:errors 3 :warnings 5)
-  /// \endcode
-  ///
-  void check(const std::string &file,
-             const std::vector<std::string> &flags,
-             const std::vector<CXUnsavedFile> &unsavedFiles);
+  /// \brief Retrieve the diagnostics for the given file.
+  void diagnostics(const std::string &file,
+                   const std::vector<std::string> &flags,
+                   const std::vector<CXUnsavedFile> &unsavedFiles);
 
   /// \brief Perform code completion at a given location.
   ///

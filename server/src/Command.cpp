@@ -146,7 +146,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
   switch (command_.action) {
-  case Command::CheckCompile:
+  case Command::Diagnostics:
     positionalArgs.push_back(StringConverter(&command_.file));
     handleUnsaved = true;
     break;

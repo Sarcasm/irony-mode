@@ -51,7 +51,7 @@ static void dumpUnsavedFiles(Command &command) {
     std::copy(command.unsavedFiles[i].second.begin(),
               command.unsavedFiles[i].second.end(),
               std::ostream_iterator<char>(std::clog));
-    std::clog << "----\n";
+    std::clog << "----" << std::endl;
   }
 }
 
@@ -158,7 +158,7 @@ int main(int ac, const char *av[]) {
 
   while (Command *c = commandParser.parse(commandProvider->nextCommand())) {
     if (c->action != Command::Exit) {
-      std::clog << "execute: " << *c << "\n";
+      std::clog << "execute: " << *c << std::endl;
 
       if (irony.isDebugEnabled()) {
         dumpUnsavedFiles(*c);
@@ -170,8 +170,8 @@ int main(int ac, const char *av[]) {
       printHelp();
       break;
 
-    case Command::CheckCompile:
-      irony.check(c->file, c->flags, c->cxUnsavedFiles);
+    case Command::Diagnostics:
+      irony.diagnostics(c->file, c->flags, c->cxUnsavedFiles);
       break;
 
     case Command::Complete:

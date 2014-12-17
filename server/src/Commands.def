@@ -12,7 +12,7 @@
 #error Please define the 'X(id, command, description)' macro before inclusion!
 #endif
 
-X(CheckCompile, "check-compile", "FILE - check that a given file compiles")
+X(Diagnostics, "diagnostics", "FILE - look for diagnostics in file")
 X(Complete,
   "complete",
   "FILE LINE COL - perform code completion at a given location")
