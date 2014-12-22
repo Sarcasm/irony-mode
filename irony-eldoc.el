@@ -63,7 +63,8 @@ Has no effect if `irony-eldoc-strip-underscores' is non-nil."
   "Return a symbol under point suitable for documentation."
   ;; Require that char-after should be word-/symbol-constituent
   (let (bounds thing)
-    (when (and (let ((s (car (syntax-after (point))))) (or (= s 2) (= s 3)))
+    (when (and (let ((s (car (syntax-after (point)))))
+                 (and s (or (= s 2) (= s 3)))) ; Note that s can be nil
                (setq bounds (bounds-of-thing-at-point 'symbol))
                (setq thing (buffer-substring-no-properties
                             (car bounds) (cdr bounds)))
