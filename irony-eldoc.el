@@ -27,6 +27,7 @@
 (require 'irony-completion)
 (require 'thingatpt)
 (require 'cl)
+(require 'eldoc)
 
 ;; {{{ Customizations
 
@@ -123,7 +124,12 @@ error (scan-error) on any unrecognized syntax, so probably call
 inside `condition-case'."
   (let (bounds thing (old-point (point)) open-paren close-paren)
     (save-excursion
-      (backward-up-list nil t) ; escape strings
+      ;; the escape-strings argument is not present in 24.4
+      ;; (backward-up-list nil t) ; escape strings
+      ;; if inside a string, move out of the string first
+      (let ((syntax (syntax-ppss)))
+        (when (nth 3 syntax) (goto-char (nth 8 syntax))))
+      (backward-up-list)
       (when
           (and (= (char-after) #x28)    ; open paren
                (setq open-paren (point)
