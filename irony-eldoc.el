@@ -60,6 +60,41 @@ Has no effect if `irony-eldoc-strip-underscores' is non-nil."
           (replace-regexp-in-string (car r) (cdr r) new-string)))
       new-string)))
 
+(defvar irony-eldoc--ignore-symbol-regex
+  (rx (or
+       (and (1+ digit) (opt "e" (opt (1+ digit))))
+       (or ;; Taken from `cc-langs'
+        "bool" "char" "wchar_t" "short" "int" "long" "signed" "unsigned"
+        "float" "double" "void" "_Bool" "_Complex" "_Imaginary"
+        "id" "Class" "SEL" "IMP" "BOOL" "struct" "union" "enum"
+        "class" "typename" "const" "restrict" "volatile" "throw"
+        "@interface" "@implementation" "@protocol"
+        "namespace" "extern" "auto" "extern" "inline" "register" "static"
+        "explicit" "friend" "mutable" "template" "using" "virtual"
+        "auto" "bycopy" "byref" "extern" "in" "inout" "oneway" "out" "static"
+        "@class" "@end" "@defs"
+        "__attribute__" "__declspec"
+        "private" "protected" "public"
+        "@private" "@protected" "@public"
+        "struct" "union" "enum" "typedef"
+        "class" "struct" "union" "enum" "typedef"
+        "operator" "@class"
+        "template"
+        "do" "else" "try" "@finally" "@try"
+        "for" "if" "switch" "while" "catch" "@catch" "@synchronized"
+        "break" "continue" "goto" "return" "@throw"
+        "asm" "__asm__"
+        "case" "default"
+        "goto" "break" "continue"
+        "NULL" "nullptr" "false" "true"
+        "nil" "Nil" "YES" "NO" "NS_DURING" "NS_HANDLER" "NS_ENDHANDLER"
+        "operator" "this" "super" "self")))
+  "Regex for identifiers that irony-eldoc should ignore entirely.
+
+This is primitive types, common types, common values (NULL, true,
+false), various keywords that may appear sometimes but for which
+there should be no documentation.")
+
 (defun irony-eldoc--which-symbol ()
   "Return a symbol under point suitable for documentation."
   ;; Require that char-after should be word-/symbol-constituent
@@ -69,10 +104,8 @@ Has no effect if `irony-eldoc-strip-underscores' is non-nil."
                (setq bounds (bounds-of-thing-at-point 'symbol))
                (setq thing (buffer-substring-no-properties
                             (car bounds) (cdr bounds)))
-               ;; TODO Check thing is not a built-in type
-               ;; TODO or something useless like that.
-               (not (string-match-p "[0-9]+" thing))
-               )
+               ;; Check thing is not a built-in type or something useless
+               (not (string-match-p irony-eldoc--ignore-symbol-regex thing)))
       (list nil thing (car bounds) (cdr bounds)))))
 
 (defun irony-eldoc--argindex (&optional pos open-paren close-paren)
