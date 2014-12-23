@@ -238,7 +238,7 @@ The symbol is specified by PROP, which is an object taken from
       (has-result-type
        (concat name arglist " ⇒ " result-type docstring))
       (t
-       (concat name arglist docstring))))))
+       nil)))))
 
 (defun irony-eldoc--show-funcall (arg-index arg-count prop)
   "Return docstring for a given function call.
@@ -320,7 +320,9 @@ If ONLY-USE-CACHED is non-nil, only look at cached documentation."
      ;; `irony-completion--candidates' that matches the symbol whose
      ;; information needs to be displayed.
      ((and props (not (car thing)))
-      (mapconcat #'irony-eldoc--show-symbol props ";; "))
+      (let ((docstring
+             (mapconcat #'irony-eldoc--show-symbol props ";; ")))
+        (unless (string= "" docstring) docstring)))
 
      ;; For a function call there will often be many different matches
      ;; in `irony-completion--candidates', so here we select all of
@@ -333,11 +335,13 @@ If ONLY-USE-CACHED is non-nil, only look at cached documentation."
               ;; Matching function calls with the right number of arguments
               (remove-if-not
                (lambda (it) (= (length (nth 6 it)) (1+ (* 2 arg-count))))
-               props)))
-        (mapconcat
-         (apply-partially #'irony-eldoc--show-funcall arg-index arg-count)
-         matching-props
-         ";; ")))
+               props))
+             (docstring (mapconcat
+                         (apply-partially
+                          #'irony-eldoc--show-funcall arg-index arg-count)
+                         matching-props
+                         ";; ")))
+        (unless (string= "" docstring) docstring)))
 
      ;; If there is no cached doc, a request is made, which may or may
      ;; not return immediately.
