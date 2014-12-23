@@ -206,6 +206,74 @@ surrounding point."
             (scan-error nil))))))
 
 ;; }}}
+;; {{{ Making displayed strings
+
+(defun irony-eldoc--show-symbol (prop)
+  "Return docstring for a given symbol.
+
+The symbol is specified by PROP, which is an object taken from
+`irony-completion--candidates'."
+  ;; Show documentation for a symbol.
+  ;; variable of type T: "variable => T"
+  ;; void function(...): "function(...)"
+  ;; T function(...): "function(...) => T"
+  (let* ((name (propertize (nth 0 prop)
+                           'face 'eldoc-highlight-function-argument))
+         (result-type (nth 2 prop))
+         (post-completion-data (nth 6 prop))
+         (has-result-type (not (string= "" result-type)))
+         (arglist (car post-completion-data))
+         (has-arglist (not (string= "" arglist)))
+         (docstring (nth 3 prop))
+         (has-docstring (not (string= "" docstring))))
+    (unless (string= "" docstring)
+      (setq docstring (concat "; " docstring)))
+    (irony-eldoc--strip-underscores
+     (cond
+      ;; Things like builtin types have nothing of interest.
+      ((and (not has-arglist) (not has-result-type) (not has-docstring))
+       nil)
+      ((and (not has-arglist) has-result-type)
+       (concat name " ⇒ " result-type docstring))
+      (has-result-type
+       (concat name arglist " ⇒ " result-type docstring))
+      (t
+       (concat name arglist docstring))))))
+
+(defun irony-eldoc--show-funcall (arg-index arg-count prop)
+  "Return docstring for a given function call.
+
+ARG-INDEX and ARG-COUNT specify the index of function argument to
+be highlighted, and PROP is an object from
+`irony-completion--candidates'."
+  ;; Show documentation inside a function call
+  (let* ((name (nth 0 prop))
+         ;; FIXME The result type is "void" for constructors
+         (result-type (nth 2 prop))
+         (has-result-type (not (string= "" result-type)))
+         (post-completion-data (nth 6 prop))
+         (arglist (car post-completion-data))
+         (has-arguments (not (string= "" arglist)))
+         (docstring (nth 3 prop))
+         (has-docstring (not (string= "" docstring))))
+    (when has-docstring
+      (setq docstring (concat "; " docstring)))
+    (when (and has-arguments
+               (>= (length post-completion-data)
+                  (1+ (* 2 arg-count))))
+      (let ((from (nth (+ 1 (* 2 arg-index)) post-completion-data))
+            (to (nth (+ 2 (* 2 arg-index)) post-completion-data)))
+        (setq arglist
+              (concat (substring arglist 0 from)
+                      (propertize (substring arglist from to)
+                                  'face 'eldoc-highlight-function-argument)
+                      (substring arglist to)))))
+    (irony-eldoc--strip-underscores
+     (if (or has-result-type has-docstring)
+         (concat name arglist " ⇒ " result-type docstring)
+       (concat name arglist)))))
+
+;; }}}
 ;; {{{ eldoc support
 
 (defun irony-eldoc--callback (thing &optional continuation)
@@ -248,72 +316,28 @@ If ONLY-USE-CACHED is non-nil, only look at cached documentation."
     (cond
      ((not thing) nil)
 
+     ;; Here each element of props is an object that came from
+     ;; `irony-completion--candidates' that matches the symbol whose
+     ;; information needs to be displayed.
      ((and props (not (car thing)))
-      ;; Show documentation for a symbol.
-      ;; variable of type T: "variable => T"
-      ;; void function(...): "function(...)"
-      ;; T function(...): "function(...) => T"
-      (let* ((prop (car props))         ; TODO which match?
-             ;; highlight symbol name
-             (name (propertize (nth 0 prop)
-                               'face 'eldoc-highlight-function-argument))
-             (result-type (nth 2 prop))
-             (post-completion-data (nth 6 prop))
-             (has-result-type (not (string= "" result-type)))
-             (arglist (car post-completion-data))
-             (has-arglist (not (string= "" arglist)))
-             (docstring (nth 3 prop))
-             (has-docstring (not (string= "" docstring))))
-        (unless (string= "" docstring)
-          (setq docstring (concat "; " docstring)))
-        (irony-eldoc--strip-underscores
-         (cond
-          ;; Things like builtin types have nothing of interest.
-          ((and (not has-arglist) (not has-result-type) (not has-docstring))
-           nil)
-          ((and (not has-arglist) has-result-type)
-           (concat name " ⇒ " result-type docstring))
-          (has-result-type
-           (concat name arglist " ⇒ " result-type docstring))
-          (t
-           (concat name arglist docstring))))))
+      (mapconcat #'irony-eldoc--show-symbol props ";; "))
 
+     ;; For a function call there will often be many different matches
+     ;; in `irony-completion--candidates', so here we select all of
+     ;; them that have the same number of arguments.
+     ;; FIXME This doesn't distinguish between template and function arguments.
      (props
-      ;; Show documentation inside a function call
       (let* ((arg-index (caar thing))
              (arg-count (cdar thing))
-             ;; find match with just enough arguments.
-             ;; FIXME This doesn't really work for overloaded functions.
-             (prop (or (car (remove-if-not (lambda (it)
-                                             (>= (length (nth 6 it))
-                                                (1+ (* 2 arg-count))))
-                                           props))
-                       (car props)))
-             (name (nth 0 prop))
-             ;; FIXME The result type is "void" for constructors
-             (result-type (nth 2 prop))
-             (has-result-type (not (string= "" result-type)))
-             (post-completion-data (nth 6 prop))
-             (arglist (car post-completion-data))
-             (has-arguments (not (string= "" arglist)))
-             (docstring (nth 3 prop))
-             (has-docstring (not (string= "" docstring))))
-        (when has-docstring
-          (setq docstring (concat "; " docstring)))
-        (when (and has-arguments
-                   (>= (length post-completion-data)
-                      (1+ (* 2 arg-count))))
-          (let ((from (nth (+ 1 (* 2 arg-index)) post-completion-data))
-                (to (nth (+ 2 (* 2 arg-index)) post-completion-data)))
-            (setq arglist
-                  (concat (substring arglist 0 from)
-                          (propertize (substring arglist from to)
-                                      'face 'eldoc-highlight-function-argument)
-                          (substring arglist to)))))
-        (irony-eldoc--strip-underscores
-         (if (or has-result-type has-docstring)
-             (concat name arglist " ⇒ " result-type docstring)
-           (concat name arglist)))))
+             (matching-props
+              ;; Matching function calls with the right number of arguments
+              (remove-if-not
+               (lambda (it) (= (length (nth 6 it)) (1+ (* 2 arg-count))))
+               props)))
+        (mapconcat
+         (apply-partially #'irony-eldoc--show-funcall arg-index arg-count)
+         matching-props
+         ";; ")))
 
      ;; If there is no cached doc, a request is made, which may or may
      ;; not return immediately.
