@@ -342,3 +342,40 @@ void Irony::complete(const std::string &file,
     std::cout << ")\n";
   }
 }
+
+void Irony::findDeclaration(const std::string &file,
+                            unsigned line,
+                            unsigned col,
+                            const std::vector<std::string> &flags,
+                            const std::vector<CXUnsavedFile> &unsavedFiles) {
+
+  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
+
+  if (tu == nullptr) {
+    std::cout << "nil\n";
+    return;
+  }
+
+  // To get the location of the declaration, first get the current
+  // CXSourceLocation object. From there we get the cursor of the symbol under
+  // cursor. Next, use clang_getCursorReferenced to get the cursor of the
+  // declaration, and get the location of the declaration cursor.
+  CXFile f = clang_getFile(tu, file.data());
+  CXSourceLocation location = clang_getLocation(tu, f, line, col);
+  CXCursor cursor = clang_getCursor(tu, location);
+  cursor = clang_getCursorReferenced(cursor);
+  if (clang_Cursor_isNull(cursor)) { // no declaration found
+    std::cout << "nil" << std::endl;
+    return;
+  }
+  location = clang_getCursorLocation(cursor);
+
+  clang_getSpellingLocation(location, &f, &line, &col, NULL);
+  CXString file_name = clang_getFileName(f);
+
+  // print the file path, line number, and col number of the declaration
+  std::cout << "(\"" << clang_getCString(file_name) << '"' << ' ' <<
+    line << ' ' << col << ')' << std::endl;
+
+  clang_disposeString(file_name);
+}
