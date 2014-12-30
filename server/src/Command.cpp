@@ -152,6 +152,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     break;
 
   case Command::Complete:
+  case Command::FindDefinition:
     positionalArgs.push_back(StringConverter(&command_.file));
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
