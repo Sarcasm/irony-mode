@@ -26,11 +26,11 @@ combination of an Emacs package and a C++ program (`irony-server`) that uses
 These dependencies will be installed automatically when using the
 [standard installation](#installation) procedure described below.
 
-| Package                  | Comment                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| [cl-lib][cl-lib-ref]     | Built-in since Emacs 24.3                                                        |
-| [json-lib][json-lib-ref] | Built-in since Emacs 23.1                                                        |
-| [YASnippet][yas-ref]     | Optional. May be used to provide post-completion expansion of function arguments |
+| Package              | Comment                                                                          |
+| -------------------- | -------------------------------------------------------------------------------- |
+| [cl-lib][cl-lib-ref] | Built-in since Emacs 24.3                                                        |
+| [json][json-el-ref]  | Built-in since Emacs 23.1                                                        |
+| [YASnippet][yas-ref] | Optional. May be used to provide post-completion expansion of function arguments |
 
 
 ### Irony-Server prerequisites
@@ -184,6 +184,7 @@ enable rpath in CMake use the following command:
 [flycheck-irony-ref]: https://github.com/Sarcasm/flycheck-irony "Flycheck Irony"
 [flycheck-ref]: http://www.flycheck.org "Flycheck -- Modern Emacs syntax checking"
 [irony-eldoc-ref]: https://github.com/ikirill/irony-eldoc "irony-eldoc -- irony-mode support for eldoc-mode"
+[json-el-ref]: http://edward.oconnor.cx/2006/03/json.el "Introducing json.el"
 [libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
 [ninja-ref]: http://martine.github.io/ninja/ "Ninja"
 [rpath-ref]: http://en.wikipedia.org/wiki/Rpath "rpath Wikipedia article"
