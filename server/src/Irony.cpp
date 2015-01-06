@@ -14,6 +14,9 @@
 
 #include "support/iomanip_quoted.h"
 
+#include "support/Sexp.h"
+using sexp::repr;
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -341,4 +344,192 @@ void Irony::complete(const std::string &file,
     clang_disposeCodeCompleteResults(completions);
     std::cout << ")\n";
   }
+}
+
+void Irony::toplevelAST(const std::string &file,
+                       unsigned line,
+                       unsigned col,
+                       const std::vector<std::string> &flags,
+                       const std::vector<CXUnsavedFile> &unsavedFiles)
+{
+  // FIXME Is this necessary here? Why isn't this global?
+  TUManager::Settings settings;
+  settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+  settings.parseTUOptions |=
+    CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
+#endif
+  (void)tuManager_.registerSettings(settings);
+
+  CXTranslationUnit tu
+    = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
+
+  if (tu == nullptr) {
+    std::cout << "nil" << std::endl;
+    return;
+  }
+
+  if (debug_) {
+    std::clog << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+    dumpDiagnostics(tu);
+    std::clog << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+  }
+
+  CXFile cxfile = clang_getFile(tu, file.c_str());
+  CXSourceLocation point_loc = clang_getLocation(tu, cxfile, line, col);
+  CXCursor toplevel_cursor = getToplevelCursor(tu, point_loc);
+
+  if (clang_isTranslationUnit(clang_getCursorKind(toplevel_cursor))
+      || clang_isInvalid(clang_getCursorKind(toplevel_cursor))) {
+    std::cout << "nil" << std::endl;
+    return;
+  }
+
+  std::cout << "(";
+  astSexpPrinter(toplevel_cursor, clang_getNullCursor());
+
+  // FIXME This doesn't really work well when the there were
+  // errors: libclang can just refuse to recurse into children
+  auto visitor = [](CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXChildVisitResult {
+    return static_cast<Irony*>(client_data)->astSexpPrinter(cursor, parent);
+  };
+  clang_visitChildren(toplevel_cursor, visitor, this);
+
+  std::cout << ")" << std::endl;
+}
+
+CXChildVisitResult Irony::astSexpPrinter(CXCursor cursor, CXCursor parent) {
+  unsigned start_offset, end_offset, parent_offset;
+
+  CXSourceRange range = clang_getCursorExtent(cursor),
+    parent_range = clang_getCursorExtent(parent);
+  CXSourceLocation start = clang_getRangeStart(range),
+    end = clang_getRangeEnd(range),
+    parent_start = clang_getRangeStart(parent_range);
+  clang_getSpellingLocation(start, nullptr, nullptr, nullptr, &start_offset);
+  clang_getSpellingLocation(end, nullptr, nullptr, nullptr, &end_offset);
+  clang_getSpellingLocation(parent_start, nullptr, nullptr, nullptr, &parent_offset);
+
+  CXCursorKind kind = clang_getCursorKind(cursor);
+  CXCursorKind parent_kind = clang_getCursorKind(parent);
+  bool parent_valid =
+    !clang_isTranslationUnit(parent_kind) && !clang_isInvalid(parent_kind);
+
+  if (debug_) std::cout << "\nastVisitor ⇒ ";
+
+  // NOTE See cl-defstruct in irony-ast.el for the order of elements
+  if (parent_valid) std::cout << " "; // first space
+  std::cout
+    << "[cl-struct-irony-ast"
+    << " " << repr(kind)
+    << " " << (1 + start_offset) << " " << (1 + end_offset)
+    << " " << sexp::cursorRef(parent)
+    << " " << sexp::cursorRef(getCursorFirstChild(cursor))
+    << " " << sexp::cursorRef(getCursorPrev(cursor, parent))
+    << " " << sexp::cursorRef(getCursorNext(cursor, parent))
+    << " #x" << std::hex << clang_hashCursor(cursor) << std::dec
+    << " " << sexp::type(cursor);
+
+  // Spelling of the thing this cursor references
+  // TODO Is there a difference between spelling and display name?
+  // std::cout << " " << repr(clang_getCursorSpelling(cursor));
+  std::cout << " " << repr(clang_getCursorDisplayName(cursor));
+
+  std::cout << " " << sexp::comment(cursor);
+  std::cout << "]";
+
+  return CXChildVisit_Recurse;
+}
+
+CXCursor Irony::getToplevelCursor(CXTranslationUnit tu, CXSourceLocation sloc)
+{
+  CXCursor cursor = clang_getCursor(tu, sloc);
+  CXCursorKind kind = clang_getCursorKind(cursor);
+  while(! clang_isTranslationUnit(kind) && ! clang_isInvalid(kind)) {
+    CXCursor parent = clang_getCursorLexicalParent(cursor);
+    if (clang_isInvalid(clang_getCursorKind(parent))) {
+      parent = clang_getCursorSemanticParent(cursor);
+    }
+    if (clang_isTranslationUnit(clang_getCursorKind(parent))) {
+      break;
+    }
+    cursor = parent;
+    kind = clang_getCursorKind(cursor);
+  }
+  return cursor;
+}
+
+
+// Utility functions
+
+long cursorOffset(CXCursor cursor) {
+  unsigned offset;
+  CXSourceRange range = clang_getCursorExtent(cursor);
+  CXSourceLocation sloc = clang_getRangeStart(range);
+  clang_getSpellingLocation(sloc, nullptr, nullptr, nullptr, &offset);
+  return (long)offset;
+}
+
+CXCursor getCursorParent(CXCursor cursor) {
+  CXCursor parent = clang_getCursorLexicalParent(cursor);
+  if (clang_isInvalid(clang_getCursorKind(parent))) {
+    parent = clang_getCursorSemanticParent(cursor);
+  }
+  return parent;
+}
+
+CXCursor getCursorFirstChild(CXCursor cursor) {
+  CXCursor first_child = clang_getNullCursor();
+  auto visitor =
+    [](CXCursor current, CXCursor, CXClientData client_data) -> CXChildVisitResult {
+      *static_cast<CXCursor*>(client_data) = current;
+      return CXChildVisit_Break;
+    };
+  clang_visitChildren(cursor, visitor, &first_child);
+  return first_child;
+}
+
+CXCursor getCursorNext(CXCursor cursor, CXCursor parent) {
+  struct data_t {
+    bool visited;
+    const CXCursor cursor;
+    CXCursor sibling;
+  } data { false, cursor, clang_getNullCursor() };
+  auto visitor =
+    [](CXCursor current, CXCursor, CXClientData client_data)
+    -> CXChildVisitResult
+    {
+      data_t& data = *static_cast<data_t*>(client_data);
+      if (data.visited) {
+        data.sibling = current;
+        return CXChildVisit_Break;
+      }
+      data.visited = clang_equalCursors(current, data.cursor);
+      return CXChildVisit_Continue;
+    };
+  clang_visitChildren(parent, visitor, &data);
+  assert(!clang_equalCursors(cursor, data.sibling));
+  return data.sibling;
+}
+
+CXCursor getCursorPrev(CXCursor cursor, CXCursor parent) {
+  if (clang_isInvalid(clang_getCursorKind(cursor))
+      || clang_isInvalid(clang_getCursorKind(parent)))
+    return clang_getNullCursor();
+  struct data_t {
+    const CXCursor cursor;
+    CXCursor sibling;
+  } data { cursor, clang_getNullCursor() };
+  auto visitor =
+    [](CXCursor current, CXCursor, CXClientData client_data)
+    -> CXChildVisitResult
+    {
+      data_t& data = *static_cast<data_t*>(client_data);
+      if (clang_equalCursors(current, data.cursor))
+        return CXChildVisit_Break;
+      data.sibling = current;
+      return CXChildVisit_Continue;
+    };
+  auto result = clang_visitChildren(parent, visitor, &data);
+  return result ? data.sibling : clang_getNullCursor();
 }
