@@ -50,7 +50,7 @@ package manager.
 
 * Using [MELPA](http://melpa.milkbox.net/)
 
-        M-x package-install RET irony-mode RET
+        M-x package-install RET irony RET
 
 * Using [el-get](https://github.com/dimitri/el-get)
 
