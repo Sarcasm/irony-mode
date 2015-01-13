@@ -32,7 +32,7 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     # LLVM MacPorts
     "/opt/local/libexec/llvm-${version}/include"
     # LLVM Homebrew
-    "/usr/local/Cellar/llvm/${version}/include"
+    "/usr/local/opt/llvm/include"
     # LLVM Homebrew/versions
     "/usr/local/lib/llvm-${version}/include"
     )
@@ -43,7 +43,7 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     # LLVM MacPorts
     "/opt/local/libexec/llvm-${version}/lib"
     # LLVM Homebrew
-    "/usr/local/Cellar/llvm/${version}/lib"
+    "/usr/local/opt/llvm/lib"
     # LLVM Homebrew/versions
     "/usr/local/lib/llvm-${version}/lib"
     )
