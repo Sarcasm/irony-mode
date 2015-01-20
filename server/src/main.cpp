@@ -178,6 +178,10 @@ int main(int ac, const char *av[]) {
       irony.complete(c->file, c->line, c->column, c->flags, c->cxUnsavedFiles);
       break;
 
+    case Command::ExprType:
+      irony.exprtype(c->file, c->line, c->column, c->flags, c->cxUnsavedFiles);
+      break;
+
     case Command::Exit:
       return 0;
 
