@@ -14,9 +14,9 @@
 #include "Sexp_TypeKind.cpp"
 
 #include <sstream>
-#include <cassert>
 #include <utility>
 #include <array>
+#include <algorithm>
 
 namespace sexp {
 
@@ -77,7 +77,7 @@ std::ostream &operator<<(std::ostream &out, const comment_proxy &proxy) {
 
 std::string chunkKind(CXCompletionChunkKind kind) {
   static const std::array<const std::string,
-                          CXCompletionChunk_VerticalSpace + 1> names{
+                          CXCompletionChunk_VerticalSpace + 2> names{
       {"Optional",
        "TypedText",
        "Text",
@@ -98,9 +98,9 @@ std::string chunkKind(CXCompletionChunkKind kind) {
        "SemiColon",
        "Equal",
        "HorizontalSpace",
-       "VerticalSpace"}};
-  assert(0 <= kind && kind < names.size());
-  return names[kind];
+       "VerticalSpace",
+       "UnknownCXCompletionChunkKind"}};
+  return names[std::min((size_t)kind, names.size()-1)];
 }
 
 std::ostream &operator<<(std::ostream &out, const completion_proxy &proxy) {

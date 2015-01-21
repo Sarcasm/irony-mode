@@ -18,7 +18,6 @@ using sexp::repr;
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
