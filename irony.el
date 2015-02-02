@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.2.0-cvs2
+;; Version: 0.2.0-cvs3
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -666,7 +666,6 @@ care of."
                                      buffer-file-name
                                      (irony--buffer-size-in-bytes)))
         (process-send-region process (point-min) (point-max))
-        ;; always make sure to finis with a newline (required by irony-server to
         ;; always make sure to finish with a newline (required by irony-server
         ;; to play nice with line buffering even when the file doesn't end with
         ;; a newline)
