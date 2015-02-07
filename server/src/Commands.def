@@ -16,6 +16,9 @@ X(Diagnostics, "diagnostics", "FILE - look for diagnostics in file")
 X(Complete,
   "complete",
   "FILE LINE COL - perform code completion at a given location")
+X(ToplevelAST,
+  "toplevelAST",
+  "FILE LINE COL - Return list of overlays for each AST node.")
 X(Help, "help", "show this message")
 X(Exit, "exit", "exit interactive mode, print nothing")
 X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
@@ -24,3 +27,7 @@ X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
 X(Unknown, "<unkown>",  "<unspecified>")
 
 #undef X
+
+// Local Variables:
+// flycheck-mode: nil
+// End:

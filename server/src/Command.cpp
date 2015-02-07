@@ -1,7 +1,7 @@
 /**
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * 
+ *
  * \brief Command parser definitions.
  *
  * This file is distributed under the GNU General Public License. See
@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <cerrno>
 
 namespace {
 
@@ -152,6 +153,13 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     break;
 
   case Command::Complete:
+    positionalArgs.push_back(StringConverter(&command_.file));
+    positionalArgs.push_back(UnsignedIntConverter(&command_.line));
+    positionalArgs.push_back(UnsignedIntConverter(&command_.column));
+    handleUnsaved = true;
+    break;
+
+  case Command::ToplevelAST:
     positionalArgs.push_back(StringConverter(&command_.file));
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
