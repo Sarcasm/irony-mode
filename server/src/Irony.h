@@ -60,6 +60,12 @@ public:
                 unsigned col,
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
+
+  void findDeclaration(const std::string &file,
+                       unsigned line,
+                       unsigned col,
+                       const std::vector<std::string> &flags,
+                       const std::vector<CXUnsavedFile> &unsavedFiles);
   /// @}
 
 private:
