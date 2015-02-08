@@ -23,6 +23,7 @@ add_executable(irony-server
   support/NonCopyable.h
   support/TemporaryFile.cpp
   support/TemporaryFile.h
+  support/Sexp.cpp
 
   Command.cpp
   Commands.def

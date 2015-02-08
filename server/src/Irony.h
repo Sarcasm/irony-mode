@@ -60,6 +60,21 @@ public:
                 unsigned col,
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
+
+  /// \brief Get type of expression in a given region.
+  ///
+  /// FIXME Somewhere in Command.h, the offsets are called line & col.
+  ///
+  /// \param start_offset Byte offsets of start of region.
+  ///
+  /// \param end_offset Byte offset of end of region. If <=
+  /// start_offset, then just use the expression at start_offset.
+  void exprtype(const std::string &file,
+                unsigned start_offset,
+                unsigned end_offset,
+                const std::vector<std::string> &flags,
+                const std::vector<CXUnsavedFile> &unsavedFiles);
+
   /// @}
 
 private:

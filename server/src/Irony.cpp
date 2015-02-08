@@ -13,10 +13,11 @@
 #include "Irony.h"
 
 #include "support/iomanip_quoted.h"
+#include "support/Sexp.h"
+using sexp::repr;
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -341,4 +342,290 @@ void Irony::complete(const std::string &file,
     clang_disposeCodeCompleteResults(completions);
     std::cout << ")\n";
   }
+}
+
+unsigned getOffset(CXSourceLocation loc) {
+  unsigned offset, line, col;
+  clang_getSpellingLocation(loc, nullptr, &line, &col, &offset);
+  return offset;
+}
+
+unsigned getOffset(CXCursor cursor) {
+  CXSourceLocation sloc = clang_getCursorLocation(cursor);
+  return getOffset(sloc);
+}
+
+CXCursor cursorParent(CXCursor cursor) {
+  CXCursor parent = clang_getCursorLexicalParent(cursor);
+  if (clang_isInvalid(clang_getCursorKind(parent))) {
+    parent = clang_getCursorSemanticParent(cursor);
+  }
+  return parent;
+}
+
+/// Whether cursor is suitable for having its information being shown
+/// to the user.
+bool isCursorPrintable(CXCursor cursor) {
+  CXType type = clang_getCursorType(cursor);
+  bool valid = !clang_isInvalid(cursor.kind) &&
+               !clang_isUnexposed(cursor.kind) &&
+               !clang_isTranslationUnit(cursor.kind);
+  // Unexposed types are allowed (common in C++)
+  bool validType = type.kind != CXType_Invalid;
+  bool isLiteral = cursor.kind == CXCursor_IntegerLiteral ||
+                   cursor.kind == CXCursor_FloatingLiteral ||
+                   cursor.kind == CXCursor_ImaginaryLiteral ||
+                   cursor.kind == CXCursor_StringLiteral ||
+                   cursor.kind == CXCursor_CharacterLiteral;
+  return valid && validType && !isLiteral;
+}
+
+CXCursor getToplevelCursor(CXTranslationUnit tu, CXSourceLocation sloc) {
+  CXCursor cursor = clang_getCursor(tu, sloc);
+  CXCursorKind kind = clang_getCursorKind(cursor);
+  while (!clang_isTranslationUnit(kind) && !clang_isInvalid(kind)) {
+    CXCursor parent = clang_getCursorLexicalParent(cursor);
+    if (clang_isInvalid(clang_getCursorKind(parent))) {
+      parent = clang_getCursorSemanticParent(cursor);
+    }
+    if (clang_isTranslationUnit(clang_getCursorKind(parent))) {
+      break;
+    }
+    cursor = parent;
+    kind = clang_getCursorKind(cursor);
+  }
+  return cursor;
+}
+
+CXCursor getCursorFirstChild(CXCursor cursor) {
+  CXCursor first_child = clang_getNullCursor();
+  auto visitor = [](CXCursor current, CXCursor, CXClientData client_data)
+                     -> CXChildVisitResult {
+    *static_cast<CXCursor *>(client_data) = current;
+    return CXChildVisit_Break;
+  };
+  clang_visitChildren(cursor, visitor, &first_child);
+  return first_child;
+}
+
+/// Wrapper around clang_getCursorExtent
+struct Range {
+  Range(CXCursor cursor)
+    : range(clang_getCursorExtent(cursor))
+    , start(clang_getRangeStart(range))
+    , end(clang_getRangeEnd(range))
+    , start_offset(getOffset(start))
+    , end_offset(getOffset(end)) {
+  }
+  bool contains(unsigned offset) {
+    return start_offset <= offset && offset < end_offset;
+  }
+  bool contains(unsigned a, unsigned b) {
+    return start_offset <= std::min(a, b) && std::max(a, b) <= end_offset;
+  }
+  CXSourceRange range;
+  CXSourceLocation start, end;
+  unsigned start_offset, end_offset;
+};
+
+struct exprtypeAlist {
+  exprtypeAlist(const CXCursor &cursor) : cursor(cursor) {
+  }
+  const CXCursor &cursor;
+};
+
+struct typeAlist {
+  typeAlist(const CXType &type) : type(type) {
+  }
+  const CXType &type;
+};
+
+std::ostream &operator<<(std::ostream &out, const typeAlist &proxy) {
+  CXType type = proxy.type;
+  if (type.kind == CXType_Invalid)
+    return out << "nil";
+  out << "(";
+  if (type.kind != CXType_Unexposed)
+    out << sexp::alistEntry("kind", repr(type.kind));
+  out << sexp::alistEntry("spelling", repr(clang_getTypeSpelling(type)));
+
+  int numargs = clang_getNumArgTypes(type);
+  if (numargs >= 0) {
+    out << " (args";
+    for (int i = 0; i < numargs; ++i) {
+      CXType arg = clang_getArgType(type, i);
+      out << sexp::alistEntry("type", typeAlist(arg));
+    }
+    out << ")";
+  }
+
+  if (clang_isFunctionTypeVariadic(type)) {
+    out << " (variadic . t)";
+  }
+
+  return out << ")";
+}
+
+std::ostream& operator<<(std::ostream& out, const exprtypeAlist &proxy) {
+  CXCursor cursor = proxy.cursor;
+
+  /* Examples of what might be printed (from test.cc)
+
+FIXME More robust examples and testing
+
+(exprtype (bounds 832 836) (kind . CallExpr) (type (kind . Dependent) (spelling . "<dependent type>")) (call (bounds 832 833) (kind . OverloadedDeclRef) (spelling . "h") (overloaded (completion (comment . "docstring for h(X).") (priority . 50) (chunks (ResultType . "X") "h(" (Placeholder . "const X &x")")")) (completion (comment . "docstring for h<T>") (priority . 50) (chunks (ResultType . "T") "h(" (Placeholder . "const T &x")")")))) (args (834 . 835)))
+
+(exprtype (bounds 834 835) (kind . DeclRefExpr) (spelling . "t") (type (spelling . "T")) (completion (priority . 50) (chunks (ResultType . "T") "t")))
+
+(exprtype (bounds 892 902) (kind . ParmDecl) (spelling . "y") (type (kind . LValueReference) (spelling . "const Y &")) (completion (priority . 50) (chunks (ResultType . "const Y &") "y")))
+
+(exprtype (bounds 1287 1291) (kind . CallExpr) (spelling . "f") (type (kind . Void) (spelling . "void")) (completion (comment . "docstring for f") (priority . 50) (chunks (ResultType . "void") "f(" (Placeholder . "string x") ")")) (call (bounds 1287 1288) (kind . DeclRefExpr) (spelling . "f") (type (kind . FunctionProto) (spelling . "void (string)") (args (type (kind . Typedef) (spelling . "string")))) (completion (comment . "docstring for f") (priority . 50) (chunks (ResultType . "void") "f(" (Placeholder . "string x") ")")) (comment . "docstring for f")) (args (1289 . 1290)) (comment . "docstring for f"))
+
+(exprtype (bounds 1289 1290) (kind . DeclRefExpr) (spelling . "x") (type (kind . Typedef) (spelling . "string")) (completion (priority . 50) (chunks (ResultType . "string") "x")))
+
+NOTE: no arguments here despite this being a CallExpr
+(exprtype (bounds 1205 1227) (kind . CallExpr) (spelling . "vector") (type (spelling . "vector<float>")) (completion (parent . "std::__1::vector") (priority . 50) (chunks "vector(" (Placeholder . "size_type __n") "," (Placeholder . "const_reference __x") ")")) (call (bounds 1205 1211) (kind . TemplateRef) (spelling . "vector") (completion (parent . "std::__1") (priority . 50) (chunks "vector<" (Placeholder . "class _Tp") (Optional . (completion (priority . 0) (chunks "," (Placeholder . "class _Allocator")))) ">"))))
+
+   */
+
+  Range range{cursor};
+  CXType type = clang_getCursorType(cursor);
+
+  // This is a long alist of essentially arbitrary elements.
+  if (!clang_isInvalid(cursor.kind))
+    out << " (bounds " << range.start_offset << " " << range.end_offset << ")";
+  out << sexp::alistEntry("kind", repr(cursor.kind))
+      << sexp::alistEntry("spelling", repr(clang_getCursorSpelling(cursor)))
+      << sexp::alistEntry("type", typeAlist(type));
+
+  // Find a suitable completion string
+  {
+    CXCompletionString completion =
+        clang_getCursorCompletionString(clang_getCursorDefinition(cursor));
+    if (!completion)
+      completion =
+          clang_getCursorCompletionString(clang_getCursorReferenced(cursor));
+    if (!completion)
+      completion = clang_getCursorCompletionString(cursor);
+    if (completion)
+      out << " " << sexp::completion(completion);
+  }
+
+  // If cursor is a call to a function, we show the type of the
+  // function as well. Then the type is the return type.
+  if (cursor.kind == CXCursor_CallExpr) {
+    // Find the first child, which should be the function
+    // FIXME Is this true for obj-c? I'm not familiar with it.
+    CXCursor funref = cursor;
+    for (CXCursor cursor_child = funref; !clang_isInvalid(cursor_child.kind);
+         funref = cursor_child, cursor_child = getCursorFirstChild(funref))
+      ;
+
+    out << " (call" << exprtypeAlist(funref) << ")";
+  }
+
+  // FIXME Constructor arguments don't seem to appear here.
+  // Are they of kind CallExpr?
+  int numargs = clang_Cursor_getNumArguments(cursor);
+  if (numargs >= 0) {
+    out << " (args";
+    for (int i = 0; i < numargs; ++i) {
+      CXCursor arg = clang_Cursor_getArgument(cursor, i);
+      Range range{arg};
+      out << " (" << range.start_offset << " . " << range.end_offset << ")";
+    }
+    out << ")";
+  }
+
+  out << sexp::alistEntry("comment", sexp::comment(cursor));
+
+  // Overloaded decl ref
+  {
+    CXCursor ref = cursor;
+    int num_overloaded = clang_getNumOverloadedDecls(ref);
+    if (!num_overloaded) {
+      ref = clang_getCursorReferenced(cursor);
+      num_overloaded = clang_getNumOverloadedDecls(ref);
+    }
+    if (num_overloaded > 0) {
+      out << " (overloaded";
+      for (int i = 0; i < num_overloaded; ++i) {
+        CXCursor decl = clang_getOverloadedDecl(ref, i);
+        out << " " << sexp::completion(decl);
+      }
+      out << ")";
+    }
+  }
+
+  return out;
+}
+
+void Irony::exprtype(const std::string &file,
+                    unsigned start_offset,
+                    unsigned end_offset,
+                    const std::vector<std::string> &flags,
+                    const std::vector<CXUnsavedFile> &unsavedFiles) {
+  // NOTE Duplicate from complete(..) above
+  TUManager::Settings settings;
+  settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+  settings.parseTUOptions |=
+      CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
+#endif
+  (void)tuManager_.registerSettings(settings);
+  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
+
+  if (!tu) {
+    std::cout << "nil\n";
+    return;
+  }
+
+  // if (true || debug_) {
+  //   std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+  //   dumpDiagnostics(tu);
+  //   std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+  // }
+
+  if (end_offset < start_offset)
+    end_offset = start_offset;
+
+  CXFile cxfile = clang_getFile(tu, file.c_str());
+  CXSourceLocation
+    start_loc = clang_getLocationForOffset(tu, cxfile, start_offset);
+
+  CXCursor cursor = clang_getCursor(tu, start_loc);
+
+  /* The lexical parent of a cursor doesn't seem to be its parent in
+  the AST, which is what we want. So go to the toplevel cursor, just
+  below the translation unit, and walk down looking for printable
+  cursors covering the region. */
+  if (!isCursorPrintable(cursor) ||
+      !Range(cursor).contains(start_offset, end_offset)) {
+    cursor = getToplevelCursor(tu, start_loc);
+    struct data_t {
+      const unsigned start_offset, end_offset;
+      CXCursor cursor;
+    } data{start_offset, end_offset, clang_getNullCursor()};
+    auto visitor = [](CXCursor current, CXCursor, CXClientData client_data)
+                       -> CXChildVisitResult {
+      Range range{current};
+      data_t &data = *static_cast<data_t *>(client_data);
+      if (range.contains(data.start_offset, data.end_offset)) {
+        if (isCursorPrintable(current))
+          data.cursor = current;
+        return CXChildVisit_Recurse;
+      }
+      return range.start_offset >= data.end_offset ? CXChildVisit_Break
+                                                   : CXChildVisit_Continue;
+    };
+    clang_visitChildren(cursor, visitor, &data);
+    if (!clang_Cursor_isNull(data.cursor))
+      cursor = data.cursor;
+  }
+
+  std::cout << "(exprtype";
+  unsigned numdiag = clang_getNumDiagnostics(tu);
+  if (numdiag)
+    std::cout << sexp::alistEntry("diagnostics", numdiag);
+  std::cout << exprtypeAlist(cursor) << ")" << std::endl;
 }
