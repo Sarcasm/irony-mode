@@ -17,4 +17,10 @@
 #define CINDEX_VERSION 0 ///< pre-clang 3.2 support
 #endif
 
+#if CINDEX_VERSION >= 6
+#define HAS_BRIEF_COMMENTS_IN_COMPLETION 1
+#else
+#define HAS_BRIEF_COMMENTS_IN_COMPLETION 0
+#endif
+
 #endif /* !IRONY_MODE_SERVER_SUPPORT_CINDEXVERSION_H_ */

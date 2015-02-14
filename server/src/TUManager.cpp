@@ -13,26 +13,44 @@
 
 #include <iostream>
 
-typedef TUManager::SettingsID SettingsID;
-typedef TUManager::Settings Settings;
-
-Settings::Settings() : parseTUOptions(0) {
-}
-
-void Settings::merge(const Settings &other) {
-  parseTUOptions |= other.parseTUOptions;
-}
-
-bool Settings::equals(const Settings &other) const {
-  return parseTUOptions == other.parseTUOptions;
-}
-
 TUManager::TUManager()
   : index_(clang_createIndex(0, 0))
   , translationUnits_()
-  , effectiveSettings_()
-  , settingsList_() {
-  effectiveSettings_ = computeEffectiveSettings();
+  , parseTUOptions_(clang_defaultEditingTranslationUnitOptions()) {
+
+  // this seems necessary to trigger "correct" reparse (/codeCompleteAt)
+  // clang_reparseTranslationUnit documentation states:
+  //
+  // >  * \param TU The translation unit whose contents will be re-parsed. The
+  // >  * translation unit must originally have been built with
+  // >  * \c clang_createTranslationUnitFromSourceFile().
+  //
+  // clang_createTranslationUnitFromSourceFile() is just a call to
+  // clang_parseTranslationUnit() with
+  // CXTranslationUnit_DetailedPreprocessingRecord enabled but because we want
+  // some other flags to be set we can't just call
+  // clang_createTranslationUnitFromSourceFile()
+  parseTUOptions_ |= CXTranslationUnit_DetailedPreprocessingRecord;
+
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+  parseTUOptions_ |= CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
+#endif
+
+  // XXX: Completion results caching doesn't seem to work right, changes at the
+  // top of the file (i.e: new declarations) aren't detected and do not appear
+  // in completion results.
+  parseTUOptions_ &= ~CXTranslationUnit_CacheCompletionResults;
+
+  // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
+  // to fail on the standard library types when
+  // CXTranslationUnit_PrecompiledPreamble is used. We disable this option for
+  // old versions of libclang. As a result the completion will work but
+  // significantly slower.
+  //
+  // -- https://github.com/Sarcasm/irony-mode/issues/4
+  if (CINDEX_VERSION < 6) {
+    parseTUOptions_ &= ~CXTranslationUnit_PrecompiledPreamble;
+  }
 }
 
 TUManager::~TUManager() {
@@ -92,7 +110,7 @@ TUManager::parse(const std::string &filename,
         static_cast<int>(argv.size()),
         const_cast<CXUnsavedFile *>(unsavedFiles.data()),
         unsavedFiles.size(),
-        effectiveSettings_.parseTUOptions);
+        parseTUOptions_);
   }
 
   if (tu == nullptr) {
@@ -135,73 +153,6 @@ TUManager::getOrCreateTU(const std::string &filename,
     return tu;
 
   return parse(filename, flags, unsavedFiles);
-}
-
-SettingsID TUManager::registerSettings(const Settings &settings) {
-  SettingsID settingsID = settingsList_.insert(settingsList_.end(), settings);
-
-  onSettingsChanged();
-  return settingsID;
-}
-
-void TUManager::unregisterSettings(SettingsID settingsID) {
-  onSettingsChanged();
-  settingsList_.erase(settingsID);
-}
-
-void TUManager::onSettingsChanged() {
-  const Settings &newSettings = computeEffectiveSettings();
-
-  if (newSettings.equals(effectiveSettings_))
-    return;
-
-  effectiveSettings_ = newSettings;
-  invalidateAllCachedTUs();
-}
-
-Settings TUManager::computeEffectiveSettings() const {
-  Settings settings;
-
-  settings.parseTUOptions = clang_defaultEditingTranslationUnitOptions();
-
-  // this seems necessary to trigger "correct" reparse (/codeCompleteAt)
-  // clang_reparseTranslationUnit documentation states:
-  //
-  // >  * \param TU The translation unit whose contents will be re-parsed. The
-  // >  * translation unit must originally have been built with
-  // >  * \c clang_createTranslationUnitFromSourceFile().
-  //
-  // clang_createTranslationUnitFromSourceFile() is just a call to
-  // clang_parseTranslationUnit() with
-  // CXTranslationUnit_DetailedPreprocessingRecord enabled but because we
-  // want some other flags to be set we can't just call
-  // clang_createTranslationUnitFromSourceFile()
-  settings.parseTUOptions |= CXTranslationUnit_DetailedPreprocessingRecord;
-
-  for (std::list<Settings>::const_iterator it = settingsList_.begin(),
-                                           end = settingsList_.end();
-       it != end;
-       ++it) {
-    settings.merge(*it);
-  }
-
-  // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
-  // to fail on the standard library types when
-  // CXTranslationUnit_PrecompiledPreamble is used. We disable this option for
-  // old versions of libclang. As a result the completion will work but
-  // significantly slower.
-  //
-  // -- https://github.com/Sarcasm/irony-mode/issues/4
-  if (CINDEX_VERSION < 6) {
-    settings.parseTUOptions &= ~CXTranslationUnit_PrecompiledPreamble;
-  }
-
-  // Completion results caching doesn't seem to work right, changes at the top
-  // of the file (i.e: new declarations) aren't detected and do not appear in
-  // completion results.
-  settings.parseTUOptions &= ~CXTranslationUnit_CacheCompletionResults;
-
-  return settings;
 }
 
 void TUManager::invalidateCachedTU(const std::string &filename) {

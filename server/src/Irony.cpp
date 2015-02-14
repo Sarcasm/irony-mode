@@ -21,12 +21,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#if CINDEX_VERSION >= 6
-#define HAS_BRIEF_COMMENTS_IN_COMPLETION 1
-#else
-#define HAS_BRIEF_COMMENTS_IN_COMPLETION 0
-#endif
-
 static std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
 
@@ -167,19 +161,6 @@ void Irony::complete(const std::string &file,
                      unsigned col,
                      const std::vector<std::string> &flags,
                      const std::vector<CXUnsavedFile> &unsavedFiles) {
-  // Register the settings the first time, to enable optimization of code
-  // completion and request brief comments if available.
-  TUManager::Settings settings;
-
-  settings.parseTUOptions |= CXTranslationUnit_CacheCompletionResults;
-
-#if HAS_BRIEF_COMMENTS_IN_COMPLETION
-  settings.parseTUOptions |=
-      CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
-#endif
-
-  (void)tuManager_.registerSettings(settings);
-
   CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
 
   if (tu == nullptr) {
