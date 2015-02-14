@@ -21,6 +21,7 @@ add_executable(irony-server
   support/CommandLineParser.h
   support/iomanip_quoted.h
   support/NonCopyable.h
+  support/CIndex.h
   support/TemporaryFile.cpp
   support/TemporaryFile.h
 

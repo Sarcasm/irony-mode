@@ -14,9 +14,8 @@
 #ifndef IRONY_MODE_SERVER_TUMANAGER_H_
 #define IRONY_MODE_SERVER_TUMANAGER_H_
 
+#include "support/CIndex.h"
 #include "support/NonCopyable.h"
-
-#include <clang-c/Index.h>
 
 #include <list>
 #include <map>

@@ -21,8 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
-    (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+#if CINDEX_VERSION >= 6
 #define HAS_BRIEF_COMMENTS_IN_COMPLETION 1
 #else
 #define HAS_BRIEF_COMMENTS_IN_COMPLETION 0
@@ -82,8 +81,7 @@ static void dumpDiagnostics(const CXTranslationUnit &tu) {
 
 // clang_getInstantiationLocation() has been marked deprecated and
 // is aimed to be replaced by clang_getExpansionLocation().
-#if defined(CINDEX_VERSION_MAJOR) && defined(CINDEX_VERSION_MINOR) &&          \
-    (CINDEX_VERSION_MAJOR > 0 || CINDEX_VERSION_MINOR >= 6)
+#if CINDEX_VERSION >= 6
       clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
 #else
       clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);

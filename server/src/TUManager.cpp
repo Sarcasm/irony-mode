@@ -185,16 +185,16 @@ Settings TUManager::computeEffectiveSettings() const {
     settings.merge(*it);
   }
 
-#if !defined(CINDEX_VERSION_MAJOR) || !defined(CINDEX_VERSION_MINOR) ||        \
-    (CINDEX_VERSION_MAJOR == 0 && CINDEX_VERSION_MINOR < 6)
   // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
-  //      to fail on the standard library types when
-  //      CXTranslationUnit_PrecompiledPreamble is used. We disable this option
-  //      for old versions of libclang. As a result the completion will work but
-  //      significantly slower.
+  // to fail on the standard library types when
+  // CXTranslationUnit_PrecompiledPreamble is used. We disable this option for
+  // old versions of libclang. As a result the completion will work but
+  // significantly slower.
+  //
   // -- https://github.com/Sarcasm/irony-mode/issues/4
-  settings.parseTUOptions &= ~CXTranslationUnit_PrecompiledPreamble;
-#endif
+  if (CINDEX_VERSION < 6) {
+    settings.parseTUOptions &= ~CXTranslationUnit_PrecompiledPreamble;
+  }
 
   // Completion results caching doesn't seem to work right, changes at the top
   // of the file (i.e: new declarations) aren't detected and do not appear in

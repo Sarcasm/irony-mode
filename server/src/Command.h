@@ -11,8 +11,7 @@
 #ifndef IRONY_MODE_SERVER_COMMAND_H_
 #define IRONY_MODE_SERVER_COMMAND_H_
 
-#include <clang-c/Index.h>
-
+#include "support/CIndex.h"
 #include "support/TemporaryFile.h"
 
 #include <iosfwd>
