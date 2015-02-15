@@ -115,7 +115,7 @@ TUManager::parse(const std::string &filename,
 
   if (tu == nullptr) {
     std::clog << "error: libclang couldn't parse '" << filename << "'\n";
-    return 0;
+    return nullptr;
   }
 
   // Reparsing is necessary to enable optimizations.
@@ -139,7 +139,7 @@ TUManager::parse(const std::string &filename,
     clang_disposeTranslationUnit(tu);
     std::clog << "error: libclang couldn't reparse '" << filename << "'\n";
     tu = 0;
-    return 0;
+    return nullptr;
   }
 
   return tu;

@@ -28,18 +28,34 @@ public:
     return debug_;
   }
 
-  /// \name Commands
-  /// @{
+  /// \name Modifiers
+  /// \{
 
   /// \brief Set or unset debugging of commands.
   void setDebug(bool enable) {
     debug_ = enable;
   }
 
-  /// \brief Retrieve the diagnostics for the given file.
-  void diagnostics(const std::string &file,
-                   const std::vector<std::string> &flags,
-                   const std::vector<CXUnsavedFile> &unsavedFiles);
+  /// Parse or reparse the given file and compile options.
+  ///
+  /// If the compile options have changed, the translation unit is re-created to
+  /// take this into account.
+  ///
+  /// Output \c nil or \c t, whether or not parsing the translation unit
+  /// succeeded.
+  ///
+  /// \sa diagnostics()
+  void parse(const std::string &file,
+             const std::vector<std::string> &flags,
+             const std::vector<CXUnsavedFile> &unsavedFiles);
+
+  /// \}
+
+  /// \name Observers
+  /// \{
+
+  /// \brief Retrieve the last parse diagnostics for the given file.
+  void diagnostics() const;
 
   /// \brief Perform code completion at a given location.
   ///
@@ -60,10 +76,11 @@ public:
                 unsigned col,
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
-  /// @}
+  /// \}
 
 private:
   TUManager tuManager_;
+  CXTranslationUnit activeTu_;
   bool debug_;
 };
 

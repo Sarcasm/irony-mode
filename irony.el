@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2014  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.2.0-cvs3
+;; Version: 0.2.0-cvs4
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -643,7 +643,18 @@ If no such file exists on the filesystem the special file '-' is
       buffer-file-name
     "-"))
 
-(defun irony--send-file-request (request callback &rest args)
+(defun irony--send-request (request callback &rest args)
+  (let ((process (irony--get-server-process-create))
+        (argv (cons request args)))
+    (when (and process (process-live-p process))
+      (irony--server-process-push-callback process callback)
+      ;; skip narrowing to compute buffer size and content
+      (irony--without-narrowing
+        (process-send-string process
+                             (format "%s\n"
+                                     (combine-and-quote-strings argv)))))))
+
+(defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.
 
 This concerns mainly irony-server commands that do some work on a
@@ -670,6 +681,89 @@ care of."
         ;; to play nice with line buffering even when the file doesn't end with
         ;; a newline)
         (process-send-string process "\n")))))
+
+
+;;
+;; Buffer parsing
+;;
+
+(defvar-local irony--parse-buffer-state nil
+  "If non-nil, state is of the form (context . status) where:
+
+- context is `irony--parse-buffer-context'
+- status is one of the following symbol: requested, done")
+
+(defvar-local irony--parse-buffer-callbacks nil)
+(defvar-local irony--parse-buffer-last-results nil
+  "Holds the last parsing results.")
+
+(defun irony--parse-buffer-context ()
+  ;; FIXME: use the ticks of all irony's files that may influence this one?
+  ;; FIXME: compile options should be part of the context? or settings the
+  ;; compile options should flush the context alternatively.
+  (buffer-chars-modified-tick))
+
+(defun irony--buffer-parsed-p ()
+  (equal irony--parse-buffer-state
+         (cons (irony--parse-buffer-context) 'done)))
+
+(defun irony--buffer-parsing-in-progress-p ()
+  (equal irony--parse-buffer-state
+         (cons (irony--parse-buffer-context) 'requested)))
+
+(defun irony--parse-request-handler (result context)
+  (let ((callbacks irony--parse-buffer-callbacks)
+        (status (cond
+                 ;; context out-of-date?
+                 ((not (equal context (irony--parse-buffer-context)))
+                  'cancelled)
+                 (result
+                  'success)
+                 (t
+                  'failed))))
+    (setq irony--parse-buffer-last-results (list status)
+          irony--parse-buffer-callbacks nil
+          irony--parse-buffer-state (cons context 'done))
+    (mapc #'(lambda (cb) (funcall cb status)) callbacks)))
+
+;; TODO: provide a synchronous/blocking counterpart, see how
+;; `url-retrieve-synchronously' does it
+(defun irony--parse-buffer-async (callback &optional force)
+  "Parse the current buffer and call CALLACK when done.
+
+Parsing is effectively done only if need, if the buffer hasn't
+changed since the last parsing, CALLBACK is called immediately.
+
+Use FORCE to force a re-parse unconditionally.
+
+Callback is a function that is called with one argument, the
+status of the parsing request, the value is one of the following
+symbol:
+
+- success: parsing the file was a sucess, irony-server has
+  up-to-date information about the buffer
+
+- failed:- parsing the file resulted in a failure (file access
+  rights wrong, whatever)
+
+- cancelled: if the request for this callback was superseded by
+  another request or if the callback is out-of-date (but not
+  necessarily superseded by another request)"
+  (when force
+    (setq irony--parse-buffer-state nil))
+  (if (irony--buffer-parsed-p)
+      (apply callback irony--parse-buffer-last-results)
+    (let (obselete-callbacks)
+      (unless (irony--buffer-parsing-in-progress-p)
+        (let ((context (irony--parse-buffer-context)))
+          (setq obselete-callbacks irony--parse-buffer-callbacks
+                irony--parse-buffer-callbacks nil
+                irony--parse-buffer-state (cons context 'requested))
+          (irony--send-parse-request "parse"
+                                    (list 'irony--parse-request-handler context))))
+      (push callback irony--parse-buffer-callbacks)
+      ;; it's safer to call this last, since the function may be called recursively
+      (mapc #'(lambda (cb) (funcall cb 'cancelled)) obselete-callbacks))))
 
 (provide 'irony)
 

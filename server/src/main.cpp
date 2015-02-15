@@ -171,7 +171,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Diagnostics:
-      irony.diagnostics(c->file, c->flags, c->cxUnsavedFiles);
+      irony.diagnostics();
       break;
 
     case Command::Complete:
@@ -180,6 +180,10 @@ int main(int ac, const char *av[]) {
 
     case Command::Exit:
       return 0;
+
+    case Command::Parse:
+      irony.parse(c->file, c->flags, c->cxUnsavedFiles);
+      break;
 
     case Command::SetDebug:
       irony.setDebug(c->opt);

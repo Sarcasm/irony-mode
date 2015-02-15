@@ -205,7 +205,7 @@ Return t if the context has been updated, nil otherwise."
                             (position-bytes (point-at-bol)))))))
     (setq irony-completion--request-callbacks nil
           irony-completion--request-tick irony-completion--context-tick)
-    (irony--send-file-request
+    (irony--send-parse-request
      "complete"
      (list 'irony-completion--request-handler irony-completion--context-tick)
      (number-to-string line)

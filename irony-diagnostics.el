@@ -29,47 +29,6 @@
 
 
 ;;
-;; Internal variables
-;;
-
-(defvar-local irony-diagnostics--diagnostics nil)
-(defvar-local irony-diagnostics--request-context nil)
-(defvar-local irony-diagnostics--available-context nil)
-(defvar-local irony-diagnostics--callbacks nil)
-
-
-;;
-;; Functions
-;;
-
-(defun irony-diagnostics--context ()
-  (buffer-chars-modified-tick))
-
-
-;;
-;; Interface with irony-server
-;;
-
-(defun irony-diagnostics--send-request ()
-  (setq irony-diagnostics--request-context (irony-diagnostics--context))
-  (irony--send-file-request "diagnostics"
-                            (list 'irony-diagnostics--request-handler
-                                  (irony-diagnostics--context))))
-
-(defun irony-diagnostics--request-handler (diagnostics context)
-  (when (equal (list irony-diagnostics--request-context
-                     (irony-diagnostics--context))
-               (make-list 2 context))
-    (setq irony-diagnostics--diagnostics diagnostics
-          irony-diagnostics--available-context context)
-    (mapc 'funcall irony-diagnostics--callbacks)))
-
-(defun irony-diagnostics--in-progress-p ()
-  (unless (irony-diagnostics-available-p)
-    (equal irony-diagnostics--request-context (irony-diagnostics--context))))
-
-
-;;
 ;; Irony Diagnostics Interface
 ;;
 
@@ -88,20 +47,56 @@
 (defun irony-diagnostics-message (diagnostic)
   (nth 5 diagnostic))
 
-(defun irony-diagnostics-available-p ()
-  (equal irony-diagnostics--available-context (irony-diagnostics--context)))
+(defun irony-diagnostics--request-handler (diagnostics callback)
+  (cond
+   ((irony--buffer-parsed-p)
+    (funcall callback 'success diagnostics))
+   (t
+    ;; buffer has become out-of-date
+    (funcall callback 'cancelled "diagnostics obselete, buffer has changed"))))
 
-(defun irony-diagnostics ()
-  "Return the list of diagnostics for the current buffer, if available."
-  (when (irony-diagnostics-available-p)
-    irony-diagnostics--diagnostics))
+(defun irony-diagnostics-async (callback &optional force)
+  "Perform an asynchronous diagnostic request for the current
+buffer.
 
-(defun irony-diagnostics--async (callback)
-  (if (irony-diagnostics-available-p)
-      (funcall callback)
-    (unless (irony-diagnostics--in-progress-p)
-      (irony-diagnostics--send-request))
-    (push callback irony-diagnostics--callbacks)))
+Use FORCE to force the reparsing of the buffer.
+
+CALLBACK is called with at least one argument, a symbol
+representing the status of the request. Depending on the status
+more argument are provided. Possible values are explained below:
+
+- success 
+
+  When quering the diagnostics work, the additional argument is a
+  list of diagnostic object, diagnostics fields can be queried
+  with the functions `irony-diagnostics-<xxx>'.
+
+- error
+
+  Retrieving the diagnostics wasn't possible. A string explaining
+  the reason is passed as a second argument.
+
+- cancelled
+
+  Retrieving the diagnostics was cancelled, e.g: because the
+  buffer has changed since the beginning of the request, and as
+  such the diagnostics are considered no longer relevant. A
+  reason string is passed as a second argument."
+  (lexical-let ((cb callback))
+    (irony--parse-buffer-async
+     #'(lambda (parse-status)
+         (cond
+          ((eq parse-status 'success)
+           (irony--send-request "diagnostics"
+                                (list 'irony-diagnostics--request-handler
+                                      cb)))
+          ((eq parse-status 'cancelled)
+           (funcall cb 'cancelled "parsing was cancelled"))
+          ((eq parse-status 'failed)
+           (funcall cb 'error "parsing failed"))
+          (t
+           (funcall cb 'error "internal-error: unexpected parse status"))))
+     force)))
 
 (provide 'irony-diagnostics)
 

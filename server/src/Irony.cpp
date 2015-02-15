@@ -32,7 +32,7 @@ static std::string cxStringToStd(CXString cxString) {
   return stdStr;
 }
 
-Irony::Irony() : debug_(false) {
+Irony::Irony() : activeTu_(nullptr), debug_(false) {
 }
 
 static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
@@ -103,17 +103,23 @@ static void dumpDiagnostics(const CXTranslationUnit &tu) {
   std::cout << ")\n";
 }
 
-void Irony::diagnostics(const std::string &file,
-                        const std::vector<std::string> &flags,
-                        const std::vector<CXUnsavedFile> &unsavedFiles) {
-  CXTranslationUnit tu = tuManager_.parse(file, flags, unsavedFiles);
+void Irony::parse(const std::string &file,
+                  const std::vector<std::string> &flags,
+                  const std::vector<CXUnsavedFile> &unsavedFiles) {
+  activeTu_ = tuManager_.parse(file, flags, unsavedFiles);
 
-  if (tu == nullptr) {
+  std::cout << (activeTu_ ? "t" : "nil") << "\n";
+}
+
+void Irony::diagnostics() const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: diagnostics - parse wasn't called\n";
+
     std::cout << "nil\n";
     return;
   }
 
-  dumpDiagnostics(tu);
+  dumpDiagnostics(activeTu_);
 }
 
 namespace {

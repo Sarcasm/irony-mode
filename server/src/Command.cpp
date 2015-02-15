@@ -146,7 +146,11 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
   switch (command_.action) {
-  case Command::Diagnostics:
+  case Command::SetDebug:
+    positionalArgs.push_back(OptionConverter(&command_.opt));
+    break;
+
+  case Command::Parse:
     positionalArgs.push_back(StringConverter(&command_.file));
     handleUnsaved = true;
     break;
@@ -158,12 +162,10 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     handleUnsaved = true;
     break;
 
+  case Command::Diagnostics:
   case Command::Help:
   case Command::Exit:
-    break;
-
-  case Command::SetDebug:
-    positionalArgs.push_back(OptionConverter(&command_.opt));
+    // no-arguments commands
     break;
 
   case Command::Unknown:
