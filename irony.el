@@ -132,7 +132,7 @@ database."
   '((c++-mode  . "c++")
     (c-mode    . "c")
     (objc-mode . "objective-c"))
-  "Alist to decide the language option to used based on the major-mode."
+  "Alist to decide the language option to used based on the `major-mode'."
   :type '(alist :key-type symbol :value-type string)
   :group 'irony)
 
@@ -150,8 +150,11 @@ CMakeLists.txt used to build the server."
   :type 'directory
   :group 'irony)
 
-(defcustom irony-server-build-dir (concat irony-user-dir "build/")
-  "Build directory for irony-server."
+(defcustom irony-server-build-dir nil
+  "Build directory for irony-server.
+
+If set to nil the default is to create a build directory in
+`temporary-file-directory'/build-irony-server-`(irony-version)'."
   :type 'directory
   :group 'irony)
 
@@ -489,16 +492,20 @@ The installation requires CMake and the libclang developpement package."
                  (shell-quote-argument irony-server-source-dir)
                  (shell-quote-argument irony-cmake-executable))))
            (irony--install-server-read-command command))))
-  ;; we need to kill the process to be able to install a new one, at least on
-  ;; Windows
-  (make-directory irony-server-build-dir t)
-  (let ((default-directory irony-server-build-dir))
+  (let ((build-dir (or irony-server-build-dir
+                       (format "%s/build-irony-server-%s"
+                               temporary-file-directory
+                               (irony-version)))))
+  (make-directory build-dir t)
+  (let ((default-directory build-dir))
+    ;; we need to kill the process to be able to install a new one,
+    ;; at least on Windows
     (irony-server-kill)
     (with-current-buffer (compilation-start command nil
                                             #'(lambda (maj-mode)
                                                 "*irony-server build*"))
       (setq-local compilation-finish-functions
-                  '(irony--server-install-finish-function)))))
+                  '(irony--server-install-finish-function))))))
 
 (defun irony--server-install-finish-function (buffer msg)
   (if (string= "finished\n" msg)
