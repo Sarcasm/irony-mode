@@ -633,9 +633,6 @@ list (and undo information is not kept).")
     (process-put p 'irony-callback-stack (cdr callbacks))
     (car callbacks)))
 
-(defun irony--server-process-callback-count (p)
-  (length (process-get p 'irony-callback-stack)))
-
 
 ;;
 ;; Server commands
@@ -770,7 +767,7 @@ symbol:
 - success: parsing the file was a sucess, irony-server has
   up-to-date information about the buffer
 
-- failed:- parsing the file resulted in a failure (file access
+- failed: parsing the file resulted in a failure (file access
   rights wrong, whatever)
 
 - cancelled: if the request for this callback was superseded by

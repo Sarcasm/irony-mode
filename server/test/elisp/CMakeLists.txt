@@ -20,14 +20,18 @@ else()
 endif()
 
 #
-# ert_test(name test_file)
+# add_ert_test(<FileName>)
 #
-# creates a test target named NAME which run the Elisp script TEST_FILE using
-# the Emacs ERT testing framework.
+# Create a test which run the given Elisp script using the Emacs ERT testing
+# framework.
+#
+# The target is deduced from the ``FileName`` argument, e.g: the file foo.el
+# will be the target 'check-foo-el'.
 #
 # FIXME: assumes MELPA is configured...
-function(ert_test name test_file)
-  add_test(${name}
+function(add_ert_test test_file)
+  get_filename_component(name ${test_file} NAME_WE)
+  add_test(check-${name}-el
     ${EMACS_EXECUTABLE} -batch
     -l package
     --eval "(package-initialize) (unless (require 'cl-lib nil t) (package-refresh-contents) (package-install 'cl-lib))"
@@ -35,5 +39,5 @@ function(ert_test name test_file)
     -f ert-run-tests-batch-and-exit)
 endfunction()
 
-ert_test(irony-el irony.el)
-ert_test(irony-cdb-json-el irony-cdb-json.el)
+add_ert_test(irony.el)
+add_ert_test(irony-cdb-json.el)

@@ -9,6 +9,8 @@ set(CMAKE_MODULE_PATH
 
 include(utils)
 
+include(CTest)
+
 check_for_in_source_build()
 release_as_default_build_type()
 
@@ -61,5 +63,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(src)
 add_subdirectory(docs)
-enable_testing()
-add_subdirectory(test)
+
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif()

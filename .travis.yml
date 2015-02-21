@@ -29,7 +29,7 @@ before_script:
 script:
   - cmake -DEMACS_EXECUTABLE=$(which $EMACS) ../server
   - make -k
-  - ctest --output-on-failure 
+  - make check
 
 after_script:
   - cd -
