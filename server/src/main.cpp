@@ -22,6 +22,7 @@
 
 static void printHelp() {
   std::cout << "usage: irony-server [OPTIONS...] [COMMAND] [ARGS...]\n"
+    "\n"
     "Options:\n"
     "  -v, --version\n"
     "  -h, --help\n"
@@ -33,7 +34,7 @@ static void printHelp() {
 
 #define X(sym, str, desc)                                                      \
   if (Command::sym != Command::Unknown)                                        \
-    std::cout << std::left << std::setw(18) << "  " str << desc << "\n";
+    std::cout << std::left << std::setw(25) << "  " str << desc << "\n";
 #include "Commands.def"
 }
 
@@ -187,6 +188,10 @@ int main(int ac, const char *av[]) {
 
     case Command::SetDebug:
       irony.setDebug(c->opt);
+      break;
+
+    case Command::GetCompileOptions:
+      irony.getCompileOptions(c->dir, c->file);
       break;
 
     case Command::Unknown:

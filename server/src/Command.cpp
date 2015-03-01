@@ -99,6 +99,7 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
 std::ostream &operator<<(std::ostream &os, const Command &command) {
   os << "Command{action=" << command.action << ", "
      << "file='" << command.file << "', "
+     << "dir='" << command.dir << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
      << "flags=[";
@@ -143,6 +144,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   command_.action = actionFromString(actionStr);
 
   bool handleUnsaved = false;
+  bool readCompileOptions = false;
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
   switch (command_.action) {
@@ -153,6 +155,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::Parse:
     positionalArgs.push_back(StringConverter(&command_.file));
     handleUnsaved = true;
+    readCompileOptions = true;
     break;
 
   case Command::Complete:
@@ -160,12 +163,18 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     handleUnsaved = true;
+    readCompileOptions = true;
     break;
 
   case Command::Diagnostics:
   case Command::Help:
   case Command::Exit:
     // no-arguments commands
+    break;
+
+  case Command::GetCompileOptions:
+    positionalArgs.push_back(StringConverter(&command_.dir));
+    positionalArgs.push_back(StringConverter(&command_.file));
     break;
 
   case Command::Unknown:
@@ -227,7 +236,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   // When a file is provided, the next line contains the compilation options to
   // pass to libclang.
-  if (!command_.file.empty()) {
+  if (readCompileOptions) {
     std::string compileOptions;
     std::getline(std::cin, compileOptions);
 

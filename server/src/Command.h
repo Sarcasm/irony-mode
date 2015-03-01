@@ -29,6 +29,7 @@ struct Command {
     action = Unknown;
     flags.clear();
     file.clear();
+    dir.clear();
     line = 0;
     column = 0;
     unsavedFiles.clear();
@@ -43,6 +44,7 @@ struct Command {
 
   std::vector<std::string> flags;
   std::string file;
+  std::string dir;
   unsigned line;
   unsigned column;
   // pair of (filename, content)
