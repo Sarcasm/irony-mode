@@ -67,14 +67,39 @@ directories to project directory."
                (cons project-root compile-commands-path))
   (irony-cdb-json--save-project-alist))
 
+;; (defun irony-cdb-json--get-compile-options ()
+;;   (irony-cdb-json--ensure-project-alist-loaded)
+;;   (irony--awhen (irony-cdb-json--locate-db)
+;;     (let ((db (irony-cdb-json--load-db it)))
+;;       (irony--aif (irony-cdb-json--exact-flags db)
+;;           it
+;;         (let ((dir-cdb (irony-cdb-json--compute-directory-cdb db)))
+;;           (irony-cdb-json--guess-flags dir-cdb))))))
+
 (defun irony-cdb-json--get-compile-options ()
-  (irony-cdb-json--ensure-project-alist-loaded)
+  (irony-cdb-json--server-exact-flags))
+
+(defun irony-cdb-json--server-exact-flags ()
+  "Get flags from irony-server. Returns a cons cell with the flags as car and
+the directory as cdr.
+
+TODO: What if process-lines fails?
+TODO: Communicate with the async irony-server process instead
+TODO: Make the c++ process output all commands for a file (now only returns the
+first)"
   (irony--awhen (irony-cdb-json--locate-db)
-    (let ((db (irony-cdb-json--load-db it)))
-      (irony--aif (irony-cdb-json--exact-flags db)
-          it
-        (let ((dir-cdb (irony-cdb-json--compute-directory-cdb db)))
-          (irony-cdb-json--guess-flags dir-cdb))))))
+    (when (setq irony--server-executable
+                (or irony--server-executable
+                    (irony--locate-server-executable)))
+      (let ((dir-and-flags (process-lines irony--server-executable
+                                          "get-compile-options"
+                                          (file-name-directory it)
+                                          (buffer-file-name))))
+        (let* ((path (buffer-file-name))
+              (directory (car dir-and-flags))
+              (options (cdr (irony-cdb-json--adjust-compile-options
+                             (cdr dir-and-flags) path directory))))
+          (list (cons options directory)))))))
 
 (defsubst irony-cdb-json--target-path ()
   (or buffer-file-name (expand-file-name default-directory)))

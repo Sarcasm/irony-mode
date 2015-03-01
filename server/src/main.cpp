@@ -8,6 +8,7 @@
 
 #include "Irony.h"
 #include "Command.h"
+#include "Database.h"
 
 #include "support/CommandLineParser.h"
 
@@ -146,6 +147,27 @@ int main(int ac, const char *av[]) {
   }
 
   argv.erase(argv.begin(), argv.begin() + optCount);
+
+  // Special command for getting compile options from JSON database
+  if (!argv.empty() && argv.front() == "get-compile-options") {
+    if (argv.size() < 3) {
+      std::cerr << "Compile option usage: irony-server get-compile-options "
+                << "<projectRoot> <filename>\n";
+      return 1;
+    }
+
+    std::pair<std::string, std::vector<std::string>> p =
+      getFlags(argv[1], argv[2]);
+
+    std::string &dir = p.first;
+    std::vector<std::string> &flags = p.second;
+
+    std::cout << dir << "\n";
+    for (auto it = flags.begin(), end = flags.end(); it != end; ++it)
+      std::cout << *it << "\n";
+
+    return 0;
+  }
 
   CommandParser commandParser;
   std::unique_ptr<CommandProviderInterface> commandProvider;
