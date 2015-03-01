@@ -32,6 +32,8 @@ add_executable(irony-server
   Irony.h
   TUManager.cpp
   TUManager.h
+  Database.h
+  Database.cpp
 
   main.cpp)
 
