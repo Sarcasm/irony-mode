@@ -216,6 +216,36 @@ buffer file.")
 
 
 ;;
+;; Error conditions
+;;
+
+;; `define-error' breaks backward compatibility with Emacs < 24.4
+(defun irony--define-error (name message &optional parent)
+  "Define NAME as a new error signal.
+MESSAGE is a string that will be output to the echo area if such an error
+is signaled without being caught by a `condition-case'.
+PARENT is either a signal or a list of signals from which it inherits.
+Defaults to `error'."
+  (unless parent (setq parent 'error))
+  (let ((conditions
+         (if (consp parent)
+             (apply #'nconc
+                    (mapcar (lambda (parent)
+                              (cons parent
+                                    (or (get parent 'error-conditions)
+                                        (error "Unknown signal `%s'" parent))))
+                            parent))
+           (cons parent (get parent 'error-conditions)))))
+    (put name 'error-conditions
+         (delete-dups (copy-sequence (cons name conditions))))
+    (when message (put name 'error-message message))))
+
+(irony--define-error 'irony-error "Irony-Mode error")
+(irony--define-error 'irony-parse-error "Irony-Mode parsing error" 'irony-error)
+(irony--define-error 'irony-server-error "Irony-Mode server error" 'irony-error)
+
+
+;;
 ;; Utility functions & macros
 ;;
 
@@ -332,7 +362,7 @@ breaks with escaped quotes in compile_commands.json, such as in:
        ((eq ch ?\")                     ;quoted string
         (let ((endq (string-match-p "[^\\]\"" cmd-line i)))
           (unless endq
-            (error "Irony: ill formed command line"))
+            (signal 'irony-parse-error (list "ill formed command line" cmd-line)))
           (let ((quoted-str (substring cmd-line (1+ i) (1+ endq))))
             (setq cur-arg (append (irony--split-command-line-1 quoted-str)
                                   cur-arg)
@@ -519,34 +549,40 @@ The installation requires CMake and the libclang developpement package."
       (message "irony-server installed successfully!")
     (message "Failed to build irony-server, you are on your own buddy!")))
 
-(defun irony--locate-server-executable ()
-  "Check if an irony-server exists for the current buffer."
+(defun irony--find-server-executable ()
+  "Return the path to the irony-server executable.
+
+Throw an `irony-server-error' if a proper executable cannot be
+found."
   (let ((exe (expand-file-name "bin/irony-server" irony-server-install-prefix)))
     (condition-case err
-        (let ((irony-server-version (car (process-lines exe "--version"))))
-          (if (and (string-match "^irony-server version " irony-server-version)
+        (let ((version (car (process-lines exe "--version"))))
+          (if (and (string-match "^irony-server version " version)
                    (version= (irony-version)
-                             (substring irony-server-version
+                             (substring version
                                         (length "irony-server version "))))
               ;; irony-server is working and up-to-date!
               exe
-            (message "irony-server version mismatch: %s"
-                     (substitute-command-keys
-                      "type `\\[irony-install-server]' to reinstall"))
-            nil))
+            (signal 'irony-server-error
+                    (list
+                     (format "irony-server version mismatch: %s"
+                             (substitute-command-keys
+                              "type `\\[irony-install-server]' to reinstall"))))))
+      (irony-server-error
+       (signal (car err) (cdr err)))
       (error
-       (if (file-executable-p exe)
-           ;; failed to execute due to a runtime problem, i.e: libclang.so isn't
-           ;; in the ld paths
-           (message "error: irony-server is broken, good luck buddy! %s"
-                    (error-message-string err))
-         ;; irony-server doesn't exists, first time irony-mode is used? inform
-         ;; the user about how to build the executable
-         (message "%s"
-                  (substitute-command-keys
-                   "Type `\\[irony-install-server]' to install irony-server")))
-       ;; return nil on error
-       nil))))
+       (signal 'irony-server-error
+               (if (file-executable-p exe)
+                   ;; failed to execute due to a runtime problem, i.e:
+                   ;; libclang.so isn't in the ld paths
+                   (list (format "irony-server is broken! %s"
+                                 (error-message-string err)))
+                 ;; irony-server doesn't exists, first time irony-mode is used?
+                 ;; inform the user about how to build the executable
+                 (list
+                  (format "irony-server not installed! %s"
+                          (substitute-command-keys
+                           "Type `\\[irony-install-server]' to install")))))))))
 
 
 ;;
@@ -562,28 +598,29 @@ When using a leading space, the buffer is hidden from the buffer
 list (and undo information is not kept).")
 
 (defun irony--start-server-process ()
-  (when (setq irony--server-executable (or irony--server-executable
-                                           (irony--locate-server-executable)))
-    (let ((process-connection-type nil)
-          (process-adaptive-read-buffering nil)
-          (w32-pipe-buffer-size (when (boundp 'w32-pipe-buffer-size)
-                                  (or irony-server-w32-pipe-buffer-size
-                                      w32-pipe-buffer-size)))
-          process)
-      (setq process
-            (start-process-shell-command
-             "Irony"                    ;process name
-             irony--server-buffer       ;buffer
-             (format "%s -i 2> %s"      ;command
-                     (shell-quote-argument irony--server-executable)
-                     (expand-file-name
-                      (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
-                      temporary-file-directory))))
-      (buffer-disable-undo irony--server-buffer)
-      (set-process-query-on-exit-flag process nil)
-      (set-process-sentinel process 'irony--server-process-sentinel)
-      (set-process-filter process 'irony--server-process-filter)
-      process)))
+  (unless irony--server-executable
+    ;; if not found, an `irony-server-error' error is signaled
+    (setq irony--server-executable (irony--find-server-executable)))
+  (let ((process-connection-type nil)
+        (process-adaptive-read-buffering nil)
+        (w32-pipe-buffer-size (when (boundp 'w32-pipe-buffer-size)
+                                (or irony-server-w32-pipe-buffer-size
+                                    w32-pipe-buffer-size)))
+        process)
+    (setq process
+          (start-process-shell-command
+           "Irony"                    ;process name
+           irony--server-buffer       ;buffer
+           (format "%s -i 2> %s"      ;command
+                   (shell-quote-argument irony--server-executable)
+                   (expand-file-name
+                    (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
+                    temporary-file-directory))))
+    (buffer-disable-undo irony--server-buffer)
+    (set-process-query-on-exit-flag process nil)
+    (set-process-sentinel process 'irony--server-process-sentinel)
+    (set-process-filter process 'irony--server-process-filter)
+    process))
 
 ;;;###autoload
 (defun irony-server-kill ()
@@ -594,10 +631,9 @@ list (and undo information is not kept).")
     (setq irony--server-process nil)))
 
 (defun irony--get-server-process-create ()
-  (if (and irony--server-process
-           (process-live-p irony--server-process))
-      irony--server-process
-    (setq irony--server-process (irony--start-server-process))))
+  (unless irony--server-process
+    (setq irony--server-process (irony--start-server-process)))
+  irony--server-process)
 
 (defun irony--server-process-sentinel (process event)
   (unless (process-live-p process)
