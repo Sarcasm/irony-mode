@@ -95,7 +95,7 @@ first)"
                                           "get-compile-options"
                                           (file-name-directory it)
                                           (buffer-file-name))))
-        (let* ((path (buffer-file-name))
+        (let* ((path (file-truename (buffer-file-name)))
               (directory (car dir-and-flags))
               (options (cdr (irony-cdb-json--adjust-compile-options
                              (cdr dir-and-flags) path directory))))
