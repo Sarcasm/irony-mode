@@ -76,30 +76,39 @@ directories to project directory."
 ;;         (let ((dir-cdb (irony-cdb-json--compute-directory-cdb db)))
 ;;           (irony-cdb-json--guess-flags dir-cdb))))))
 
+(defvar-local irony-cdb-json--server-compile-options nil
+  "Compiler options got from irony-server.")
+
+(defun irony-cdb-json--request-handler (flags result)
+  (set result flags))
+
+;; TODO: add the guess logic again!
+;; TODO: sometimes there are garbage on the callback-queue, determine why
 (defun irony-cdb-json--get-compile-options ()
   (irony-cdb-json--server-exact-flags))
 
 (defun irony-cdb-json--server-exact-flags ()
-  "Get flags from irony-server. Returns a cons cell with the flags as car and
-the directory as cdr.
-
-TODO: What if process-lines fails?
-TODO: Communicate with the async irony-server process instead
-TODO: Make the c++ process output all commands for a file (now only returns the
-first)"
+  "Get compile options from server"
   (irony--awhen (irony-cdb-json--locate-db)
-    (when (setq irony--server-executable
-                (or irony--server-executable
-                    (irony--locate-server-executable)))
-      (let ((dir-and-flags (process-lines irony--server-executable
-                                          "get-compile-options"
-                                          (file-name-directory it)
-                                          (buffer-file-name))))
-        (let* ((path (file-truename (buffer-file-name)))
-              (directory (car dir-and-flags))
-              (options (cdr (irony-cdb-json--adjust-compile-options
-                             (cdr dir-and-flags) path directory))))
-          (list (cons options directory)))))))
+    (let ((project-root (file-name-directory it))
+          (file (buffer-file-name)))
+      ;; Reset compile options
+      (setq irony-cdb-json--server-compile-options nil)
+      ;; Get the compile options from the server
+      (irony--send-request-sync
+       "get-compile-options"
+       (list 'irony-cdb-json--request-handler
+             'irony-cdb-json--server-compile-options)
+       project-root file)
+      ;; Adjust the compile options and return
+      (when irony-cdb-json--server-compile-options
+        (irony-cdb-json--adjust-compile-options
+         (car irony-cdb-json--server-compile-options)
+         (file-truename file)
+         (cdr irony-cdb-json--server-compile-options))
+        ;; Remove compiler and make list of single cons
+        (list (cons (cdar irony-cdb-json--server-compile-options)
+                    (cdr irony-cdb-json--server-compile-options)))))))
 
 (defsubst irony-cdb-json--target-path ()
   (or buffer-file-name (expand-file-name default-directory)))
