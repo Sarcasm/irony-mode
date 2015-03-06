@@ -11,6 +11,7 @@
  */
 
 #include "Irony.h"
+#include "Database.h"
 
 #include "support/iomanip_quoted.h"
 
@@ -326,4 +327,27 @@ void Irony::complete(const std::string &file,
     clang_disposeCodeCompleteResults(completions);
     std::cout << ")\n";
   }
+
+}
+
+// Get compile options from JSON database
+void Irony::getCompileOptions(const std::string &projectRoot,
+                              const std::string &file) {
+  std::pair<std::string, std::vector<std::string>> p =
+    getFlags(projectRoot, file);
+
+  std::string &wdir = p.first;
+  std::vector<std::string> &flags = p.second;
+
+  std::cout << "(\n";
+
+  std::cout << "(";
+  for (auto it = flags.begin(), end = flags.end(); it != end; ++it)
+    std::cout << support::quoted(*it) << " ";
+  std::cout << ")";
+  std::cout << " . ";
+
+  std::cout << support::quoted(wdir);
+
+  std::cout << "\n)\n";
 }
