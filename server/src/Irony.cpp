@@ -340,22 +340,24 @@ void Irony::complete(const std::string &file,
 // Get compile options from JSON database
 void Irony::getCompileOptions(const std::string &projectRoot,
                               const std::string &file) {
-  std::pair<std::string, std::vector<std::string>> p =
-    getFlags(projectRoot, file);
-
-  std::string &wdir = p.first;
-  std::vector<std::string> &flags = p.second;
+  std::vector<std::vector<std::string>> flags = getFlags(projectRoot, file);
 
   if (!flags.empty()) {
     std::cout << "(\n";
 
-    std::cout << "(";
-    for (auto it = flags.begin(), end = flags.end(); it != end; ++it)
-      std::cout << support::quoted(*it) << " ";
-    std::cout << ")";
-    std::cout << " . ";
+    for (auto vi = flags.begin(), vend = flags.end(); vi != vend; ++vi) {
+      std::cout << "( ";
 
-    std::cout << support::quoted(wdir);
+      std::cout << "(";
+      for (auto it = std::next(vi->begin()), end = vi->end(); it != end; ++it)
+        std::cout << support::quoted(*it) << " ";
+      std::cout << ")";
+      std::cout << " . ";
+
+      std::cout << support::quoted(vi->front());
+
+      std::cout << ")\n";
+    }
 
     std::cout << "\n)\n";
   } else {

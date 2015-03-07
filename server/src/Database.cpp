@@ -14,63 +14,62 @@
 
 #include "Database.h"
 
-static void getExactFlags(std::string &dir,
-                          std::vector<std::string>& flags,
+static void getExactFlags(std::vector<std::vector<std::string>>& flags,
                           CXCompilationDatabase &db,
                           const std::string& fullFilename) {
-  unsigned                    ncmd;
-  CXCompileCommands           cmds;
+  unsigned          ncmd;
+  unsigned          i;
+  CXCompileCommands cmds;
 
   cmds = clang_CompilationDatabase_getCompileCommands(db, fullFilename.c_str());
-
   ncmd = clang_CompileCommands_getSize(cmds);
+  flags.resize(ncmd);
 
-  if (ncmd > 0) {
-    unsigned narg;
-    unsigned j;
-    CXCompileCommand cmd;
-    CXString cxdir;
+  for (i = 0; i < ncmd; ++i) {
+    unsigned          narg;
+    unsigned          j;
+    CXCompileCommand  cmd;
+    CXString          cxdir;
+    const char       *dir;
 
     cmd = clang_CompileCommands_getCommand(cmds, 0);
-    narg = clang_CompileCommand_getNumArgs(cmd);
+    cxdir = clang_CompileCommand_getDirectory(cmd);
+    dir = clang_getCString(cxdir);
+    flags[i].push_back(dir);
 
+    narg = clang_CompileCommand_getNumArgs(cmd);
     for (j = 0; j < narg; ++j) {
       CXString str;
       const char *cstr;
 
       str = clang_CompileCommand_getArg(cmd, j);
       cstr = clang_getCString(str);
-      flags.push_back(cstr);
+      flags[i].push_back(cstr);
     }
 
-    cxdir = clang_CompileCommand_getDirectory(cmd);
-    dir = clang_getCString(cxdir);
 
   }
 
   clang_CompileCommands_dispose(cmds);
 }
 
-// Get compiler flags and directory.
-// Todo: return all compile commands
-std::pair<std::string, std::vector<std::string>> getFlags(
+std::vector<std::vector<std::string>> getFlags(
     const std::string &projectRoot,
     const std::string &fullFilename) {
-  std::string                 dir;
-  std::vector<std::string>    flags;
-  CXCompilationDatabase       db;
-  CXCompilationDatabase_Error error;
+  std::vector<std::vector<std::string>> flags;
+  CXCompilationDatabase                db;
+  CXCompilationDatabase_Error          error;
 
   db = clang_CompilationDatabase_fromDirectory(projectRoot.c_str(), &error);
 
   if (error == CXCompilationDatabase_CanNotLoadDatabase) {
       std::clog << "Cannot load database!\n";
-      exit(1);
+      return flags;
   }
 
-  getExactFlags(dir, flags, db, fullFilename);
+  getExactFlags(flags, db, fullFilename);
 
   clang_CompilationDatabase_dispose(db);
 
-  return make_pair(dir, flags);
+  return flags;
 }
