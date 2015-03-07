@@ -67,22 +67,12 @@ directories to project directory."
                (cons project-root compile-commands-path))
   (irony-cdb-json--save-project-alist))
 
-;; (defun irony-cdb-json--get-compile-options ()
-;;   (irony-cdb-json--ensure-project-alist-loaded)
-;;   (irony--awhen (irony-cdb-json--locate-db)
-;;     (let ((db (irony-cdb-json--load-db it)))
-;;       (irony--aif (irony-cdb-json--exact-flags db)
-;;           it
-;;         (let ((dir-cdb (irony-cdb-json--compute-directory-cdb db)))
-;;           (irony-cdb-json--guess-flags dir-cdb))))))
-
 (defvar-local irony-cdb-json--server-compile-options nil
   "Compiler options got from irony-server.")
 
 (defun irony-cdb-json--request-handler (flags result)
   (set result flags))
 
-;; TODO: add the guess logic again!
 ;; TODO: sometimes there are garbage on the callback-queue, determine why
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
@@ -106,14 +96,8 @@ directories to project directory."
              'irony-cdb-json--server-compile-options)
        project-root file)
       ;; Adjust the compile options and return
-      (when irony-cdb-json--server-compile-options
-        (irony-cdb-json--adjust-compile-options
-         (car irony-cdb-json--server-compile-options)
-         (file-truename file)
-         (cdr irony-cdb-json--server-compile-options))
-        ;; Remove compiler and make list of single cons
-        (list (cons (cdar irony-cdb-json--server-compile-options)
-                    (cdr irony-cdb-json--server-compile-options))))))
+      (irony-cdb-json--adjust-options-and-remove-compiler
+       file irony-cdb-json--server-compile-options)))
 
 (defsubst irony-cdb-json--target-path ()
   (or buffer-file-name (expand-file-name default-directory)))
@@ -165,12 +149,6 @@ directories to project directory."
   (delq nil (mapcar #'irony-cdb-json--transform-compile-command
                     ;; JSON read may throw
                     (json-read-file json-file))))
-
-(defun irony-cdb-json--exact-flags (file-cdb)
-  (when buffer-file-name
-    (mapcar #'(lambda (e)
-                (cons (nth 1 e) (nth 2 e)))
-            (irony--assoc-all buffer-file-name file-cdb))))
 
 (defun irony-cdb-json--guess-flags (dir-cdb)
   (cl-loop for e in dir-cdb
@@ -229,6 +207,20 @@ Relative paths are relative to DEFAULT-DIR."
         ;; new cdr need skipping
         (setq it (cdr it)))))
     (cdr head)))
+
+(defun irony-cdb-json--adjust-options-and-remove-compiler (file cmds)
+  "Remove compiler, target file and output file from cmds
+
+cmds is a list of conses, with car holding the options and cdr holding the
+working directory where the command was issued."
+  (mapcar (lambda (cmd)
+          (let ((opt (car cmd))
+                (wdir (cdr cmd)))
+            (cons (cdr
+                   (irony-cdb-json--adjust-compile-options
+                    opt (file-truename file) wdir))
+                  wdir)))
+          cmds))
 
 (defun irony-cdb-json--transform-compile-command (compile-command)
   "Transform a compile command in the JSON compilation database
