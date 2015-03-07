@@ -339,15 +339,20 @@ void Irony::getCompileOptions(const std::string &projectRoot,
   std::string &wdir = p.first;
   std::vector<std::string> &flags = p.second;
 
-  std::cout << "(\n";
+  if (!flags.empty()) {
+    std::cout << "(\n";
 
-  std::cout << "(";
-  for (auto it = flags.begin(), end = flags.end(); it != end; ++it)
-    std::cout << support::quoted(*it) << " ";
-  std::cout << ")";
-  std::cout << " . ";
+    std::cout << "(";
+    for (auto it = flags.begin(), end = flags.end(); it != end; ++it)
+      std::cout << support::quoted(*it) << " ";
+    std::cout << ")";
+    std::cout << " . ";
 
-  std::cout << support::quoted(wdir);
+    std::cout << support::quoted(wdir);
 
-  std::cout << "\n)\n";
+    std::cout << "\n)\n";
+  } else {
+    std::cout << "nil\n";
+  }
+
 }

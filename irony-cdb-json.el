@@ -85,12 +85,17 @@ directories to project directory."
 ;; TODO: add the guess logic again!
 ;; TODO: sometimes there are garbage on the callback-queue, determine why
 (defun irony-cdb-json--get-compile-options ()
-  (irony-cdb-json--server-exact-flags))
-
-(defun irony-cdb-json--server-exact-flags ()
-  "Get compile options from server"
   (irony--awhen (irony-cdb-json--locate-db)
-    (let ((project-root (file-name-directory it))
+    (let ((db-location it))
+      (irony--aif (irony-cdb-json--server-exact-flags db-location)
+          it
+        (let* ((db (irony-cdb-json--load-db db-location))
+               (dir-cdb (irony-cdb-json--compute-directory-cdb db)))
+          (irony-cdb-json--guess-flags dir-cdb))))))
+
+(defun irony-cdb-json--server-exact-flags (db-file)
+  "Get compile options from server"
+  (let ((project-root (file-name-directory db-file))
           (file (buffer-file-name)))
       ;; Reset compile options
       (setq irony-cdb-json--server-compile-options nil)
@@ -108,7 +113,7 @@ directories to project directory."
          (cdr irony-cdb-json--server-compile-options))
         ;; Remove compiler and make list of single cons
         (list (cons (cdar irony-cdb-json--server-compile-options)
-                    (cdr irony-cdb-json--server-compile-options)))))))
+                    (cdr irony-cdb-json--server-compile-options))))))
 
 (defsubst irony-cdb-json--target-path ()
   (or buffer-file-name (expand-file-name default-directory)))
