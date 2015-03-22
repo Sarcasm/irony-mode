@@ -578,7 +578,7 @@ list (and undo information is not kept).")
 (defun irony-server-kill ()
   "Kill the running irony-server process, if any."
   (interactive)
-  (when (process-live-p irony--server-process)
+  (when (and irony--server-process (process-live-p irony--server-process))
     (kill-process irony--server-process)
     (setq irony--server-process nil)))
 
