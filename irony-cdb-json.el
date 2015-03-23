@@ -86,7 +86,7 @@ directories to project directory."
 (defun irony-cdb-json--server-exact-flags (db-file)
   "Get compile options from server"
   (let ((project-root (file-name-directory db-file))
-          (file (buffer-file-name)))
+          (file buffer-file-truename))
       ;; Reset compile options
       (setq irony-cdb-json--server-compile-options nil)
       ;; Get the compile options from the server
@@ -218,7 +218,7 @@ working directory where the command was issued."
                 (wdir (cdr cmd)))
             (cons (cdr
                    (irony-cdb-json--adjust-compile-options
-                    opt (file-truename file) wdir))
+                    opt file wdir))
                   wdir)))
           cmds))
 
