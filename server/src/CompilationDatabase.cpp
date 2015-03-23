@@ -34,8 +34,10 @@ static void getExactFlags(std::vector<std::vector<std::string>> &flags,
 
     cmd = clang_CompileCommands_getCommand(cmds, 0);
     cxdir = clang_CompileCommand_getDirectory(cmd);
+
     dir = clang_getCString(cxdir);
     flags[i].push_back(dir);
+    clang_disposeString(cxdir);
 
     narg = clang_CompileCommand_getNumArgs(cmd);
     for (j = 0; j < narg; ++j) {
@@ -45,6 +47,7 @@ static void getExactFlags(std::vector<std::vector<std::string>> &flags,
       str = clang_CompileCommand_getArg(cmd, j);
       cstr = clang_getCString(str);
       flags[i].push_back(cstr);
+      clang_disposeString(str);
     }
   }
 
