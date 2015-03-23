@@ -19,8 +19,7 @@
 // Return all compile commands and the associated working directory
 // for a file.  For every command, the working directory is the first
 // entry in the list of compiler flags.
-std::vector<std::vector<std::string>> getFlags(
-    const std::string &projectRoot,
-    const std::string &fullFilename);
+std::vector<std::vector<std::string>> getFlags(const std::string &projectRoot,
+                                               const std::string &fullFilename);
 
 #endif
