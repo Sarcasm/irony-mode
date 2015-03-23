@@ -11,7 +11,7 @@
  */
 
 #include "Irony.h"
-#include "Database.h"
+#include "CompilationDatabase.h"
 
 #include "support/iomanip_quoted.h"
 

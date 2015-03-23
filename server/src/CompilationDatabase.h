@@ -10,8 +10,8 @@
  * COPYING for details.
  */
 
-#ifndef IRONY_DATABASE_H
-#define IRONY_DATABASE_H
+#ifndef IRONY_COMPILATION_DATABASE_H
+#define IRONY_COMPILATION_DATABASE_H
 
 #include <vector>
 #include <string>

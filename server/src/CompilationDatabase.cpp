@@ -12,7 +12,7 @@
 #include <clang-c/CXCompilationDatabase.h>
 #include <clang-c/CXString.h>
 
-#include "Database.h"
+#include "CompilationDatabase.h"
 
 static void getExactFlags(std::vector<std::vector<std::string>> &flags,
                           CXCompilationDatabase &db,
