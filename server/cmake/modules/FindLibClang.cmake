@@ -29,6 +29,7 @@ set(libclang_llvm_lib_search_paths
   )
 
 foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
+  string(REPLACE "." "" undotted_version "${version}")
   list(APPEND libclang_llvm_header_search_paths
     # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
     "/usr/lib/llvm-${version}/include/"
@@ -38,6 +39,8 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     "/usr/local/Cellar/llvm/${version}/include"
     # LLVM Homebrew/versions
     "/usr/local/lib/llvm-${version}/include"
+    # FreeBSD ports versions
+    "/usr/local/llvm${undotted_version}/include"
     )
 
   list(APPEND libclang_llvm_lib_search_paths
@@ -49,6 +52,8 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     "/usr/local/Cellar/llvm/${version}/lib"
     # LLVM Homebrew/versions
     "/usr/local/lib/llvm-${version}/lib"
+    # FreeBSD ports versions
+    "/usr/local/llvm${undotted_version}/lib"
     )
 endforeach()
 
