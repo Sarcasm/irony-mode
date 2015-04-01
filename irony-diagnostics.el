@@ -27,6 +27,9 @@
 
 (require 'irony)
 
+(eval-when-compile
+  (require 'cl))                        ;for lexical-let macro
+
 
 ;;
 ;; Irony Diagnostics Interface
