@@ -189,6 +189,10 @@ int main(int ac, const char *av[]) {
       irony.setDebug(c->opt);
       break;
 
+    case Command::GetCompileOptions:
+      irony.getCompileOptions(c->dir, c->file);
+      break;
+
     case Command::Unknown:
       assert(0 && "unreacheable code...reached!");
       break;
