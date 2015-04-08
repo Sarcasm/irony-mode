@@ -50,13 +50,14 @@
 (defun irony-diagnostics-message (diagnostic)
   (nth 5 diagnostic))
 
-(defun irony-diagnostics--request-handler (diagnostics callback)
-  (cond
-   ((irony--buffer-parsed-p)
-    (funcall callback 'success diagnostics))
-   (t
-    ;; buffer has become out-of-date
-    (funcall callback 'cancelled "diagnostics obselete, buffer has changed"))))
+(defun irony-diagnostics--request-handler (diagnostics callback buffer)
+  (with-current-buffer buffer
+    (cond
+     ((irony--buffer-parsed-p)
+      (funcall callback 'success diagnostics))
+     (t
+      ;; buffer has become out-of-date
+      (funcall callback 'cancelled "diagnostics obselete, buffer has changed")))))
 
 (defun irony-diagnostics-async (callback &optional force)
   "Perform an asynchronous diagnostic request for the current
@@ -92,7 +93,8 @@ more argument are provided. Possible values are explained below:
           ((eq parse-status 'success)
            (irony--send-request "diagnostics"
                                 (list 'irony-diagnostics--request-handler
-                                      cb)))
+                                      cb
+                                      (current-buffer))))
           ((eq parse-status 'cancelled)
            (funcall cb 'cancelled "parsing was cancelled"))
           ((eq parse-status 'failed)
