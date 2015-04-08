@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'irony-cdb)
+
 (require 'cl-lib)
 
 ;;;###autoload
@@ -43,15 +44,7 @@
 ;; TODO: sometimes there is garbage on the callback-queue, determine why
 (defun irony-cdb-libclang--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
-    (let ((db-location it))
-      ;; Try to obtain flags from server
-      (irony--aif (irony-cdb-libclang--server-exact-flags db-location)
-          it
-        ;; Couldn't get flags from server. Load db using irony-cdb-json guess
-        ;; the flags
-        (let* ((db (irony-cdb-json--load-db db-location))
-               (dir-cdb (irony-cdb-json--compute-directory-cdb db)))
-          (irony-cdb-json--guess-flags dir-cdb))))))
+    (irony-cdb-libclang--server-exact-flags it)))
 
 (defun irony-cdb-libclang--server-exact-flags (db-file)
   "Get compile options from server"
