@@ -28,7 +28,6 @@
 
 (require 'irony-cdb)
 (require 'cl-lib)
-(require 'pp)
 
 ;;;###autoload
 (defun irony-cdb-libclang (command &rest args)
