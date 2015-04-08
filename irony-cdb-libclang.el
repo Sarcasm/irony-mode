@@ -1,8 +1,10 @@
 ;;; irony-cdb-libclang.el --- Compilation Database for irony using libclang
 
 ;; Copyright (C) 2014  Guillaume Papin
+;;                     Karl Hylén
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
+;;         Karl Hylén <karl.hylen@gmail.com>
 ;; Keywords: c, convenience, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -20,10 +22,8 @@
 
 ;;; Commentary:
 ;;
-;; Compilation Database support for Irony using libclangs CXCompilationDatabase.
-;; Currently libclang only supports json compilation databases, but reading
-;; using libclang is much faster than using json.el
-
+;; Compilation Database support for Irony using libclangs CXCompilationDatabase,
+;; http://clang.llvm.org/doxygen/group__COMPILATIONDB.html
 ;;; Code:
 
 (require 'irony-cdb)
