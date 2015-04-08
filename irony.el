@@ -718,20 +718,21 @@ care of."
   (equal irony--parse-buffer-state
          (cons (irony--parse-buffer-context) 'requested)))
 
-(defun irony--parse-request-handler (result context)
-  (let ((callbacks irony--parse-buffer-callbacks)
-        (status (cond
-                 ;; context out-of-date?
-                 ((not (equal context (irony--parse-buffer-context)))
-                  'cancelled)
-                 (result
-                  'success)
-                 (t
-                  'failed))))
-    (setq irony--parse-buffer-last-results (list status)
-          irony--parse-buffer-callbacks nil
-          irony--parse-buffer-state (cons context 'done))
-    (mapc #'(lambda (cb) (funcall cb status)) callbacks)))
+(defun irony--parse-request-handler (result context buffer)
+    (with-current-buffer buffer
+      (let ((callbacks irony--parse-buffer-callbacks)
+            (status (cond
+                     ;; context out-of-date?
+                     ((not (equal context (irony--parse-buffer-context)))
+                      'cancelled)
+                     (result
+                      'success)
+                     (t
+                      'failed))))
+        (setq irony--parse-buffer-last-results (list status)
+              irony--parse-buffer-callbacks nil
+              irony--parse-buffer-state (cons context 'done))
+        (mapc #'(lambda (cb) (funcall cb status)) callbacks))))
 
 ;; TODO: provide a synchronous/blocking counterpart, see how
 ;; `url-retrieve-synchronously' does it
@@ -767,7 +768,8 @@ symbol:
                 irony--parse-buffer-callbacks nil
                 irony--parse-buffer-state (cons context 'requested))
           (irony--send-parse-request "parse"
-                                    (list 'irony--parse-request-handler context))))
+                                    (list 'irony--parse-request-handler context
+                                          (current-buffer)))))
       (push callback irony--parse-buffer-callbacks)
       ;; it's safer to call this last, since the function may be called recursively
       (mapc #'(lambda (cb) (funcall cb 'cancelled)) obselete-callbacks))))
