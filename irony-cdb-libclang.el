@@ -49,7 +49,7 @@
 (defun irony-cdb-libclang--server-exact-flags (db-file)
   "Get compile options from server"
   (let ((project-root (file-name-directory db-file))
-          (file buffer-file-truename))
+          (file buffer-file-name))
       ;; Reset compile options
       (setq irony-cdb-libclang--server-compile-options nil)
       ;; Get the compile options from the server
