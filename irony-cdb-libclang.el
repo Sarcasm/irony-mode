@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'irony-cdb)
+(require 'irony-cdb-json)
 
 (require 'cl-lib)
 
