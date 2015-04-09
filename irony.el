@@ -637,6 +637,9 @@ list (and undo information is not kept).")
 (defun irony--server-process-callback-count (p)
   (length (process-get p 'irony-callback-stack)))
 
+(defun irony--server-process-has-callback-p (p)
+  (process-get p 'irony-callback-stack))
+
 
 ;;
 ;; Server commands
@@ -670,7 +673,7 @@ callback should set the irony-sync-result property of the irony-server process"
     ;; Using apply to "spread" the args list
     (apply 'irony--send-request request callback args)
     ;; While there are callbacks left on the queue, wait for output from server
-    (while (process-get process 'irony-callback-stack)
+    (while (irony--server-process-has-callback-p process)
       (accept-process-output process))))
 
 (defun irony--send-parse-request (request callback &rest args)
