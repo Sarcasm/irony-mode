@@ -69,12 +69,11 @@
 cmds is a list of conses, with car holding the options and cdr holding the
 working directory where the command was issued."
   (mapcar (lambda (cmd)
-          (let ((opt (car cmd))
-                (wdir (cdr cmd)))
-            (cons (cdr
-                   (irony-cdb-json--adjust-compile-options
-                    opt file wdir))
-                  wdir)))
+            (let ((opt (irony-cdb--remove-compiler-from-flags (car cmd)))
+                  (wdir (cdr cmd)))
+              (cons
+               (irony-cdb-json--adjust-compile-options opt file wdir)
+               wdir)))
           cmds))
 
 (provide 'irony-cdb-libclang)
