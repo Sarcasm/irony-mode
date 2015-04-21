@@ -58,7 +58,7 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
 endforeach()
 
 find_path(LIBCLANG_INCLUDE_DIR clang-c/Index.h
-  PATHS ${libclang_llvm_header_search_paths}
+  PATHS ${libclang_llvm_header_search_paths} ENV PATH
   PATH_SUFFIXES LLVM/include #Windows package from http://llvm.org/releases/
   DOC "The path to the directory that contains clang-c/Index.h")
 
@@ -71,7 +71,7 @@ if (MSVC)
 endif()
 
 find_library(LIBCLANG_LIBRARY NAMES libclang.imp libclang clang
-  PATHS ${libclang_llvm_lib_search_paths}
+  PATHS ${libclang_llvm_lib_search_paths} ENV PATH
   PATH_SUFFIXES LLVM/lib #Windows package from http://llvm.org/releases/
   DOC "The file that corresponds to the libclang library.")
 
