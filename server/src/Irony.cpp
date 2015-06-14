@@ -215,11 +215,18 @@ void Irony::complete(const std::string &file,
 
     for (unsigned i = 0; i < completions->NumResults; ++i) {
       CXCompletionResult candidate = completions->Results[i];
+      CXAvailabilityKind availability =
+          clang_getCompletionAvailability(candidate.CompletionString);
 
       unsigned priority =
           clang_getCompletionPriority(candidate.CompletionString);
       unsigned annotationStart = 0;
       bool typedTextSet = false;
+
+      if (availability == CXAvailability_NotAccessible ||
+          availability == CXAvailability_NotAvailable) {
+        continue;
+      }
 
       typedtext.clear();
       brief.clear();
