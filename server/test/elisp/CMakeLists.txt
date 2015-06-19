@@ -41,4 +41,5 @@ function(add_ert_test test_file)
 endfunction()
 
 add_ert_test(irony.el)
+add_ert_test(irony-iotask.el)
 add_ert_test(irony-cdb-json.el)
