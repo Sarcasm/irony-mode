@@ -60,9 +60,9 @@ directory. This functions helps mapping out-of-source build
 directories to project directory."
   (interactive
    (progn
-     (let ((proot (read-directory-name "Project root:" nil nil t)))
-       (list proot (read-file-name "Compile commands:" proot nil t
-                                   "compile_commands.json")))))
+     (let ((proot (expand-file-name (read-directory-name "Project root:" nil nil t))))
+       (list proot (expand-file-name (read-file-name "Compile commands:" proot nil t
+                                                     "compile_commands.json"))))))
   (add-to-list 'irony-cdb-json--project-alist
                (cons project-root compile-commands-path))
   (irony-cdb-json--save-project-alist))
