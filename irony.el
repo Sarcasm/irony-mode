@@ -665,13 +665,25 @@ If no such file exists on the filesystem the special file '-' is
                              (format "%s\n"
                                      (combine-and-quote-strings argv)))))))
 
-(defun irony--send-request-sync (request callback &rest args)
+(defvar-local irony--sync-id 0 "ID of next sync request.")
+(defvar-local irony--sync-result '(-1 . nil)
+  "The car stores the id of the result and the cdr stores the return value.")
+
+(defun irony--sync-request-callback (response buffer id)
+  (with-current-buffer buffer
+      (setq irony--sync-result (cons id response))))
+
+(defun irony--send-request-sync (request &rest args)
   "Send a request to irony-server and wait for the result."
-  (let ((process (irony--get-server-process-create)))
-    (apply 'irony--send-request request callback args)
-    ;; While there are callbacks left on the queue, wait for output from server
-    (while (irony--server-process-has-callback-p process)
-      (accept-process-output process))))
+  (let* ((id irony--sync-id)
+         (callback (list #'irony--sync-request-callback (current-buffer) id)))
+    (setq irony--sync-id (+ irony--sync-id 1))
+    (with-local-quit
+      (let ((process (irony--get-server-process-create)))
+        (apply 'irony--send-request request callback args)
+        (while (null (equal id (car irony--sync-result)))
+          (accept-process-output process))
+        (cdr irony--sync-result)))))
 
 (defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.

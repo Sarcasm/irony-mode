@@ -36,13 +36,6 @@
   (cl-case command
     (get-compile-options (irony-cdb-libclang--get-compile-options))))
 
-(defvar-local irony-cdb-libclang--server-compile-options nil
-  "Compiler options got from irony-server.")
-
-(defun irony-cdb-libclang--request-handler (flags result)
-  (set result flags))
-
-;; TODO: sometimes there is garbage on the callback-queue, determine why
 (defun irony-cdb-libclang--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
     (irony-cdb-libclang--server-exact-flags it)))
@@ -50,18 +43,9 @@
 (defun irony-cdb-libclang--server-exact-flags (db-file)
   "Get compile options from server"
   (let ((project-root (file-name-directory db-file))
-          (file buffer-file-name))
-      ;; Reset compile options
-      (setq irony-cdb-libclang--server-compile-options nil)
-      ;; Get the compile options from the server
-      (irony--send-request-sync
-       "get-compile-options"
-       (list 'irony-cdb-libclang--request-handler
-             'irony-cdb-libclang--server-compile-options)
-       project-root file)
-      ;; Adjust the compile options and return
-      (irony-cdb-libclang--adjust-options-and-remove-compiler
-       file irony-cdb-libclang--server-compile-options)))
+        (file buffer-file-name))
+    (irony-cdb-libclang--adjust-options-and-remove-compiler
+     file (irony--send-request-sync "get-compile-options" project-root file))))
 
 (defun irony-cdb-libclang--adjust-options-and-remove-compiler (file cmds)
   "Remove compiler, target file and output file from cmds
