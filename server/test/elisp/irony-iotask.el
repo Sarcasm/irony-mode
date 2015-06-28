@@ -104,6 +104,48 @@ available on all OSes supported by irony-iotask."
     (setf (irony-iotask-pdata-current pdata) 1)
     (should (irony-iotask-pdata-any-current-p pdata))))
 
+;; irony-iotask-result
+
+(ert-deftest irony-iotask-result/ready-p-value ()
+  (let ((result (irony-iotask-result-create)))
+    (should-not (irony-iotask-result-valid-p result))
+    (irony-iotask-result-set-value result 1)
+    (should (irony-iotask-result-valid-p result))))
+
+(ert-deftest irony-iotask-result/ready-p-error ()
+  (let ((result (irony-iotask-result-create)))
+    (should-not (irony-iotask-result-valid-p result))
+    (irony-iotask-result-set-error result 'irony-iotask-error (list "blah"))
+    (should (irony-iotask-result-valid-p result))))
+
+(ert-deftest irony-iotask-result/set-value ()
+  (let ((result (irony-iotask-result-create)))
+    (irony-iotask-result-set-value result 'blah)
+    (should (eq (irony-iotask-result-get result) 'blah))))
+
+(define-error 'irony-iotask-result/test-error "Irony I/O task sample error")
+
+(ert-deftest irony-iotask-result/set-error ()
+  (let ((result (irony-iotask-result-create)))
+    (irony-iotask-result-set-error result 'irony-iotask-result/test-error)
+    (should-error (irony-iotask-result-get result)
+                  :type 'irony-iotask-result/test-error)))
+
+(ert-deftest irony-iotask-result/set-error-data ()
+  (let ((result (irony-iotask-result-create)))
+    (irony-iotask-result-set-error result
+                                   'irony-iotask-result/test-error
+                                   'foo 'bar 'baz 'qux)
+    (condition-case err
+        (irony-iotask-result-get result)
+      (irony-iotask-result/test-error
+       (should (equal (cdr err) '(foo bar baz qux)))))))
+
+(ert-deftest irony-iotask-result/get-empty ()
+  (let ((result (irony-iotask-result-create)))
+    (should-error (irony-iotask-result-get result)
+                  :type 'irony-iotask-result-get-error)))
+
 ;; filter
 
 (ert-deftest irony-iotask/filter-spurious-message ()

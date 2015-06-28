@@ -52,6 +52,35 @@
 ;; Structures
 ;;
 
+(cl-defstruct (irony-iotask-result (:constructor irony-iotask-result-create))
+  -tag ;; 'value or 'error, or nil when unset
+  -value
+  -error -error-data
+  )
+
+(defun irony-iotask-result-valid-p (result)
+  (and (irony-iotask-result--tag result) t))
+
+(defun irony-iotask-result-set-value (result value)
+  (setf (irony-iotask-result--tag result) 'value)
+  (setf (irony-iotask-result--value result) value))
+
+(defun irony-iotask-result-set-error (result error &rest error-data)
+  (setf (irony-iotask-result--tag result) 'error)
+  (setf (irony-iotask-result--error result) error)
+  (setf (irony-iotask-result--error-data result) error-data))
+
+(define-error 'irony-iotask-result-get-error
+  "Result not set before call to get")
+
+(defun irony-iotask-result-get (result)
+  (cl-case (irony-iotask-result--tag result)
+    ('value (irony-iotask-result--value result))
+    ('error (signal (irony-iotask-result--error result)
+                    (irony-iotask-result--error-data result)))
+    (t
+     (signal 'irony-iotask-result-get-error (list result)))))
+
 (cl-defstruct (irony-iotask-pdata
                (:constructor irony-iotask-pdata-create))
   "Structure for storing the necessary mechanics for running
