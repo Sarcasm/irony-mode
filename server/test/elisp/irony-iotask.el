@@ -32,7 +32,7 @@ There is an exposed variable named `process' available for use in
 BODY.
 
 Elisp is used as a scripting language because it should be
-available on all OSes supported by irony-iotask."
+available on all OSes irony-iotask support."
   (declare (indent 1))
   `(let ((process-connection-type nil)
          (process-adaptive-read-buffering nil)

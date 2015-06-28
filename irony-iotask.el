@@ -160,15 +160,18 @@ Slots:
   (unless (process-live-p process)
     (signal 'irony-iotask-error (list "Process ain't running!")))
   (let ((pdata (irony-iotask-process-data process))
-        (pfilter (process-contact process :filter)))
+        (pfilter (process-contact process :filter))
+        (psentinel (process-contact process :sentinel)))
     (unless (irony-iotask-pdata-p pdata)
       (signal 'irony-iotask-error
               (list (concat "invalid process data:"
                             " did you call `irony-iotask-setup-process'?"))))
     (unless (eq pfilter 'irony-iotask-process-filter)
       (signal 'irony-iotask-error
-              (list (format "invalid process filter %s"
-                            (symbol-name pfilter)))))))
+              (list "invalid process filter" pfilter)))
+    (unless (eq psentinel 'irony-iotask-process-sentinel)
+      (signal 'irony-iotask-error
+              (list "invalid process sentinel" psentinel)))))
 
 ;; TODO: implement
 ;; signal irony-iotask-error for invalid tasks
@@ -181,11 +184,17 @@ Slots:
   (unless (irony-iotask-pdata-any-current-p pdata)
     (signal 'irony-iotask-filter-error (list "spurious buffer output")))
   (irony-iotask-pdata-append-output pdata output)
+  (error "Not implemented"))
 
-  (signal 'not-implemented nil))
 
 (defun irony-iotask-process-filter (process output)
   (irony-iotask-filter (irony-iotask-process-data process) output))
+
+(defun irony-iotask-process-sentinel (process event)
+  (unless (process-live-p process)
+    ;; TODO: send an abort error to all tasks, this should make
+    ;; `irony-iotask-run' to stop looping gracefully
+    ))
 
 
 ;;
@@ -197,6 +206,7 @@ Slots:
 irony-iotask setup the PROCESS filter and anything else that may
 be needed."
   (set-process-filter process 'irony-iotask-process-filter)
+  (set-process-sentinel process 'irony-iotask-process-sentinel)
   (process-put process 'irony-iotask-pdata (irony-iotask-pdata-create))
   (buffer-disable-undo (process-buffer process)))
 
@@ -207,11 +217,52 @@ be needed."
   (unless (irony-iotask-pdata-any-current-p pdata)
     (irony-iotask-run-next pdata)))
 
-(defun irony-iotask-schedule (process iotask)
+(defun irony-iotask-schedule (process task callback)
   ;; check argument
   (irony-iotask-check-process process)
-  (irony-iotask-check-iotask iotask)
-  (irony-iotask-pdata-schedule (irony-iotask-process-data process) iotask))
+  (irony-iotask-pdata-schedule (irony-iotask-process-data process) task))
+
+(defvar irony-iotask--run-result nil)
+(defvar irony-iotask--run-count 0)
+(defun irony-iotask-run (process task)
+  "Blocking/waiting counterpart of `irony-iotask-schedule'.
+
+Return the result (or signal the stored error) instead of passing
+it to a callback.
+
+Returns nil when quitting.
+
+This function isn't reentrant, do not call it from another task."
+  ;; the count is necessary if some previous run were interrupted, we will have
+  ;; to wait for them and the new task
+  (cl-incf irony-iotask--run-count)
+  ;; schedule an asynchronous task that set result when done
+  (condition-case err
+      (irony-iotask-schedule process task
+                             (lambda (result)
+                               (setq irony-iotask--async-task-result result)
+                               (cl-decf irony-iotask--run-count)))
+    (error
+     ;; restore count in case of schedule failure, as the callback will never
+     ;; run to decrement it otherwise
+     (cl-decf irony-iotask--run-count)
+     ;; rethrow
+     (signal (car err) (cdr err))))
+
+  ;; wait for the task to complete
+  ;; quitting is allowed, in this case the task will still run but
+  ;; asynchronously, it won't block the user interface but the result will be
+  ;; lost
+  (if (with-local-quit
+        (while (not (zerop irony-iotask--run-count))
+          (accept-process-output process 0.05))
+        t)
+      ;; didn't quit, task was completed
+      (irony-iotask-result-get irony-iotask--run-result))
+  ;; C-g was used
+  ;; TODO: reset any continuation here, we don't need to spend time running them
+  ;; if the result isn't used
+  )
 
 (provide 'irony-iotask)
 ;;; irony-iotask.el ends here
