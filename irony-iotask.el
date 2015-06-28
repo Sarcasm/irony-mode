@@ -145,16 +145,29 @@ Slots:
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
-(defun irony-iotask-run-next (pdata)
-  (irony-iotask-pdata-dequeue-to-current pdata)
-  ;; TODO: implement
-  ;; TODO: task are allowed to not perform any I/O, if they implement caching,
-  ;; check if current task has finished after the invoke and run the next one,
-  ;; if any
-  ;;
-  ;;     if task-complete-p
-  ;;        handle-completed-task
-  )
+(defun irony-iotask-pdata-schedule (pdata task)
+  (irony-iotask-pdata-enqueue pdata task)
+  ;; run task if none is running
+  (unless (irony-iotask-pdata-any-current-p pdata)
+    ;; (irony-iotask-run-next pdata)
+    ))
+
+;; removing the dependance to a process is useful for testing
+(defun irony-iotask-filter (pdata output)
+  ;; if no task this is an error, a spurious message is an error
+  (unless (irony-iotask-pdata-any-current-p pdata)
+    (signal 'irony-iotask-filter-error (list "spurious buffer output" output)))
+  (irony-iotask-pdata-append-output pdata output)
+  (error "Not implemented"))
+
+(defun irony-iotask-process-filter (process output)
+  (irony-iotask-filter (irony-iotask-process-data process) output))
+
+(defun irony-iotask-process-sentinel (process event)
+  (unless (process-live-p process)
+    ;; TODO: send an abort error to all tasks, this should make
+    ;; `irony-iotask-run' to stop looping gracefully
+    ))
 
 (defun irony-iotask-check-process (process)
   (unless (process-live-p process)
@@ -173,29 +186,6 @@ Slots:
       (signal 'irony-iotask-error
               (list "invalid process sentinel" psentinel)))))
 
-;; TODO: implement
-;; signal irony-iotask-error for invalid tasks
-(defun irony-iotask-check-iotask (iotask)
-  )
-
-;; removing the dependance to a process is useful for testing
-(defun irony-iotask-filter (pdata output)
-  ;; if no task this is an error, a spurious message is an error
-  (unless (irony-iotask-pdata-any-current-p pdata)
-    (signal 'irony-iotask-filter-error (list "spurious buffer output")))
-  (irony-iotask-pdata-append-output pdata output)
-  (error "Not implemented"))
-
-
-(defun irony-iotask-process-filter (process output)
-  (irony-iotask-filter (irony-iotask-process-data process) output))
-
-(defun irony-iotask-process-sentinel (process event)
-  (unless (process-live-p process)
-    ;; TODO: send an abort error to all tasks, this should make
-    ;; `irony-iotask-run' to stop looping gracefully
-    ))
-
 
 ;;
 ;; Public API
@@ -209,13 +199,6 @@ be needed."
   (set-process-sentinel process 'irony-iotask-process-sentinel)
   (process-put process 'irony-iotask-pdata (irony-iotask-pdata-create))
   (buffer-disable-undo (process-buffer process)))
-
-(defun irony-iotask-pdata-schedule (pdata iotask)
-  (irony-iotask-check-iotask iotask)
-  (irony-iotask-pdata-enqueue pdata iotask)
-  ;; run task if none is running
-  (unless (irony-iotask-pdata-any-current-p pdata)
-    (irony-iotask-run-next pdata)))
 
 (defun irony-iotask-schedule (process task callback)
   ;; check argument
