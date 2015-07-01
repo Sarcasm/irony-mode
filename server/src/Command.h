@@ -29,6 +29,7 @@ struct Command {
     action = Unknown;
     flags.clear();
     file.clear();
+    dir.clear();
     line = 0;
     column = 0;
     unsavedFiles.clear();
