@@ -22,6 +22,7 @@
 
 static void printHelp() {
   std::cout << "usage: irony-server [OPTIONS...] [COMMAND] [ARGS...]\n"
+    "\n"
     "Options:\n"
     "  -v, --version\n"
     "  -h, --help\n"
@@ -33,7 +34,7 @@ static void printHelp() {
 
 #define X(sym, str, desc)                                                      \
   if (Command::sym != Command::Unknown)                                        \
-    std::cout << std::left << std::setw(18) << "  " str << desc << "\n";
+    std::cout << std::left << std::setw(25) << "  " str << desc << "\n";
 #include "Commands.def"
 }
 
