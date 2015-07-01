@@ -665,18 +665,17 @@ If no such file exists on the filesystem the special file '-' is
                              (format "%s\n"
                                      (combine-and-quote-strings argv)))))))
 
-(defvar-local irony--sync-id 0 "ID of next sync request.")
-(defvar-local irony--sync-result '(-1 . nil)
+(defvar irony--sync-id 0 "ID of next sync request.")
+(defvar irony--sync-result '(-1 . nil)
   "The car stores the id of the result and the cdr stores the return value.")
 
-(defun irony--sync-request-callback (response buffer id)
-  (with-current-buffer buffer
-      (setq irony--sync-result (cons id response))))
+(defun irony--sync-request-callback (response id)
+  (setq irony--sync-result (cons id response)))
 
 (defun irony--send-request-sync (request &rest args)
   "Send a request to irony-server and wait for the result."
   (let* ((id irony--sync-id)
-         (callback (list #'irony--sync-request-callback (current-buffer) id)))
+         (callback (list #'irony--sync-request-callback id)))
     (setq irony--sync-id (1+ irony--sync-id))
     (with-local-quit
       (let ((process (irony--get-server-process-create)))
