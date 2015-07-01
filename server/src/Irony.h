@@ -76,15 +76,25 @@ public:
                 unsigned col,
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
-  /// \}
 
   /// \brief Get compile options from JSON database.
   ///
   /// \param buildDir Directory containing compile_commands.json
   /// \param file File to obtain compile commands for.
   ///
+  /// Example output:
+  ///
+  /// \code{.el}
+  ///    (
+  ///     (("-Wfoo" "-DBAR" "-Iqux") . "/path/to/working/directory")
+  ///     (("-Wfoo-alt" "-DBAR_ALT" "-Iqux/alt") . "/alt/working/directory")
+  ///    )
+  /// \endcode
+  ///
   void getCompileOptions(const std::string &buildDir,
-                         const std::string &file);
+                         const std::string &file) const;
+
+  /// \}
 
 private:
   TUManager tuManager_;
