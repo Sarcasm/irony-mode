@@ -57,7 +57,6 @@
 
 (autoload 'find-library-name "find-func")
 (autoload 'lm-version "lisp-mnt")
-(autoload 'irony-cdb-libclang "irony-cdb-libclang")
 
 
 ;;
