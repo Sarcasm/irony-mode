@@ -20,7 +20,7 @@ struct quoted_string_proxy {
   quoted_string_proxy(const std::string &s) : s(s) {
   }
 
-  const std::string &s;
+  std::string s;
 };
 
 std::ostream &operator<<(std::ostream &os, const quoted_string_proxy &q) {
