@@ -1,10 +1,8 @@
 ;;; irony-cdb-libclang.el --- Compilation Database for irony using libclang
 
-;; Copyright (C) 2014  Guillaume Papin
-;;                     Karl Hylén
+;; Copyright (C) 2015  Karl Hylén
 
-;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;;         Karl Hylén <karl.hylen@gmail.com>
+;; Author: Karl Hylén <karl.hylen@gmail.com>
 ;; Keywords: c, convenience, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -41,17 +39,19 @@
     (irony-cdb-libclang--server-exact-flags it)))
 
 (defun irony-cdb-libclang--server-exact-flags (db-file)
-  "Get compile options from server"
-  (let ((project-root (file-name-directory db-file))
+  "Get compilation options from irony-server.
+
+The parameter DB-FILE is the database file."
+  (let ((build-dir (file-name-directory db-file))
         (file buffer-file-name))
     (irony-cdb-libclang--adjust-options-and-remove-compiler
-     file (irony--send-request-sync "get-compile-options" project-root file))))
+     file (irony--send-request-sync "get-compile-options" build-dir file))))
 
 (defun irony-cdb-libclang--adjust-options-and-remove-compiler (file cmds)
-  "Remove compiler, target file and output file from cmds
+  "Remove compiler, target file FILE and output file from CMDS.
 
-cmds is a list of conses, with car holding the options and cdr holding the
-working directory where the command was issued."
+The parameter CMDS is a list of conses. In each cons, the car holds the options
+and the cdr holds the working directory where the compile command was issued."
   (mapcar (lambda (cmd)
             (let ((opt (irony-cdb--remove-compiler-from-flags (car cmd)))
                   (wdir (cdr cmd)))

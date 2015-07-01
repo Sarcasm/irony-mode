@@ -14,38 +14,26 @@
 
 #include "CompilationDatabase.h"
 
-static void getExactFlags(std::vector<std::vector<std::string>> &flags,
-                          CXCompilationDatabase &db,
-                          const std::string &fullFilename) {
-  unsigned ncmd;
-  unsigned i;
-  CXCompileCommands cmds;
-
-  cmds = clang_CompilationDatabase_getCompileCommands(db, fullFilename.c_str());
-  ncmd = clang_CompileCommands_getSize(cmds);
+static void getExactCompCmds(CXCompilationDatabase &db,
+                             const std::string &fullFilename,
+                             std::vector<std::vector<std::string>> &flags) {
+  CXCompileCommands cmds =
+      clang_CompilationDatabase_getCompileCommands(db, fullFilename.c_str());
+  unsigned ncmd = clang_CompileCommands_getSize(cmds);
   flags.resize(ncmd);
 
-  for (i = 0; i < ncmd; ++i) {
-    unsigned narg;
-    unsigned j;
-    CXCompileCommand cmd;
-    CXString cxdir;
-    const char *dir;
+  for (unsigned i = 0; i < ncmd; ++i) {
+    CXCompileCommand cmd = clang_CompileCommands_getCommand(cmds, 0);
+    CXString cxdir = clang_CompileCommand_getDirectory(cmd);
 
-    cmd = clang_CompileCommands_getCommand(cmds, 0);
-    cxdir = clang_CompileCommand_getDirectory(cmd);
-
-    dir = clang_getCString(cxdir);
+    const char *dir = clang_getCString(cxdir);
     flags[i].push_back(dir);
     clang_disposeString(cxdir);
 
-    narg = clang_CompileCommand_getNumArgs(cmd);
-    for (j = 0; j < narg; ++j) {
-      CXString str;
-      const char *cstr;
-
-      str = clang_CompileCommand_getArg(cmd, j);
-      cstr = clang_getCString(str);
+    for (unsigned j = 0, narg = clang_CompileCommand_getNumArgs(cmd);
+         j < narg; ++j) {
+      CXString str = clang_CompileCommand_getArg(cmd, j);
+      const char *cstr = clang_getCString(str);
       flags[i].push_back(cstr);
       clang_disposeString(str);
     }
@@ -55,19 +43,22 @@ static void getExactFlags(std::vector<std::vector<std::string>> &flags,
 }
 
 std::vector<std::vector<std::string>>
-getFlags(const std::string &projectRoot, const std::string &fullFilename) {
+getCompileCommands(const std::string &buildDir,
+                   const std::string &fullFilename) {
   std::vector<std::vector<std::string>> flags;
   CXCompilationDatabase db;
   CXCompilationDatabase_Error error;
 
-  db = clang_CompilationDatabase_fromDirectory(projectRoot.c_str(), &error);
+  db = clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
 
   if (error == CXCompilationDatabase_CanNotLoadDatabase) {
-    std::clog << "Cannot load database!\n";
+    std::clog << "Cannot load database!\n"
+              << "Build directory: " << buildDir << "\n"
+              << "File name: " << fullFilename << "\n";
     return flags;
   }
 
-  getExactFlags(flags, db, fullFilename);
+  getExactCompCmds(db, fullFilename, flags);
 
   clang_CompilationDatabase_dispose(db);
 

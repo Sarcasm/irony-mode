@@ -80,12 +80,10 @@ public:
 
   /// \brief Get compile options from JSON database.
   ///
-  /// \param projectRoot Directory containing compile_commands.json
+  /// \param buildDir Directory containing compile_commands.json
   /// \param file File to obtain compile commands for.
   ///
-  /// \todo Return all compile commands for a file, not just the first.
-  ///
-  void getCompileOptions(const std::string &projectRoot,
+  void getCompileOptions(const std::string &buildDir,
                          const std::string &file);
 
 private:

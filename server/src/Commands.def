@@ -18,7 +18,7 @@ X(Exit, "exit", "exit interactive mode, print nothing")
 X(Help, "help", "show this message")
 X(Parse, "parse", "FILE - parse the given file")
 X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
-X(GetCompileOptions, "get-compile-options", "PROJECT_ROOT FILE - "
+X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "
   "get compile options for FILE from JSON database in PROJECT_ROOT")
 // sentinel value, should be the last one
 X(Unknown, "<unkown>",  "<unspecified>")

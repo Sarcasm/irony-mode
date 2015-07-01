@@ -677,7 +677,7 @@ If no such file exists on the filesystem the special file '-' is
   "Send a request to irony-server and wait for the result."
   (let* ((id irony--sync-id)
          (callback (list #'irony--sync-request-callback (current-buffer) id)))
-    (setq irony--sync-id (+ irony--sync-id 1))
+    (setq irony--sync-id (1+ irony--sync-id))
     (with-local-quit
       (let ((process (irony--get-server-process-create)))
         (apply 'irony--send-request request callback args)

@@ -126,8 +126,9 @@ for files that it cannot handle."
                             (cdar it)))))))
 
 (defun irony-cdb--remove-compiler-from-flags (flags)
-  "Removes the compiler from flags read from a compilation database. In the
-future this might get more invloved."
+  "Removes the compiler from flags read from a compilation database.
+
+In the future this might get more involved."
   (cdr flags))
 
 (provide 'irony-cdb)

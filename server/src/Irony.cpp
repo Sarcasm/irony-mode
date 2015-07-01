@@ -337,31 +337,30 @@ void Irony::complete(const std::string &file,
 
 }
 
-// Get compile options from JSON database
-void Irony::getCompileOptions(const std::string &projectRoot,
+/// Get compile options from JSON database
+void Irony::getCompileOptions(const std::string &buildDir,
                               const std::string &file) {
-  std::vector<std::vector<std::string>> flags = getFlags(projectRoot, file);
+  typedef std::vector<std::string> CompileCommand;
+  std::vector<CompileCommand> flags = getCompileCommands(buildDir, file);
 
-  if (!flags.empty()) {
-    std::cout << "(\n";
+  std::cout << "(\n";
 
-    for (auto vi = flags.begin(), vend = flags.end(); vi != vend; ++vi) {
-      std::cout << "( ";
+  for (const CompileCommand &compileCommand : flags) {
+    std::cout << "( ";
 
-      std::cout << "(";
-      for (auto it = std::next(vi->begin()), end = vi->end(); it != end; ++it)
-        std::cout << support::quoted(*it) << " ";
-      std::cout << ")";
-      std::cout << " . ";
-
-      std::cout << support::quoted(vi->front());
-
-      std::cout << ")\n";
+    std::cout << "(";
+    for (CompileCommand::const_iterator it = std::next(compileCommand.begin()),
+                                        end = compileCommand.end();
+         it != end; ++it) {
+      std::cout << support::quoted(*it) << " ";
     }
+    std::cout << ")";
+    std::cout << " . ";
 
-    std::cout << "\n)\n";
-  } else {
-    std::cout << "nil\n";
+    std::cout << support::quoted(compileCommand.front());
+
+    std::cout << ")\n";
   }
 
+  std::cout << "\n)\n";
 }
