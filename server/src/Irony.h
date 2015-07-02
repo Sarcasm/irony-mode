@@ -18,7 +18,8 @@
 
 #include "TUManager.h"
 
-#include <iosfwd>
+#include <string>
+#include <vector>
 
 class Irony {
 public:

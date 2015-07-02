@@ -17,7 +17,6 @@
 #include "support/CIndex.h"
 #include "support/NonCopyable.h"
 
-#include <list>
 #include <map>
 #include <string>
 #include <vector>

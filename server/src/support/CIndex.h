@@ -11,10 +11,10 @@
 
 #include <clang-c/Index.h>
 
-/// Use <tt>#if CINDEX_VERSION_VERSION > 10047</tt> to test for
+/// Use <tt>\#if CINDEX_VERSION_VERSION > 10047</tt> to test for
 /// CINDEX_VERSION_MAJOR = 1 and CINDEX_VERSION_MINOR = 47.
 #ifndef CINDEX_VERSION
-#define CINDEX_VERSION 0 ///< pre-clang 3.2 support
+#define CINDEX_VERSION 0 // pre-clang 3.2 support
 #endif
 
 #if CINDEX_VERSION >= 6

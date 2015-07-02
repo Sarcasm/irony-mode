@@ -15,11 +15,8 @@
 #include "support/iomanip_quoted.h"
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <iostream>
-#include <sstream>
-#include <stdexcept>
 
 static std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
