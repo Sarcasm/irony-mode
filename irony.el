@@ -636,9 +636,6 @@ list (and undo information is not kept).")
 (defun irony--server-process-callback-count (p)
   (length (process-get p 'irony-callback-stack)))
 
-(defun irony--server-process-has-callback-p (p)
-  (process-get p 'irony-callback-stack))
-
 
 ;;
 ;; Server commands
@@ -679,7 +676,7 @@ If no such file exists on the filesystem the special file '-' is
     (with-local-quit
       (let ((process (irony--get-server-process-create)))
         (apply 'irony--send-request request callback args)
-        (while (null (equal id (car irony--sync-result)))
+        (while (not (= id (car irony--sync-result)))
           (accept-process-output process))
         (cdr irony--sync-result)))))
 
