@@ -661,6 +661,17 @@ If no such file exists on the filesystem the special file '-' is
                              (format "%s\n"
                                      (combine-and-quote-strings argv)))))))
 
+(defun irony--send-request-sync (request callback &rest args)
+  "Send a request to irony-server and wait for the result.
+
+callback should set the irony-sync-result property of the irony-server process"
+  (let ((process (irony--get-server-process-create)))
+    ;; Using apply to "spread" the args list
+    (apply 'irony--send-request request callback args)
+    ;; While there are callbacks left on the queue, wait for output from server
+    (while (process-get process 'irony-callback-stack)
+      (accept-process-output process))))
+
 (defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.
 

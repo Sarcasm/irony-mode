@@ -43,6 +43,7 @@ struct Command {
 
   std::vector<std::string> flags;
   std::string file;
+  std::string dir;
   unsigned line;
   unsigned column;
   // pair of (filename, content)
