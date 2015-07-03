@@ -44,8 +44,6 @@
 
 (define-error 'irony-iotask-error "I/O task error")
 (define-error 'irony-iotask-filter-error "I/O task filter error")
-(define-error 'irony-iotask-pdata-queue-empty-error
-  "I/O task queue is empty" 'irony-iotask-error)
 
 
 ;;
@@ -84,78 +82,36 @@
 (cl-defstruct (irony-iotask-pdata
                (:constructor irony-iotask-pdata-create))
   "Structure for storing the necessary mechanics for running
-tasks on a process. pdata stands for \"process data\".
-
-Slots:
-`current'
-     The current, engaged task, if any.
-`pending'
-     A queue (FIFO) of pending tasks.
-`-process-output' /private/
-     The accumulation of process output as a string, for the
-     tasks to consume.
-
-     The process buffer could be used for this but we really have
-     no use for it, we get a string from the filter function that
-     we are better of accumulating to a string than play with the
-     process buffer with moving point/process-mark and stuff."
-  current
-  pending
-  (-process-output ""))
-
-(defun irony-iotask-pdata-empty-p (pdata)
-  (null (irony-iotask-pdata-pending pdata)))
-
-(defun irony-iotask-pdata-enqueue (pdata v)
-  (setf (irony-iotask-pdata-pending pdata)
-        (append (irony-iotask-pdata-pending pdata)
-                (list v))))
-
-(defun irony-iotask-pdata-peek (pdata)
-  (car (irony-iotask-pdata-pending pdata)))
-
-(defun irony-iotask-pdata-dequeue (pdata)
-  (unless (irony-iotask-pdata-pending pdata)
-    (signal 'irony-iotask-pdata-queue-empty-error
-            (list "cannot dequeue")))
-  (let ((v (irony-iotask-pdata-peek pdata)))
-    (setf (irony-iotask-pdata-pending pdata)
-          (cdr (irony-iotask-pdata-pending pdata)))
-    v))
-
-(defun irony-iotask-pdata-dequeue-to-current (pdata)
-  (let ((v (irony-iotask-pdata-dequeue pdata)))
-    (setf (irony-iotask-pdata-current pdata) v)))
-
-(defun irony-iotask-pdata-any-pending-p (pdata)
-  (and (irony-iotask-pdata-pending pdata) t))
-
-(defun irony-iotask-pdata-any-current-p (pdata)
-  (and (irony-iotask-pdata-current pdata) t))
+tasks on a process. pdata stands for \"process data\"."
+  queue
+  -process)
 
 (defun irony-iotask-pdata-append-output (pdata output)
-  (setf (irony-iotask-pdata--process-output pdata)
-        (concat (irony-iotask-pdata--process-output pdata) output)))
+  ;; TODO: implement
+  (error "not implemented"))
 
 
 ;;
 ;; Implementation details, internal mechanic
 ;;
 
+(defmacro irony-iotask-enqueue (q v)
+  `(setq q (append q (list ,v))))
+
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
 (defun irony-iotask-pdata-schedule (pdata task)
-  (irony-iotask-pdata-enqueue pdata task)
-  ;; run task if none is running
-  (unless (irony-iotask-pdata-any-current-p pdata)
-    ;; (irony-iotask-run-next pdata)
-    ))
+  ;; (irony-iotask-enqueue pdata task)
+  ;; ;; run task if none is running
+  ;; (unless (eq (length )irony-iotask-pdata-any-current-p pdata)
+  ;;   (irony-iotask-run-next pdata))
+  )
 
 ;; removing the dependance to a process is useful for testing
 (defun irony-iotask-filter (pdata output)
   ;; if no task this is an error, a spurious message is an error
-  (unless (irony-iotask-pdata-any-current-p pdata)
+  (unless (irony-iotask-pdata-queue pdata)
     (signal 'irony-iotask-filter-error (list "spurious buffer output" output)))
   (irony-iotask-pdata-append-output pdata output)
   (error "Not implemented"))
