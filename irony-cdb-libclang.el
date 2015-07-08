@@ -22,6 +22,7 @@
 ;;
 ;; Compilation Database support for Irony using libclangs CXCompilationDatabase,
 ;; http://clang.llvm.org/doxygen/group__COMPILATIONDB.html
+
 ;;; Code:
 
 (require 'irony-cdb)
