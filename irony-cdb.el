@@ -36,6 +36,7 @@
 
 (autoload 'irony-cdb-clang-complete "irony-cdb-clang-complete")
 (autoload 'irony-cdb-json "irony-cdb-json")
+(autoload 'irony-cdb-libclang "irony-cdb-libclang")
 
 
 ;;
@@ -47,6 +48,7 @@
   :group 'irony)
 
 (defcustom irony-cdb-compilation-databases '(irony-cdb-clang-complete
+                                             irony-cdb-libclang
                                              irony-cdb-json)
   "List of active compilation databases.
 
@@ -124,6 +126,12 @@ for files that it cannot handle."
         (throw 'found (list compilation-database
                             (caar it)
                             (cdar it)))))))
+
+(defun irony-cdb--remove-compiler-from-flags (flags)
+  "Removes the compiler from flags read from a compilation database.
+
+In the future this might get more involved."
+  (cdr flags))
 
 (provide 'irony-cdb)
 
