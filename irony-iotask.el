@@ -119,7 +119,7 @@ Properties:
 (defun irony-iotask-ectx-create (pdata task callback)
   (irony-iotask-ectx--create :-result (irony-iotask-result-create)
                              :-pdata pdata
-                             :-process (irony-iotask-pdata--process pdata)
+                             :-process (irony-iotask-pdata-process pdata)
                              :-task task
                              :-buffer (current-buffer)
                              :-callback callback))
@@ -132,11 +132,13 @@ Properties:
   (irony-iotask-result-set-error (irony-iotask-ectx--result ectx)
                                  error error-data))
 (cl-defstruct (irony-iotask-pdata
-               (:constructor irony-iotask-pdata-create))
+               ;; The process is optional so that we can unit-test the queue.
+               ;; Whether or not it is good design is debatable.
+               (:constructor irony-iotask-pdata-create (&optional process)))
   "Structure for storing the necessary mechanics for running
 tasks on a process. pdata stands for \"process data\"."
   queue
-  -process)
+  process)
 
 (defun irony-iotask-pdata-append-output (pdata output)
   ;; TODO: implement
@@ -145,6 +147,27 @@ tasks on a process. pdata stands for \"process data\"."
 (defun irony-iotask-pdata-enqueue (pdata task)
   (setf (irony-iotask-pdata-queue pdata)
         (append (irony-iotask-pdata-queue pdata) (list task))))
+
+(defun irony-iotask-pdata-run-next (pdata)
+  (irony-iotask--call-start (car (irony-iotask-pdata-queue pdata)))
+  (irony-iotask-pdata-check-result pdata))
+
+(defun irony-iotask-pdata-run-next-safe (pdata)
+  "Run the next task, if any."
+  (when (irony-iotask-pdata-queue pdata)
+    (irony-iotask-pdata-run-next pdata)))
+
+(defun irony-iotask-pdata-check-result (pdata)
+  (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
+         (result (irony-iotask-ectx--result ectx)))
+    (when (irony-iotask-result-valid-p result)
+      ;; pop before calling the callback, so we are more robust errors in
+      ;; callback, it won't corrupt our state
+      (setq ectx (pop (irony-iotask-pdata-queue pdata)))
+      (with-current-buffer (irony-iotask-ectx--buffer ectx)
+        ;; TODO: helpful error msg since this is called asynchronously
+        (funcall (irony-iotask-ectx--callback ectx) result))
+      (irony-iotask-pdata-run-next-safe pdata))))
 
 
 ;;
@@ -155,29 +178,22 @@ tasks on a process. pdata stands for \"process data\"."
   (process-get process 'irony-iotask-pdata))
 
 (define-error 'irony-iotask-bad-task "Bad I/O task")
-(defun irony-iotask-pdata-run-first (pdata)
-  (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
-         (task (irony-iotask-ectx--task ectx))
-         (task-buffer (irony-iotask-ectx--buffer ectx))
-         (result (irony-iotask-ectx--result ectx))
-         (start-fn (plist-get task :start)))
+(defun irony-iotask--call-start (ectx)
+  (let ((task (irony-iotask-ectx--task ectx))
+        (start-fn (plist-get task :start)))
     (if start-fn
-        (with-current-buffer task-buffer
+        (with-current-buffer (irony-iotask-ectx--buffer ectx)
           (funcall start-fn ectx))
       (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task
                                    "no :start function"
-                                   task))
-    ;; check if the result was set (e.g: due to caching or error)
-    (when (irony-iotask-result-valid-p result)
-      (with-current-buffer task-buffer
-        (funcall (irony-iotask-ectx--callback ectx) result)))))
+                                   task))))
 
 (defun irony-iotask-pdata-schedule (pdata task callback)
   (irony-iotask-pdata-enqueue pdata
                               (irony-iotask-ectx-create pdata task callback))
   ;; run task if none were running
   (when (= (length (irony-iotask-pdata-queue pdata)) 1)
-    (irony-iotask-pdata-run-first pdata)))
+    (irony-iotask-pdata-run-next pdata)))
 
 ;; removing the dependance to a process is useful for testing
 (defun irony-iotask-filter (pdata output)
@@ -224,7 +240,8 @@ irony-iotask setup the PROCESS filter and anything else that may
 be needed."
   (set-process-filter process #'irony-iotask-process-filter)
   (set-process-sentinel process #'irony-iotask-process-sentinel)
-  (process-put process 'irony-iotask-pdata (irony-iotask-pdata-create))
+  (process-put process 'irony-iotask-pdata
+               (irony-iotask-pdata-create process))
   (buffer-disable-undo (process-buffer process)))
 
 (defun irony-iotask-schedule (process task callback)
