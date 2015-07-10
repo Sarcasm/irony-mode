@@ -129,8 +129,8 @@ tasks on a process. pdata stands for \"process data\"."
   (unless (process-live-p process)
     (signal 'irony-iotask-error (list "Process ain't running!")))
   (let ((pdata (irony-iotask-process-data process))
-        (pfilter (process-contact process :filter))
-        (psentinel (process-contact process :sentinel)))
+        (pfilter (process-filter process))
+        (psentinel (process-sentinel process)))
     (unless (irony-iotask-pdata-p pdata)
       (signal 'irony-iotask-error
               (list (concat "invalid process data:"
@@ -151,8 +151,8 @@ tasks on a process. pdata stands for \"process data\"."
   "Call after creating the asynchronous process to let
 irony-iotask setup the PROCESS filter and anything else that may
 be needed."
-  (set-process-filter process 'irony-iotask-process-filter)
-  (set-process-sentinel process 'irony-iotask-process-sentinel)
+  (set-process-filter process #'irony-iotask-process-filter)
+  (set-process-sentinel process #'irony-iotask-process-sentinel)
   (process-put process 'irony-iotask-pdata (irony-iotask-pdata-create))
   (buffer-disable-undo (process-buffer process)))
 
