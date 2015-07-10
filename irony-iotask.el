@@ -79,6 +79,58 @@
     (t
      (signal 'irony-iotask-result-get-error (list result)))))
 
+;; FIXME: quoting issues? I cannot write "#'(lambda ()...)" as property value
+(defmacro irony-iotask-define-task (var docstring &rest properties)
+  "A task is simply a property list.
+
+Each of these function are called in the buffer they were
+originally created (at schedule time).
+
+Properties:
+
+`start' (mandatory)
+     Function to call to launch the task.
+
+     Usually the function sends a string/command/message to the
+     execution context. If the task do some caching it's possible
+     that nothing is send, instead the execution context result
+     should be set to indicate that the task is ready.
+
+     Takes an execution-context as parameter (`irony-iotask-ectx')."
+  (declare (indent 1)
+           (doc-string 2))
+  `(progn
+     (defvar ,var nil ,docstring)
+     ;; Use `setq' to reset the var every time the macro is called.
+     ;; This is useful, for example when evaluating using C-M-x (`eval-defun').
+     ;; Trick stolen from auto-complete's `ac-define-source'
+     (setq ,var '(,@properties))))
+
+(cl-defstruct (irony-iotask-ectx
+               (:constructor irony-iotask-ectx--create))
+  "The execution context used as arguments for tasks."
+  -result
+  -pdata
+  -process
+  -task
+  -buffer
+  -callback)
+
+(defun irony-iotask-ectx-create (pdata task callback)
+  (irony-iotask-ectx--create :-result (irony-iotask-result-create)
+                             :-pdata pdata
+                             :-process (irony-iotask-pdata--process pdata)
+                             :-task task
+                             :-buffer (current-buffer)
+                             :-callback callback))
+
+(defun irony-iotask-ectx-set-result (ectx value)
+  (irony-iotask-result-set-value (irony-iotask-ectx--result ectx)
+                                 value))
+
+(defun irony-iotask-ectx-set-error (ectx error &rest error-data)
+  (irony-iotask-result-set-error (irony-iotask-ectx--result ectx)
+                                 error error-data))
 (cl-defstruct (irony-iotask-pdata
                (:constructor irony-iotask-pdata-create))
   "Structure for storing the necessary mechanics for running
@@ -90,23 +142,42 @@ tasks on a process. pdata stands for \"process data\"."
   ;; TODO: implement
   (error "not implemented"))
 
+(defun irony-iotask-pdata-enqueue (pdata task)
+  (setf (irony-iotask-pdata-queue pdata)
+        (append (irony-iotask-pdata-queue pdata) (list task))))
+
 
 ;;
 ;; Implementation details, internal mechanic
 ;;
 
-(defmacro irony-iotask-enqueue (q v)
-  `(setq q (append q (list ,v))))
-
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
-(defun irony-iotask-pdata-schedule (pdata task)
-  ;; (irony-iotask-enqueue pdata task)
-  ;; ;; run task if none is running
-  ;; (unless (eq (length )irony-iotask-pdata-any-current-p pdata)
-  ;;   (irony-iotask-run-next pdata))
-  )
+(define-error 'irony-iotask-bad-task "Bad I/O task")
+(defun irony-iotask-pdata-run-first (pdata)
+  (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
+         (task (irony-iotask-ectx--task ectx))
+         (task-buffer (irony-iotask-ectx--buffer ectx))
+         (result (irony-iotask-ectx--result ectx))
+         (start-fn (plist-get task :start)))
+    (if start-fn
+        (with-current-buffer task-buffer
+          (funcall start-fn ectx))
+      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task
+                                   "no :start function"
+                                   task))
+    ;; check if the result was set (e.g: due to caching or error)
+    (when (irony-iotask-result-valid-p result)
+      (with-current-buffer task-buffer
+        (funcall (irony-iotask-ectx--callback ectx) result)))))
+
+(defun irony-iotask-pdata-schedule (pdata task callback)
+  (irony-iotask-pdata-enqueue pdata
+                              (irony-iotask-ectx-create pdata task callback))
+  ;; run task if none were running
+  (when (= (length (irony-iotask-pdata-queue pdata)) 1)
+    (irony-iotask-pdata-run-first pdata)))
 
 ;; removing the dependance to a process is useful for testing
 (defun irony-iotask-filter (pdata output)
@@ -159,7 +230,9 @@ be needed."
 (defun irony-iotask-schedule (process task callback)
   ;; check argument
   (irony-iotask-check-process process)
-  (irony-iotask-pdata-schedule (irony-iotask-process-data process) task))
+  (irony-iotask-pdata-schedule (irony-iotask-process-data process)
+                               task
+                               callback))
 
 (defvar irony-iotask--run-result nil)
 (defvar irony-iotask--run-count 0)
@@ -179,7 +252,7 @@ This function isn't reentrant, do not call it from another task."
   (condition-case err
       (irony-iotask-schedule process task
                              (lambda (result)
-                               (setq irony-iotask--async-task-result result)
+                               (setq irony-iotask--run-result result)
                                (cl-decf irony-iotask--run-count)))
     (error
      ;; restore count in case of schedule failure, as the callback will never

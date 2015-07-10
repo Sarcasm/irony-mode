@@ -53,16 +53,6 @@ available on all OSes irony-iotask support."
      (while (process-live-p process)
        (sit-for 0.05))))
 
-;; enqueue
-
-(ert-deftest irony-iotask/enqueue ()
-  (let (q)
-    (dolist (v '(1 2 3))
-      (irony-iotask-enqueue q v))
-    (should (equal 1 (pop q)))
-    (should (equal 2 (pop q)))
-    (should (equal 3 (pop q)))))
-
 ;; irony-iotask-result
 
 (ert-deftest irony-iotask-result/ready-p-value ()
@@ -105,9 +95,33 @@ available on all OSes irony-iotask support."
     (should-error (irony-iotask-result-get result)
                   :type 'irony-iotask-result-get-error)))
 
+;; pdata
+
+(ert-deftest irony-iotask/enqueue ()
+  (let ((pdata (irony-iotask-pdata-create)))
+    (dolist (v '(1 2 3))
+      (irony-iotask-pdata-enqueue pdata v))
+    (should (equal 1 (pop (irony-iotask-pdata-queue pdata))))
+    (should (equal 2 (pop (irony-iotask-pdata-queue pdata))))
+    (should (equal 3 (pop (irony-iotask-pdata-queue pdata))))
+    (should-not (pop (irony-iotask-pdata-queue pdata)))))
+
 ;; filter
 
 (ert-deftest irony-iotask/filter-spurious-message ()
   (let ((pdata (irony-iotask-pdata-create)))
     (should-error (irony-iotask-filter pdata "spurious message\n")
                   :type 'irony-iotask-filter-error)))
+
+;; task
+
+(irony-iotask-define-task irony-iotask/task-start-t
+  "doc"
+  :start (lambda (ectx)
+           (irony-iotask-ectx-set-result ectx 42)))
+
+(ert-deftest irony-iotask/task-start ()
+  (irony-iotask/with-elisp-process-setup
+   () ;; no-op
+   (should (equal 42
+                  (irony-iotask-run process irony-iotask/task-start-t)))))
