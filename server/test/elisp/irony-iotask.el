@@ -125,3 +125,20 @@ available on all OSes irony-iotask support."
    () ;; no-op
    (should (equal 42
                   (irony-iotask-run process irony-iotask/task-start-t)))))
+
+(irony-iotask-define-task irony-iotask/task-update-t
+  "doc"
+  :start (lambda (ectx)
+           (irony-iotask-ectx-write-string ectx "hello\n"))
+  :update (lambda (ectx bytes)
+            (cond
+             ((string= bytes "hello\n")
+              (irony-iotask-ectx-set-result ectx "update-ok"))
+             ((>= (length bytes) (length "hello\n"))
+              (throw 'invalid-msg t)))))
+
+(ert-deftest irony-iotask-schedule/echo-hello ()
+  (irony-iotask/with-elisp-process-setup
+   (message (read-from-minibuffer ""))
+   (should (string= "update-ok"
+                    (irony-iotask-run process irony-iotask/task-update-t)))))

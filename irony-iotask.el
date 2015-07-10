@@ -44,6 +44,8 @@
 
 (define-error 'irony-iotask-error "I/O task error")
 (define-error 'irony-iotask-filter-error "I/O task filter error")
+(define-error 'irony-iotask-bad-task "Bad I/O task")
+(define-error 'irony-iotask-bad-data "Bad I/O task data")
 
 
 ;;
@@ -96,7 +98,20 @@ Properties:
      that nothing is send, instead the execution context result
      should be set to indicate that the task is ready.
 
-     Takes an execution-context as parameter (`irony-iotask-ectx')."
+     Takes an execution-context as parameter (`irony-iotask-ectx').
+
+`update' (mandatory)
+     Function to call when some process output is available.
+
+     The function should determine whether a message is complete,
+     in this case it should set the result in the execution
+     context, it should also detect if the message is invalid and
+     throw the 'invalid-msg tag with a value of t in this case.
+     If the message is incomplete the function should do nothing.
+     The return value isn't used.
+
+     Takes two parameters, the execution context and an array of
+     bytes."
   (declare (indent 1)
            (doc-string 2))
   `(progn
@@ -112,6 +127,7 @@ Properties:
   -result
   -pdata
   -process
+  (-process-output "")
   -task
   -buffer
   -callback)
@@ -131,6 +147,14 @@ Properties:
 (defun irony-iotask-ectx-set-error (ectx error &rest error-data)
   (irony-iotask-result-set-error (irony-iotask-ectx--result ectx)
                                  error error-data))
+
+(defun irony-iotask-ectx-write-string (ectx string)
+  (process-send-string (irony-iotask-ectx--process ectx) string))
+
+(defun irony-iotask-ectx--append-output (ectx output)
+  (let ((new-output (concat (irony-iotask-ectx--process-output ectx) output)))
+    (setf (irony-iotask-ectx--process-output ectx) new-output)))
+
 (cl-defstruct (irony-iotask-pdata
                ;; The process is optional so that we can unit-test the queue.
                ;; Whether or not it is good design is debatable.
@@ -139,10 +163,6 @@ Properties:
 tasks on a process. pdata stands for \"process data\"."
   queue
   process)
-
-(defun irony-iotask-pdata-append-output (pdata output)
-  ;; TODO: implement
-  (error "not implemented"))
 
 (defun irony-iotask-pdata-enqueue (pdata task)
   (setf (irony-iotask-pdata-queue pdata)
@@ -177,16 +197,28 @@ tasks on a process. pdata stands for \"process data\"."
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
-(define-error 'irony-iotask-bad-task "Bad I/O task")
 (defun irony-iotask--call-start (ectx)
   (let ((task (irony-iotask-ectx--task ectx))
-        (start-fn (plist-get task :start)))
-    (if start-fn
+        (fn (plist-get task :start)))
+    (if fn
         (with-current-buffer (irony-iotask-ectx--buffer ectx)
-          (funcall start-fn ectx))
-      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task
-                                   "no :start function"
-                                   task))))
+          (funcall fn ectx))
+      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task task
+                                   "no :start function"))))
+
+(defun irony-iotask--call-update (ectx)
+  (let* ((task (irony-iotask-ectx--task ectx))
+         (fn (plist-get task :update))
+         (bytes (irony-iotask-ectx--process-output ectx)))
+    (if fn
+        (with-current-buffer (irony-iotask-ectx--buffer ectx)
+          (when (catch 'invalid-msg
+                  (funcall fn ectx bytes)
+                  nil)
+            (irony-iotask-ectx-set-error ectx
+                                         'irony-iotask-bad-data task bytes)))
+      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task task
+                                   "no :update function"))))
 
 (defun irony-iotask-pdata-schedule (pdata task callback)
   (irony-iotask-pdata-enqueue pdata
@@ -197,11 +229,13 @@ tasks on a process. pdata stands for \"process data\"."
 
 ;; removing the dependance to a process is useful for testing
 (defun irony-iotask-filter (pdata output)
-  ;; if no task this is an error, a spurious message is an error
-  (unless (irony-iotask-pdata-queue pdata)
-    (signal 'irony-iotask-filter-error (list "spurious buffer output" output)))
-  (irony-iotask-pdata-append-output pdata output)
-  (error "Not implemented"))
+  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
+    ;; if no task this is an error, a spurious message is an error
+    (unless ectx
+      (signal 'irony-iotask-filter-error (list "spurious output" output)))
+    (irony-iotask-ectx--append-output ectx output)
+    (irony-iotask--call-update ectx)
+    (irony-iotask-pdata-check-result pdata)))
 
 (defun irony-iotask-process-filter (process output)
   (irony-iotask-filter (irony-iotask-process-data process) output))
