@@ -46,12 +46,19 @@ available on all OSes irony-iotask support."
                           "--batch"
                           "--eval"
                           (prin1-to-string (quote ,process-script))))
-     (irony-iotask-setup-process process)
-     (progn
-       ,@body)
-     ;; for the tests, we want to wait the end of the process
-     (while (process-live-p process)
-       (sit-for 0.05))))
+     (unwind-protect
+         (progn
+           (irony-iotask-setup-process process)
+           ,@body)
+       ;; for the tests, we want to wait the end of the process
+       (while (process-live-p process)
+         (sit-for 0.05)))))
+
+(defmacro irony-iotask/with-echo-process-setup (&rest body)
+  (declare (indent 1))
+  `(irony-iotask/with-elisp-process-setup
+    (message (read-from-minibuffer ""))
+    ,@body))
 
 ;; irony-iotask-result
 
@@ -123,8 +130,7 @@ available on all OSes irony-iotask support."
 (ert-deftest irony-iotask/task-start ()
   (irony-iotask/with-elisp-process-setup
    () ;; no-op
-   (should (equal 42
-                  (irony-iotask-run process irony-iotask/task-start-t)))))
+   (should (equal 42 (irony-iotask-run process irony-iotask/task-start-t)))))
 
 (irony-iotask-define-task irony-iotask/task-update-t
   "doc"
@@ -138,7 +144,6 @@ available on all OSes irony-iotask support."
               (throw 'invalid-msg t)))))
 
 (ert-deftest irony-iotask-schedule/echo-hello ()
-  (irony-iotask/with-elisp-process-setup
-   (message (read-from-minibuffer ""))
+  (irony-iotask/with-echo-process-setup
    (should (string= "update-ok"
                     (irony-iotask-run process irony-iotask/task-update-t)))))
