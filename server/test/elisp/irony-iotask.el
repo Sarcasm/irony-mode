@@ -143,7 +143,15 @@ available on all OSes irony-iotask support."
              ((>= (length bytes) (length "hello\n"))
               (throw 'invalid-msg t)))))
 
-(ert-deftest irony-iotask-schedule/echo-hello ()
+(ert-deftest irony-iotask-schedule/task-update/simple ()
   (irony-iotask/with-echo-process-setup
    (should (string= "update-ok"
                     (irony-iotask-run process irony-iotask/task-update-t)))))
+
+(ert-deftest irony-iotask-schedule/task-update/invalid-msg ()
+  (irony-iotask/with-elisp-process-setup
+   (progn
+     (read-from-minibuffer "")
+     (message "spurious-output"))
+   (should-error (irony-iotask-run process irony-iotask/task-update-t)
+                 :type 'irony-iotask-bad-data)))
