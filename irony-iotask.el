@@ -184,10 +184,10 @@ tasks on a process. pdata stands for \"process data\"."
       ;; pop before calling the callback, so we are more robust errors in
       ;; callback, it won't corrupt our state
       (setq ectx (pop (irony-iotask-pdata-queue pdata)))
-      (with-current-buffer (irony-iotask-ectx--buffer ectx)
-        ;; TODO: helpful error msg since this is called asynchronously
-        (funcall (irony-iotask-ectx--callback ectx) result))
-      (irony-iotask-pdata-run-next-safe pdata))))
+      (unwind-protect
+          (with-current-buffer (irony-iotask-ectx--buffer ectx)
+            (funcall (irony-iotask-ectx--callback ectx) result))
+        (irony-iotask-pdata-run-next-safe pdata)))))
 
 
 ;;
@@ -197,6 +197,8 @@ tasks on a process. pdata stands for \"process data\"."
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
+;; TODO: catch errors in `funcall' call and store it cleanly as a
+;; `irony-iotask-bad-task' error?
 (defun irony-iotask--call-start (ectx)
   (let ((task (irony-iotask-ectx--task ectx))
         (fn (plist-get task :start)))
