@@ -64,7 +64,8 @@ directories to project directory."
        (list proot (read-file-name "Compile commands:" proot nil t
                                    "compile_commands.json")))))
   (add-to-list 'irony-cdb-json--project-alist
-               (cons project-root compile-commands-path))
+               (cons (expand-file-name project-root)
+                     (expand-file-name compile-commands-path)))
   (irony-cdb-json--save-project-alist))
 
 (defun irony-cdb-json--get-compile-options ()
