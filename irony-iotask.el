@@ -121,6 +121,15 @@ Properties:
      ;; Trick stolen from auto-complete's `ac-define-source'
      (setq ,var '(,@properties))))
 
+(cl-defstruct (irony-iotask-packaged-task
+               (:constructor irony-iotask-packaged-task--create))
+  task
+  args)
+
+(defun irony-iotask-package-task (task &rest args)
+  (irony-iotask-packaged-task--create :task task
+                                      :args args))
+
 (cl-defstruct (irony-iotask-ectx
                (:constructor irony-iotask-ectx--create))
   "The execution context used as arguments for tasks."
@@ -128,19 +137,15 @@ Properties:
   -pdata
   -process
   (-process-output "")
-  -task
+  -packaged-task
   -buffer
   -callback)
 
-(defun irony-iotask-package-task (task &rest args)
-  ;; TODO: build task continuation
-  task)
-
-(defun irony-iotask-ectx-create (pdata task callback)
+(defun irony-iotask-ectx-create (pdata packaged-task callback)
   (irony-iotask-ectx--create :-result (irony-iotask-result-create)
                              :-pdata pdata
                              :-process (irony-iotask-pdata-process pdata)
-                             :-task task
+                             :-packaged-task packaged-task
                              :-buffer (current-buffer)
                              :-callback callback))
 
@@ -149,8 +154,10 @@ Properties:
                                  value))
 
 (defun irony-iotask-ectx-set-error (ectx error &rest error-data)
-  (irony-iotask-result-set-error (irony-iotask-ectx--result ectx)
-                                 error error-data))
+  (apply #'irony-iotask-result-set-error
+         (irony-iotask-ectx--result ectx)
+         error
+         error-data))
 
 (defun irony-iotask-ectx-write-string (ectx string)
   (process-send-string (irony-iotask-ectx--process ectx) string))
@@ -158,6 +165,21 @@ Properties:
 (defun irony-iotask-ectx--append-output (ectx output)
   (let ((new-output (concat (irony-iotask-ectx--process-output ectx) output)))
     (setf (irony-iotask-ectx--process-output ectx) new-output)))
+
+(defun irony-iotask-ectx-call (ectx prop-fn &rest leading-args)
+  (let* ((packaged-task (irony-iotask-ectx--packaged-task ectx))
+         (task (irony-iotask-packaged-task-task packaged-task))
+         (args (irony-iotask-packaged-task-args packaged-task))
+         (fn (plist-get task prop-fn)))
+    (condition-case err
+        (progn
+          (unless fn
+            (signal 'irony-iotask-bad-task
+                    (list task (format "no %s function" prop-fn))))
+          (with-current-buffer (irony-iotask-ectx--buffer ectx)
+            (apply fn ectx (append leading-args args))))
+      (error
+       (apply #'irony-iotask-ectx-set-error ectx (car err) (cdr err))))))
 
 (cl-defstruct (irony-iotask-pdata
                ;; The process is optional so that we can unit-test the queue.
@@ -173,8 +195,9 @@ tasks on a process. pdata stands for \"process data\"."
         (append (irony-iotask-pdata-queue pdata) (list task))))
 
 (defun irony-iotask-pdata-run-next (pdata)
-  (irony-iotask--call-start (car (irony-iotask-pdata-queue pdata)))
-  (irony-iotask-pdata-check-result pdata))
+  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
+    (irony-iotask-ectx-call ectx :start)
+    (irony-iotask-pdata-check-result pdata)))
 
 (defun irony-iotask-pdata-run-next-safe (pdata)
   "Run the next task, if any."
@@ -201,31 +224,6 @@ tasks on a process. pdata stands for \"process data\"."
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
 
-;; TODO: catch errors in `funcall' call and store it cleanly as a
-;; `irony-iotask-bad-task' error?
-(defun irony-iotask--call-start (ectx)
-  (let* ((task (irony-iotask-ectx--task ectx))
-         (fn (plist-get task :start)))
-    (if fn
-        (with-current-buffer (irony-iotask-ectx--buffer ectx)
-          (funcall fn ectx))
-      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task task
-                                   "no :start function"))))
-
-(defun irony-iotask--call-update (ectx)
-  (let* ((task (irony-iotask-ectx--task ectx))
-         (fn (plist-get task :update))
-         (bytes (irony-iotask-ectx--process-output ectx)))
-    (if fn
-        (with-current-buffer (irony-iotask-ectx--buffer ectx)
-          (when (catch 'invalid-msg
-                  (funcall fn ectx bytes)
-                  nil)
-            (irony-iotask-ectx-set-error ectx
-                                         'irony-iotask-bad-data task bytes)))
-      (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-task task
-                                   "no :update function"))))
-
 (defun irony-iotask-pdata-schedule (pdata task callback)
   (irony-iotask-pdata-enqueue pdata
                               (irony-iotask-ectx-create pdata task callback))
@@ -240,7 +238,11 @@ tasks on a process. pdata stands for \"process data\"."
     (unless ectx
       (signal 'irony-iotask-filter-error (list "spurious output" output)))
     (irony-iotask-ectx--append-output ectx output)
-    (irony-iotask--call-update ectx)
+    (let ((bytes (irony-iotask-ectx--process-output ectx)))
+      (when (catch 'invalid-msg
+              (irony-iotask-ectx-call ectx :update bytes)
+              nil)
+        (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-data ectx bytes)))
     (irony-iotask-pdata-check-result pdata)))
 
 (defun irony-iotask-process-filter (process output)

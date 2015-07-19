@@ -124,8 +124,8 @@ available on all OSes irony-iotask support."
 
 (irony-iotask-define-task irony-iotask/task-start-t
   "doc"
-  :start (lambda (ectx)
-           (irony-iotask-ectx-set-result ectx 42)))
+  :start (lambda (ectx &optional value)
+           (irony-iotask-ectx-set-result ectx (or value 42))))
 
 (ert-deftest irony-iotask/task-start/simple ()
   (let ((task (irony-iotask-package-task irony-iotask/task-start-t)))
@@ -133,21 +133,34 @@ available on all OSes irony-iotask support."
      () ;; no-op
      (should (equal 42 (irony-iotask-run process task))))))
 
+(ert-deftest irony-iotask/task-start/with-arguments ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-start-t 43)))
+    (irony-iotask/with-elisp-process-setup
+     () ;; no-op
+     (should (equal 43 (irony-iotask-run process task))))))
+
 (irony-iotask-define-task irony-iotask/task-update-t
   "doc"
-  :start (lambda (ectx)
-           (irony-iotask-ectx-write-string ectx "hello\n"))
-  :update (lambda (ectx bytes)
+  :start (lambda (ectx &optional hello)
+           (irony-iotask-ectx-write-string ectx
+                                           (format "%s\n" (or hello "hello"))))
+  :update (lambda (ectx bytes &optional hello)
+            (setq hello (or hello "hello"))
             (cond
-             ((string= bytes "hello\n")
-              (irony-iotask-ectx-set-result ectx "update-ok"))
-             ((>= (length bytes) (length "hello\n"))
+             ((string= bytes (format "%s\n" hello))
+              (irony-iotask-ectx-set-result ectx (format "%s ok" hello)))
+             ((>= (length bytes) (1+ (length hello)))
               (throw 'invalid-msg t)))))
 
 (ert-deftest irony-iotask-schedule/task-update/simple ()
   (let ((task (irony-iotask-package-task irony-iotask/task-update-t)))
     (irony-iotask/with-echo-process-setup
-     (should (string= "update-ok" (irony-iotask-run process task))))))
+     (should (string= "hello ok" (irony-iotask-run process task))))))
+
+(ert-deftest irony-iotask-schedule/task-update/with-arguments ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-update-t "bonjour")))
+    (irony-iotask/with-echo-process-setup
+     (should (string= "bonjour ok" (irony-iotask-run process task))))))
 
 (ert-deftest irony-iotask-schedule/task-update/invalid-msg ()
   (let ((task (irony-iotask-package-task irony-iotask/task-update-t)))
