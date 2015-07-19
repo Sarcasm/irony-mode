@@ -132,6 +132,10 @@ Properties:
   -buffer
   -callback)
 
+(defun irony-iotask-package-task (task &rest args)
+  ;; TODO: build task continuation
+  task)
+
 (defun irony-iotask-ectx-create (pdata task callback)
   (irony-iotask-ectx--create :-result (irony-iotask-result-create)
                              :-pdata pdata

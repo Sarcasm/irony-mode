@@ -127,10 +127,11 @@ available on all OSes irony-iotask support."
   :start (lambda (ectx)
            (irony-iotask-ectx-set-result ectx 42)))
 
-(ert-deftest irony-iotask/task-start ()
-  (irony-iotask/with-elisp-process-setup
-   () ;; no-op
-   (should (equal 42 (irony-iotask-run process irony-iotask/task-start-t)))))
+(ert-deftest irony-iotask/task-start/simple ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-start-t)))
+    (irony-iotask/with-elisp-process-setup
+     () ;; no-op
+     (should (equal 42 (irony-iotask-run process task))))))
 
 (irony-iotask-define-task irony-iotask/task-update-t
   "doc"
@@ -144,14 +145,15 @@ available on all OSes irony-iotask support."
               (throw 'invalid-msg t)))))
 
 (ert-deftest irony-iotask-schedule/task-update/simple ()
-  (irony-iotask/with-echo-process-setup
-   (should (string= "update-ok"
-                    (irony-iotask-run process irony-iotask/task-update-t)))))
+  (let ((task (irony-iotask-package-task irony-iotask/task-update-t)))
+    (irony-iotask/with-echo-process-setup
+     (should (string= "update-ok" (irony-iotask-run process task))))))
 
 (ert-deftest irony-iotask-schedule/task-update/invalid-msg ()
-  (irony-iotask/with-elisp-process-setup
-   (progn
-     (read-from-minibuffer "")
-     (message "spurious-output"))
-   (should-error (irony-iotask-run process irony-iotask/task-update-t)
-                 :type 'irony-iotask-bad-data)))
+  (let ((task (irony-iotask-package-task irony-iotask/task-update-t)))
+    (irony-iotask/with-elisp-process-setup
+     (progn
+       (read-from-minibuffer "")
+       (message "spurious-output"))
+     (should-error (irony-iotask-run process task)
+                   :type 'irony-iotask-bad-data))))
