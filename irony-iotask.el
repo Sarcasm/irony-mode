@@ -200,8 +200,8 @@ tasks on a process. pdata stands for \"process data\"."
 ;; TODO: catch errors in `funcall' call and store it cleanly as a
 ;; `irony-iotask-bad-task' error?
 (defun irony-iotask--call-start (ectx)
-  (let ((task (irony-iotask-ectx--task ectx))
-        (fn (plist-get task :start)))
+  (let* ((task (irony-iotask-ectx--task ectx))
+         (fn (plist-get task :start)))
     (if fn
         (with-current-buffer (irony-iotask-ectx--buffer ectx)
           (funcall fn ectx))
