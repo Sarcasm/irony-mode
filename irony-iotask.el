@@ -211,10 +211,10 @@ tasks on a process. pdata stands for \"process data\"."
       ;; pop before calling the callback, so we are more robust errors in
       ;; callback, it won't corrupt our state
       (setq ectx (pop (irony-iotask-pdata-queue pdata)))
-      (unwind-protect
-          (with-current-buffer (irony-iotask-ectx--buffer ectx)
-            (funcall (irony-iotask-ectx--callback ectx) result))
-        (irony-iotask-pdata-run-next-safe pdata)))))
+      (with-demoted-errors "Error in task callback: %S"
+        (with-current-buffer (irony-iotask-ectx--buffer ectx)
+          (funcall (irony-iotask-ectx--callback ectx) result)))
+      (irony-iotask-pdata-run-next-safe pdata))))
 
 
 ;;
