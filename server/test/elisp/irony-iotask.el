@@ -51,8 +51,12 @@ available on all OSes irony-iotask support."
            (irony-iotask-setup-process process)
            ,@body)
        ;; for the tests, we want to wait the end of the process
-       (while (process-live-p process)
-         (sit-for 0.05)))))
+       (unwind-protect
+           (with-timeout
+               (1
+                (kill-process process))
+             (while (process-live-p process)
+               (sit-for 0.05)))))))
 
 (defmacro irony-iotask/with-echo-process-setup (&rest body)
   (declare (indent 1))
