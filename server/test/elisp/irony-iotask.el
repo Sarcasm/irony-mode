@@ -174,3 +174,13 @@ available on all OSes irony-iotask support."
        (message "spurious-output"))
      (should-error (irony-iotask-run process task)
                    :type 'irony-iotask-bad-data))))
+
+(ert-deftest irony-iotask-chain/simple ()
+  (let ((task (irony-iotask-chain
+               (irony-iotask-package-task irony-iotask/task-update-t "hi")
+               (irony-iotask-package-task irony-iotask/task-update-t "hej"))))
+    (irony-iotask/with-elisp-process-setup
+     (progn
+       (message (read-from-minibuffer ""))
+       (message (read-from-minibuffer "")))
+     (should (equal "hej ok" (irony-iotask-run process task))))))

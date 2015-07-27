@@ -61,6 +61,12 @@
 (defun irony-iotask-result-valid-p (result)
   (and (irony-iotask-result--tag result) t))
 
+(defun irony-iotask-result-value-p (result)
+  (eq (irony-iotask-result--tag result) 'value))
+
+(defun irony-iotask-result-error-p (result)
+  (eq (irony-iotask-result--tag result) 'error))
+
 (defun irony-iotask-result-set-value (result value)
   (setf (irony-iotask-result--tag result) 'value)
   (setf (irony-iotask-result--value result) value))
@@ -124,30 +130,60 @@ Properties:
 (cl-defstruct (irony-iotask-packaged-task
                (:constructor irony-iotask-packaged-task--create))
   task
-  args)
+  args
+  (process-output "")
+  result
+  continuation)
+
+(defun irony-iotask-packaged-task--append-output (packaged-task output)
+  (let ((new-output
+         (concat (irony-iotask-packaged-task-process-output packaged-task)
+                 output)))
+    (setf (irony-iotask-packaged-task-process-output packaged-task)
+          new-output)))
 
 (defun irony-iotask-package-task (task &rest args)
   (irony-iotask-packaged-task--create :task task
+                                      :result (irony-iotask-result-create)
                                       :args args))
+
+(defun irony-iotask--chain-1 (packaged-task-1 packaged-task-2)
+  (while (irony-iotask-packaged-task-continuation packaged-task-1)
+    (setq packaged-task-1
+          (irony-iotask-packaged-task-continuation packaged-task-1)))
+  (setf (irony-iotask-packaged-task-continuation packaged-task-1)
+        packaged-task-2))
+
+(defun irony-iotask-chain (packaged-task-1 packaged-task-2 &rest others)
+  (setq others (cons packaged-task-2 others))
+  (while others
+    (irony-iotask--chain-1 packaged-task-1 (car others))
+    (setq others (cdr others)))
+  packaged-task-1)
 
 (cl-defstruct (irony-iotask-ectx
                (:constructor irony-iotask-ectx--create))
   "The execution context used as arguments for tasks."
-  -result
   -pdata
   -process
-  (-process-output "")
   -packaged-task
+  ;; TODO: buffer should be determined thanks to an attribute
+  ;; :bound-to {nil,process,buffer}, so we know in which context to execute the
+  ;; tasks, they can do caching buffer-local variable in these buffers.
+  ;;
+  ;; what the default should be? process is safer?
   -buffer
   -callback)
 
 (defun irony-iotask-ectx-create (pdata packaged-task callback)
-  (irony-iotask-ectx--create :-result (irony-iotask-result-create)
-                             :-pdata pdata
+  (irony-iotask-ectx--create :-pdata pdata
                              :-process (irony-iotask-pdata-process pdata)
                              :-packaged-task packaged-task
                              :-buffer (current-buffer)
                              :-callback callback))
+
+(defun irony-iotask-ectx--result (ectx)
+  (irony-iotask-packaged-task-result (irony-iotask-ectx--packaged-task ectx)))
 
 (defun irony-iotask-ectx-set-result (ectx value)
   (irony-iotask-result-set-value (irony-iotask-ectx--result ectx)
@@ -162,9 +198,13 @@ Properties:
 (defun irony-iotask-ectx-write-string (ectx string)
   (process-send-string (irony-iotask-ectx--process ectx) string))
 
+(defun irony-iotask-ectx--process-output (ectx)
+  (irony-iotask-packaged-task-process-output
+   (irony-iotask-ectx--packaged-task ectx)))
+
 (defun irony-iotask-ectx--append-output (ectx output)
-  (let ((new-output (concat (irony-iotask-ectx--process-output ectx) output)))
-    (setf (irony-iotask-ectx--process-output ectx) new-output)))
+  (irony-iotask-packaged-task--append-output
+   (irony-iotask-ectx--packaged-task ectx) output))
 
 (defun irony-iotask-ectx-call (ectx prop-fn &rest leading-args)
   (let* ((packaged-task (irony-iotask-ectx--packaged-task ectx))
@@ -206,15 +246,23 @@ tasks on a process. pdata stands for \"process data\"."
 
 (defun irony-iotask-pdata-check-result (pdata)
   (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
-         (result (irony-iotask-ectx--result ectx)))
+         (packaged-task (irony-iotask-ectx--packaged-task ectx))
+         (result (irony-iotask-packaged-task-result packaged-task)))
     (when (irony-iotask-result-valid-p result)
-      ;; pop before calling the callback, so we are more robust errors in
-      ;; callback, it won't corrupt our state
-      (setq ectx (pop (irony-iotask-pdata-queue pdata)))
-      (with-demoted-errors "Error in task callback: %S"
-        (with-current-buffer (irony-iotask-ectx--buffer ectx)
-          (funcall (irony-iotask-ectx--callback ectx) result)))
-      (irony-iotask-pdata-run-next-safe pdata))))
+      (if (and (irony-iotask-packaged-task-continuation packaged-task)
+               (irony-iotask-result-value-p result))
+          ;; we got a non-error, we can chain to the next continuation
+          (progn
+            (setf (irony-iotask-ectx--packaged-task ectx)
+                  (irony-iotask-packaged-task-continuation packaged-task))
+            (irony-iotask-pdata-run-next pdata))
+        ;; no continuation or an error, call the callback
+        ;; and skip any potential continuation
+        (setq ectx (pop (irony-iotask-pdata-queue pdata)))
+        (with-demoted-errors "Error in task callback: %S"
+          (with-current-buffer (irony-iotask-ectx--buffer ectx)
+            (funcall (irony-iotask-ectx--callback ectx) result)))
+        (irony-iotask-pdata-run-next-safe pdata)))))
 
 
 ;;
