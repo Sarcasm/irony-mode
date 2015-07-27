@@ -42,10 +42,31 @@
 ;; Error conditions
 ;;
 
-(define-error 'irony-iotask-error "I/O task error")
-(define-error 'irony-iotask-filter-error "I/O task filter error")
-(define-error 'irony-iotask-bad-task "Bad I/O task")
-(define-error 'irony-iotask-bad-data "Bad I/O task data")
+;; `define-error' breaks backward compatibility with Emacs < 24.4
+(defun irony-iotask--define-error (name message &optional parent)
+  "Define NAME as a new error signal.
+MESSAGE is a string that will be output to the echo area if such an error
+is signaled without being caught by a `condition-case'.
+PARENT is either a signal or a list of signals from which it inherits.
+Defaults to `error'."
+  (unless parent (setq parent 'error))
+  (let ((conditions
+         (if (consp parent)
+             (apply #'nconc
+                    (mapcar (lambda (parent)
+                              (cons parent
+                                    (or (get parent 'error-conditions)
+                                        (error "Unknown signal `%s'" parent))))
+                            parent))
+           (cons parent (get parent 'error-conditions)))))
+    (put name 'error-conditions
+         (delete-dups (copy-sequence (cons name conditions))))
+    (when message (put name 'error-message message))))
+
+(irony-iotask--define-error 'irony-iotask-error "I/O task error")
+(irony-iotask--define-error 'irony-iotask-filter-error "I/O task filter error")
+(irony-iotask--define-error 'irony-iotask-bad-task "Bad I/O task")
+(irony-iotask--define-error 'irony-iotask-bad-data "Bad I/O task data")
 
 
 ;;
@@ -76,7 +97,7 @@
   (setf (irony-iotask-result--error result) error)
   (setf (irony-iotask-result--error-data result) error-data))
 
-(define-error 'irony-iotask-result-get-error
+(irony-iotask--define-error 'irony-iotask-result-get-error
   "Result not set before call to get")
 
 (defun irony-iotask-result-get (result)
