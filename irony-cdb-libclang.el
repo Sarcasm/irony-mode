@@ -43,11 +43,13 @@
   "Get compilation options from irony-server.
 
 The parameter DB-FILE is the database file."
-  (let ((build-dir (file-name-directory db-file))
-        (file buffer-file-name))
-    (when file
+  (when buffer-file-name
+    (let* ((build-dir (file-name-directory db-file))
+           (file buffer-file-name)
+           (task (irony--get-compile-options-task build-dir file))
+           (compile-options (irony--run-task task)))
       (irony-cdb-libclang--adjust-options-and-remove-compiler
-       file (irony--send-request-sync "get-compile-options" build-dir file)))))
+       file compile-options))))
 
 (defun irony-cdb-libclang--adjust-options-and-remove-compiler (file cmds)
   "Remove compiler, target file FILE and output file from CMDS.

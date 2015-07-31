@@ -55,6 +55,8 @@
 
 ;;; Code:
 
+(require 'irony-iotask)
+
 (autoload 'irony-completion--enter "irony-completion")
 (autoload 'irony-completion--exit "irony-completion")
 
@@ -616,10 +618,8 @@ list (and undo information is not kept).")
                    (expand-file-name
                     (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
                     temporary-file-directory))))
-    (buffer-disable-undo irony--server-buffer)
     (set-process-query-on-exit-flag process nil)
-    (set-process-sentinel process 'irony--server-process-sentinel)
-    (set-process-filter process 'irony--server-process-filter)
+    (irony-iotask-setup-process process)
     process))
 
 ;;;###autoload
@@ -681,10 +681,39 @@ list (and undo information is not kept).")
     (process-put p 'irony-callback-stack (cdr callbacks))
     (car callbacks)))
 
+(defun irony--run-task (task)
+  (irony-iotask-run (irony--get-server-process-create) task))
+
+(defun irony--server-send-command (command &rest args)
+  (let ((command-line (concat (combine-and-quote-strings (cons command args))
+                              "\n")))
+    (irony-iotask-send-string command-line)))
+
+;; XXX: this code can run in very tight very sensitive on big inputs,
+;; every change should be measured
+(defun irony--iotask-update-parser (&rest _args)
+  (when (and (> (buffer-size) (length irony--eot))
+             (string-equal (buffer-substring-no-properties
+                            (- (point-max) (length irony--eot)) (point-max))
+                           irony--eot))
+    (condition-case-unless-debug nil
+        (irony-iotask-set-result (read (current-buffer)))
+      (error
+       (throw 'invalid-msg t)))))
+
 
 ;;
 ;; Server commands
 ;;
+
+(irony-iotask-define-task irony--t-get-compile-options
+  "`get-compile-options' server command."
+  :start (lambda (build-dir file)
+           (irony--server-send-command "get-compile-options" build-dir file))
+  :update irony--iotask-update-parser)
+
+(defun irony--get-compile-options-task (build-dir file)
+  (irony-iotask-package-task irony--t-get-compile-options build-dir file))
 
 (defun irony--get-buffer-path-for-server ()
   "Get the path of the current buffer to send to irony-server.
@@ -705,26 +734,6 @@ If no such file exists on the filesystem the special file '-' is
         (process-send-string process
                              (format "%s\n"
                                      (combine-and-quote-strings argv)))))))
-
-(defvar irony--sync-id 0 "ID of next sync request.")
-(defvar irony--sync-result '(-1 . nil)
-  "The car stores the id of the result and the cdr stores the return value.")
-
-(defun irony--sync-request-callback (response id)
-  (setq irony--sync-result (cons id response)))
-
-(defun irony--send-request-sync (request &rest args)
-  "Send a request to irony-server and wait for the result."
-  (let* ((id irony--sync-id)
-         (callback (list #'irony--sync-request-callback id)))
-    (setq irony--sync-id (1+ irony--sync-id))
-    (with-local-quit
-      (let ((process (irony--get-server-process-create)))
-        (when process
-          (apply 'irony--send-request request callback args)
-          (while (not (= id (car irony--sync-result)))
-            (accept-process-output process))
-          (cdr irony--sync-result))))))
 
 (defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.
