@@ -190,9 +190,11 @@ Properties:
   "The execution context used as arguments for tasks."
   -process
   -packaged-task
-  ;; TODO: buffer should be determined thanks to an attribute
-  ;; :bound-to {nil,process,buffer}, so we know in which context to execute the
-  ;; tasks, they can do caching buffer-local variable in these buffers.
+  ;; TODO: buffer should be determined thanks to an attribute :bound-to
+  ;; {nil,process,buffer}, so we know in which context to execute the tasks,
+  ;; they can do caching buffer-local variable in these buffers. Also, when the
+  ;; buffer dies, the task should set the result to some kind of error (or maybe
+  ;; we don't call the function at all?).
   ;;
   ;; what the default should be? process is safer?
   -buffer
