@@ -262,6 +262,14 @@ tasks on a process. pdata stands for \"process data\"."
   (when (irony-iotask-pdata-queue pdata)
     (irony-iotask-pdata-run-next pdata)))
 
+(defun irony-iotask-pdata--process-result (pdata)
+  (let* ((ectx (pop (irony-iotask-pdata-queue pdata)))
+         (result (irony-iotask-packaged-task-result
+                  (irony-iotask-ectx--packaged-task ectx))))
+    (with-demoted-errors "Irony I/O task: error in callback: %S"
+      (with-current-buffer (irony-iotask-ectx--buffer ectx)
+        (funcall (irony-iotask-ectx--callback ectx) result)))))
+
 (defun irony-iotask-pdata-check-result (pdata)
   (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
          (packaged-task (irony-iotask-ectx--packaged-task ectx))
@@ -276,11 +284,21 @@ tasks on a process. pdata stands for \"process data\"."
             (irony-iotask-pdata-run-next pdata))
         ;; no continuation or an error, call the callback
         ;; and skip any potential continuation
-        (setq ectx (pop (irony-iotask-pdata-queue pdata)))
-        (with-demoted-errors "Error in task callback: %S"
-          (with-current-buffer (irony-iotask-ectx--buffer ectx)
-            (funcall (irony-iotask-ectx--callback ectx) result)))
+        (irony-iotask-pdata--process-result pdata)
         (irony-iotask-pdata-run-next-safe pdata)))))
+
+(irony-iotask--define-error 'irony-iotask-aborted "I/O task aborted")
+
+(defun irony-iotask-pdata-abort-current (pdata &rest reasons)
+  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
+    (apply #'irony-iotask-ectx-set-error ectx 'irony-iotask-aborted reasons)
+    (irony-iotask-pdata--process-result pdata)))
+
+(defun irony-iotask-pdata-abort-all (pdata &rest reasons)
+  (let (ectx)
+    (while (setq ectx (car (irony-iotask-pdata-queue pdata)))
+      (apply #'irony-iotask-ectx-set-error ectx 'irony-iotask-aborted reasons)
+      (irony-iotask-pdata--process-result pdata))))
 
 
 ;;
@@ -308,10 +326,13 @@ tasks on a process. pdata stands for \"process data\"."
   (irony-iotask-filter (irony-iotask-process-data process) output))
 
 (defun irony-iotask-process-sentinel (process event)
-  (unless (process-live-p process)
-    ;; TODO: send an abort error to all tasks, this should make
-    ;; `irony-iotask-run' to stop looping gracefully
-    ))
+  ;; events usually ends with a newline, we don't want it
+  (setq event (replace-regexp-in-string "\n\\'" "" event))
+  (let ((pdata (irony-iotask-process-data process)))
+    (unless (process-live-p process)
+      ;; aborting the tasks should make `irony-iotask-run'
+      ;; to stop looping gracefully
+      (irony-iotask-pdata-abort-all pdata "process stopped running" event))))
 
 (defun irony-iotask-check-process (process)
   (unless (process-live-p process)
