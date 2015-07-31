@@ -185,7 +185,6 @@ Properties:
 (cl-defstruct (irony-iotask-ectx
                (:constructor irony-iotask-ectx--create))
   "The execution context used as arguments for tasks."
-  -pdata
   -process
   -packaged-task
   ;; TODO: buffer should be determined thanks to an attribute
@@ -196,9 +195,8 @@ Properties:
   -buffer
   -callback)
 
-(defun irony-iotask-ectx-create (pdata packaged-task callback)
-  (irony-iotask-ectx--create :-pdata pdata
-                             :-process (irony-iotask-pdata-process pdata)
+(defun irony-iotask-ectx-create (process packaged-task callback)
+  (irony-iotask-ectx--create :-process process
                              :-packaged-task packaged-task
                              :-buffer (current-buffer)
                              :-callback callback))
@@ -248,8 +246,7 @@ Properties:
                (:constructor irony-iotask-pdata-create (&optional process)))
   "Structure for storing the necessary mechanics for running
 tasks on a process. pdata stands for \"process data\"."
-  queue
-  process)
+  queue)
 
 (defun irony-iotask-pdata-enqueue (pdata task)
   (setf (irony-iotask-pdata-queue pdata)
@@ -292,13 +289,6 @@ tasks on a process. pdata stands for \"process data\"."
 
 (defun irony-iotask-process-data (process)
   (process-get process 'irony-iotask-pdata))
-
-(defun irony-iotask-pdata-schedule (pdata task callback)
-  (irony-iotask-pdata-enqueue pdata
-                              (irony-iotask-ectx-create pdata task callback))
-  ;; run task if none were running
-  (when (= (length (irony-iotask-pdata-queue pdata)) 1)
-    (irony-iotask-pdata-run-next pdata)))
 
 ;; removing the dependance to a process is useful for testing
 (defun irony-iotask-filter (pdata output)
@@ -358,9 +348,13 @@ be needed."
 (defun irony-iotask-schedule (process task callback)
   ;; check argument
   (irony-iotask-check-process process)
-  (irony-iotask-pdata-schedule (irony-iotask-process-data process)
-                               task
-                               callback))
+  (let ((pdata (irony-iotask-process-data process)))
+    (irony-iotask-pdata-enqueue pdata (irony-iotask-ectx-create process
+                                                                task
+                                                                callback))
+    ;; run task if none were running
+    (when (= (length (irony-iotask-pdata-queue pdata)) 1)
+      (irony-iotask-pdata-run-next pdata))))
 
 (defvar irony-iotask--run-result nil)
 (defvar irony-iotask--run-count 0)
