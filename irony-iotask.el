@@ -35,6 +35,9 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'cl))                        ;for lexical-let macro
+
 (require 'cl-lib)
 
 
@@ -330,8 +333,6 @@ tasks on a process. pdata stands for \"process data\"."
   (setq event (replace-regexp-in-string "\n\\'" "" event))
   (let ((pdata (irony-iotask-process-data process)))
     (unless (process-live-p process)
-      ;; aborting the tasks should make `irony-iotask-run'
-      ;; to stop looping gracefully
       (irony-iotask-pdata-abort-all pdata "process stopped running" event))))
 
 (defun irony-iotask-check-process (process)
@@ -377,8 +378,6 @@ be needed."
     (when (= (length (irony-iotask-pdata-queue pdata)) 1)
       (irony-iotask-pdata-run-next pdata))))
 
-(defvar irony-iotask--run-result nil)
-(defvar irony-iotask--run-count 0)
 (defun irony-iotask-run (process task)
   "Blocking/waiting counterpart of `irony-iotask-schedule'.
 
@@ -388,36 +387,26 @@ it to a callback.
 Returns nil when quitting.
 
 This function isn't reentrant, do not call it from another task."
-  ;; the count is necessary if some previous run were interrupted, we will have
-  ;; to wait for them and the new task
-  (cl-incf irony-iotask--run-count)
-  ;; schedule an asynchronous task that set result when done
-  (condition-case err
-      (irony-iotask-schedule process task
-                             (lambda (result)
-                               (setq irony-iotask--run-result result)
-                               (cl-decf irony-iotask--run-count)))
-    (error
-     ;; restore count in case of schedule failure, as the callback will never
-     ;; run to decrement it otherwise
-     (cl-decf irony-iotask--run-count)
-     ;; rethrow
-     (signal (car err) (cdr err))))
+  (lexical-let (run-result)
+    ;; schedule an asynchronous task that set result when done
+    (irony-iotask-schedule process task (lambda (result)
+                                          (setq run-result result)))
 
-  ;; wait for the task to complete
-  ;; quitting is allowed, in this case the task will still run but
-  ;; asynchronously, it won't block the user interface but the result will be
-  ;; lost
-  (if (with-local-quit
-        (while (not (zerop irony-iotask--run-count))
-          (accept-process-output process 0.05))
-        t)
-      ;; didn't quit, task was completed
-      (irony-iotask-result-get irony-iotask--run-result))
-  ;; C-g was used
-  ;; TODO: reset any continuation here, we don't need to spend time running them
-  ;; if the result isn't used
-  )
+    ;; wait for the task to complete
+    ;; quitting is allowed, in this case the task will still run but
+    ;; asynchronously, it won't block the user interface but the result will be
+    ;; lost
+    (if (with-local-quit
+          (while (not run-result)
+            (accept-process-output process 0.05))
+          t)
+        ;; didn't quit, task was completed
+        (irony-iotask-result-get run-result)
+      ;; C-g was used
+      ;; TODO: We cannot abort the task because that may break the other tasks,
+      ;; the process will be in an unpredictable state. Howewer we cancel the
+      ;; continuations.
+      )))
 
 (provide 'irony-iotask)
 ;;; irony-iotask.el ends here
