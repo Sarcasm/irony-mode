@@ -93,6 +93,22 @@ struct InteractiveCommandProvider : CommandProviderInterface {
   }
 };
 
+struct RestoreClogOnExit {
+  RestoreClogOnExit() : rdbuf_(std::clog.rdbuf()) {
+  }
+
+  ~RestoreClogOnExit() {
+    std::clog.rdbuf(rdbuf_);
+  }
+
+private:
+  RestoreClogOnExit(const RestoreClogOnExit &);
+  RestoreClogOnExit &operator=(const RestoreClogOnExit &);
+
+private:
+  std::streambuf *rdbuf_;
+};
+
 int main(int ac, const char *av[]) {
   std::vector<std::string> argv(&av[1], &av[ac]);
 
@@ -112,6 +128,13 @@ int main(int ac, const char *av[]) {
   }
 
   std::ofstream logFile;
+
+  // When logging to a specific file, std::clog.rdbuf() is replaced by the log
+  // file's one. When we return from the main, this buffer is deleted (at the
+  // same time as logFile) but std::clog is still active, and will try to
+  // release the rdbuf() which has already been released in logFile's
+  // destructor. To avoid this we restore std::clog()'s original rdbuf on exit.
+  RestoreClogOnExit clogBufferRestorer;
 
   unsigned optCount = 0;
   while (optCount < argv.size()) {
