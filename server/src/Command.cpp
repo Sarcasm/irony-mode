@@ -172,6 +172,10 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     // no-arguments commands
     break;
 
+  case Command::GetAllFiles:
+    positionalArgs.push_back(StringConverter(&command_.dir));
+    break;
+
   case Command::GetCompileOptions:
     positionalArgs.push_back(StringConverter(&command_.dir));
     positionalArgs.push_back(StringConverter(&command_.file));

@@ -78,6 +78,9 @@ public:
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
 
+  // TODO: Documentation
+  void getAllFiles(const std::string &buildDir);
+
   /// \brief Get compile options from JSON database.
   ///
   /// \param buildDir Directory containing compile_commands.json

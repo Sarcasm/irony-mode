@@ -17,6 +17,8 @@ X(Diagnostics, "diagnostics", "print the diagnostics of the last parse")
 X(Exit, "exit", "exit interactive mode, print nothing")
 X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "
   "get compile options for FILE from JSON database in PROJECT_ROOT")
+X(GetAllFiles, "get-all-files", "BUILD_DIR"
+  "get the name of all files in the compilation database")
 X(Help, "help", "show this message")
 X(Parse, "parse", "FILE - parse the given file")
 X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")

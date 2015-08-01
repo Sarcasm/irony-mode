@@ -14,9 +14,13 @@
 
 #include "support/iomanip_quoted.h"
 
+#include <boost/filesystem.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+
+using boost::filesystem::path;
 
 static std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
@@ -331,6 +335,69 @@ void Irony::complete(const std::string &file,
     std::cout << ")\n";
   }
 
+}
+
+void Irony::getAllFiles(const std::string &buildDir) {
+#if HAS_COMPILATION_DATABASE
+  CXCompilationDatabase_Error error;
+  CXCompilationDatabase db =
+    clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
+
+  // TODO: Compute ad print all filenames
+  CXCompileCommands cmds = clang_CompilationDatabase_getAllCompileCommands(db);
+  unsigned ncmds = clang_CompileCommands_getSize(cmds);
+
+  std::cout << "(\n";
+  for (unsigned i = 0; i < ncmds; ++i) {
+    CXCompileCommand cmd = clang_CompileCommands_getCommand(cmds, i);
+
+    CXString wd = clang_CompileCommand_getDirectory(cmd);
+    std::string workingDir(clang_getCString(wd));
+    clang_disposeString(wd);
+
+    std::string file;
+
+    // Iterate through compile args to find file
+    unsigned nargs = clang_CompileCommand_getNumArgs(cmd);
+    for (unsigned j = 1; j < nargs; ++j) { // skip compiler
+      CXString arg = clang_CompileCommand_getArg(cmd, j);
+      std::string CompileArg(clang_getCString(arg));
+      clang_disposeString(arg);
+
+      if (CompileArg == "-o") {
+        // Skip output file
+        ++j;
+        continue;
+      }
+
+      if (CompileArg[0] == '-')
+        continue;
+
+      // Found compiled file
+      file = CompileArg;
+      break;
+    }
+
+    // std::cout << "File: " << file << "\tWorking dir: " << workingDir << "\n";
+
+    path filePath(file);
+
+    // Add directory
+    if (filePath.is_relative())
+      filePath = path(workingDir) /= filePath;
+
+    std::cout << filePath.make_preferred().native() << "\n";
+  }
+  std::cout << ")\n";
+
+  clang_CompileCommands_dispose(cmds);
+
+  clang_CompilationDatabase_dispose(db);
+#else // !HAS_COMPILATION_DATABASE
+
+  std::cout << "nil\n";
+
+#endif
 }
 
 void Irony::getCompileOptions(const std::string &buildDir,
