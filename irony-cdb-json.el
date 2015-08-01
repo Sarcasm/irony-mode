@@ -69,7 +69,6 @@ directories to project directory."
   (irony-cdb-json--save-project-alist))
 
 (defun irony-cdb-json--get-compile-options ()
-  (irony-cdb-json--ensure-project-alist-loaded)
   (irony--awhen (irony-cdb-json--locate-db)
     (let ((db (irony-cdb-json--load-db it)))
       (irony--aif (irony-cdb-json--exact-flags db)
@@ -112,6 +111,7 @@ directories to project directory."
            finally return found))
 
 (defun irony-cdb-json--locate-db ()
+  (irony-cdb-json--ensure-project-alist-loaded)
   (irony--aif (locate-dominating-file (irony-cdb-json--target-path)
                                       "compile_commands.json")
       (expand-file-name "compile_commands.json" it)
