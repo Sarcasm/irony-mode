@@ -106,36 +106,19 @@ available on all OSes irony-iotask support."
     (should-error (irony-iotask-result-get result)
                   :type 'irony-iotask-result-get-error)))
 
-;; pdata
-
-(ert-deftest irony-iotask/enqueue ()
-  (let ((pdata (irony-iotask-pdata-create)))
-    (dolist (v '(1 2 3))
-      (irony-iotask-pdata-enqueue pdata v))
-    (should (equal 1 (pop (irony-iotask-pdata-queue pdata))))
-    (should (equal 2 (pop (irony-iotask-pdata-queue pdata))))
-    (should (equal 3 (pop (irony-iotask-pdata-queue pdata))))
-    (should-not (pop (irony-iotask-pdata-queue pdata)))))
-
-;; filter
-
-(ert-deftest irony-iotask/filter-spurious-message ()
-  (let ((pdata (irony-iotask-pdata-create)))
-    (should-error (irony-iotask-filter pdata "spurious message\n")
-                  :type 'irony-iotask-filter-error)))
-
 ;; task
 
 (irony-iotask-define-task irony-iotask/task-start-t
   "doc"
-  :start (lambda (ectx &optional value)
-           (irony-iotask-ectx-set-result ectx (or value 42))))
+  :start (lambda (&optional value)
+           (irony-iotask-set-result (or value 42))))
 
 (ert-deftest irony-iotask/task-start/simple ()
   (let ((task (irony-iotask-package-task irony-iotask/task-start-t)))
     (irony-iotask/with-elisp-process-setup
-     () ;; no-op
-     (should (equal 42 (irony-iotask-run process task))))))
+     (read-from-minibuffer "")
+     (should (equal 42 (irony-iotask-run process task)))
+     (process-send-string process "\n"))))
 
 (ert-deftest irony-iotask/task-start/with-arguments ()
   (let ((task (irony-iotask-package-task irony-iotask/task-start-t 43)))
@@ -145,15 +128,14 @@ available on all OSes irony-iotask support."
 
 (irony-iotask-define-task irony-iotask/task-update-t
   "doc"
-  :start (lambda (ectx &optional hello)
-           (irony-iotask-ectx-write-string ectx
-                                           (format "%s\n" (or hello "hello"))))
-  :update (lambda (ectx bytes &optional hello)
+  :start (lambda (&optional hello)
+           (irony-iotask-send-string (format "%s\n" (or hello "hello"))))
+  :update (lambda (&optional hello)
             (setq hello (or hello "hello"))
             (cond
-             ((string= bytes (format "%s\n" hello))
-              (irony-iotask-ectx-set-result ectx (format "%s ok" hello)))
-             ((>= (length bytes) (1+ (length hello)))
+             ((string= (buffer-string) (format "%s\n" hello))
+              (irony-iotask-set-result (format "%s ok" hello)))
+             ((>= (buffer-size) (1+ (length hello)))
               (throw 'invalid-msg t)))))
 
 (ert-deftest irony-iotask-schedule/task-update/simple ()

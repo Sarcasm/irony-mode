@@ -31,7 +31,7 @@
 ;; may have changed since the task was initially posted)
 ;;
 ;; n-n is useful if the number of request depends on the answer to a previous
-;; request but we still want to be able to push new, different tasks
+;; request but we still want to be able to push new tasks.
 
 ;;; Code:
 
@@ -118,9 +118,13 @@ Defaults to `error'."
 Each of these function are called in the buffer they were
 originally created (at schedule time).
 
+The function `irony-iotask-set-result' and
+`irony-iotask-set-error' are available to the task's functions to
+set the task's result.
+
 Properties:
 
-`start' (mandatory)
+`:start' (mandatory)
      Function to call to launch the task.
 
      Usually the function sends a string/command/message to the
@@ -128,20 +132,24 @@ Properties:
      that nothing is send, instead the execution context result
      should be set to indicate that the task is ready.
 
-     Takes an execution-context as parameter (`irony-iotask-ectx').
+     The following additional functions are available to call
+     inside the `:start' function to communicate with the
+     underlying process:
 
-`update' (mandatory)
+     - `irony-iotask-send-string'
+     - `irony-iotask-send-region'
+     - `irony-iotask-send-eof'
+
+`:update' (mandatory)
      Function to call when some process output is available.
 
-     The function should determine whether a message is complete,
-     in this case it should set the result in the execution
-     context, it should also detect if the message is invalid and
-     throw the 'invalid-msg tag with a value of t in this case.
-     If the message is incomplete the function should do nothing.
-     The return value isn't used.
+     The function should determine whether a message is complete
+     and set the result when it is. It should also detect if the
+     message is invalid and throw the 'invalid-msg tag with a
+     value of t in this case. If the message is incomplete, the
+     function should do nothing.
 
-     Takes two parameters, the execution context and an array of
-     bytes."
+     The process output is the current buffer."
   (declare (indent 1)
            (doc-string 2))
   `(progn
@@ -155,21 +163,31 @@ Properties:
                (:constructor irony-iotask-packaged-task--create))
   task
   args
-  (process-output "")
   result
   continuation)
-
-(defun irony-iotask-packaged-task--append-output (packaged-task output)
-  (let ((new-output
-         (concat (irony-iotask-packaged-task-process-output packaged-task)
-                 output)))
-    (setf (irony-iotask-packaged-task-process-output packaged-task)
-          new-output)))
 
 (defun irony-iotask-package-task (task &rest args)
   (irony-iotask-packaged-task--create :task task
                                       :result (irony-iotask-result-create)
                                       :args args))
+
+(defvar irony-iotask--result)
+(defun irony-iotask-package-task-invoke (packaged-task prop-fn
+                                                       &rest leading-args)
+  (let* ((task (irony-iotask-packaged-task-task packaged-task))
+         (args (irony-iotask-packaged-task-args packaged-task))
+         (result (irony-iotask-packaged-task-result packaged-task))
+         (fn (plist-get task prop-fn)))
+    (condition-case err
+        (if fn
+            ;; let binding for `irony-iotask-set-result' and
+            ;; `irony-iotask-set-error'
+            (let ((irony-iotask--result result))
+              (apply fn (append leading-args args)))
+          (signal 'irony-iotask-bad-task
+                  (list task (format "no %s function" prop-fn))))
+      (error
+       (apply #'irony-iotask-result-set-error result (car err) (cdr err))))))
 
 (defun irony-iotask--chain-1 (packaged-task-1 packaged-task-2)
   (while (irony-iotask-packaged-task-continuation packaged-task-1)
@@ -187,172 +205,114 @@ Properties:
 
 (cl-defstruct (irony-iotask-ectx
                (:constructor irony-iotask-ectx--create))
-  "The execution context used as arguments for tasks."
-  -process
-  -packaged-task
-  ;; TODO: buffer should be determined thanks to an attribute :bound-to
-  ;; {nil,process,buffer}, so we know in which context to execute the tasks,
-  ;; they can do caching buffer-local variable in these buffers. Also, when the
-  ;; buffer dies, the task should set the result to some kind of error (or maybe
-  ;; we don't call the function at all?).
-  ;;
-  ;; what the default should be? process is safer?
-  -buffer
-  -callback)
+  packaged-task
+  callback
+  schedule-buffer)
 
-(defun irony-iotask-ectx-create (process packaged-task callback)
-  (irony-iotask-ectx--create :-process process
-                             :-packaged-task packaged-task
-                             :-buffer (current-buffer)
-                             :-callback callback))
+(defun irony-iotask-ectx-call-callback (ectx result)
+  (with-demoted-errors "Irony I/O task: error in callback: %S"
+    (with-current-buffer (irony-iotask-ectx-schedule-buffer ectx)
+      (funcall (irony-iotask-ectx-callback ectx) result))))
 
-(defun irony-iotask-ectx--result (ectx)
-  (irony-iotask-packaged-task-result (irony-iotask-ectx--packaged-task ectx)))
+(defvar irony-iotask--process)
 
-(defun irony-iotask-ectx-set-result (ectx value)
-  (irony-iotask-result-set-value (irony-iotask-ectx--result ectx)
-                                 value))
+(defun irony-iotask--start-next (process)
+  (let* ((ectx (car (process-get process :ectx-q)))
+         (packaged-task (irony-iotask-ectx-packaged-task ectx)))
+    ;; erase the buffer before we call :start so the next :update starts anew
+    (erase-buffer)
+    ;; for `irony-iotask-send-string', `irony-iotask-send-region' and
+    ;; `irony-iotask-send-eof'
+    (let ((irony-iotask--process process))
+      (save-current-buffer
+        (irony-iotask-package-task-invoke packaged-task :start)))
+    (irony-iotask--check-result process)))
 
-(defun irony-iotask-ectx-set-error (ectx error &rest error-data)
-  (apply #'irony-iotask-result-set-error
-         (irony-iotask-ectx--result ectx)
-         error
-         error-data))
-
-(defun irony-iotask-ectx-write-string (ectx string)
-  (process-send-string (irony-iotask-ectx--process ectx) string))
-
-(defun irony-iotask-ectx--process-output (ectx)
-  (irony-iotask-packaged-task-process-output
-   (irony-iotask-ectx--packaged-task ectx)))
-
-(defun irony-iotask-ectx--append-output (ectx output)
-  (irony-iotask-packaged-task--append-output
-   (irony-iotask-ectx--packaged-task ectx) output))
-
-(defun irony-iotask-ectx-call (ectx prop-fn &rest leading-args)
-  (let* ((packaged-task (irony-iotask-ectx--packaged-task ectx))
-         (task (irony-iotask-packaged-task-task packaged-task))
-         (args (irony-iotask-packaged-task-args packaged-task))
-         (fn (plist-get task prop-fn)))
-    (condition-case err
-        (progn
-          (unless fn
-            (signal 'irony-iotask-bad-task
-                    (list task (format "no %s function" prop-fn))))
-          (with-current-buffer (irony-iotask-ectx--buffer ectx)
-            (apply fn ectx (append leading-args args))))
-      (error
-       (apply #'irony-iotask-ectx-set-error ectx (car err) (cdr err))))))
-
-(cl-defstruct (irony-iotask-pdata
-               ;; The process is optional so that we can unit-test the queue.
-               ;; Whether or not it is good design is debatable.
-               (:constructor irony-iotask-pdata-create (&optional process)))
-  "Structure for storing the necessary mechanics for running
-tasks on a process. pdata stands for \"process data\"."
-  queue)
-
-(defun irony-iotask-pdata-enqueue (pdata task)
-  (setf (irony-iotask-pdata-queue pdata)
-        (append (irony-iotask-pdata-queue pdata) (list task))))
-
-(defun irony-iotask-pdata-run-next (pdata)
-  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
-    (irony-iotask-ectx-call ectx :start)
-    (irony-iotask-pdata-check-result pdata)))
-
-(defun irony-iotask-pdata-run-next-safe (pdata)
+(defun irony-iotask--start-next-safe (process)
   "Run the next task, if any."
-  (when (irony-iotask-pdata-queue pdata)
-    (irony-iotask-pdata-run-next pdata)))
+  (when (process-get process :ectx-q)
+    (irony-iotask--start-next process)))
 
-(defun irony-iotask-pdata--process-result (pdata)
-  (let* ((ectx (pop (irony-iotask-pdata-queue pdata)))
-         (result (irony-iotask-packaged-task-result
-                  (irony-iotask-ectx--packaged-task ectx))))
-    (with-demoted-errors "Irony I/O task: error in callback: %S"
-      (with-current-buffer (irony-iotask-ectx--buffer ectx)
-        (funcall (irony-iotask-ectx--callback ectx) result)))))
-
-(defun irony-iotask-pdata-check-result (pdata)
-  (let* ((ectx (car (irony-iotask-pdata-queue pdata)))
-         (packaged-task (irony-iotask-ectx--packaged-task ectx))
+(defun irony-iotask--check-result (process)
+  (let* ((ectx (car (process-get process :ectx-q)))
+         (packaged-task (irony-iotask-ectx-packaged-task ectx))
          (result (irony-iotask-packaged-task-result packaged-task)))
     (when (irony-iotask-result-valid-p result)
       (if (and (irony-iotask-packaged-task-continuation packaged-task)
                (irony-iotask-result-value-p result))
           ;; we got a non-error, we can chain to the next continuation
           (progn
-            (setf (irony-iotask-ectx--packaged-task ectx)
+            (setf (irony-iotask-ectx-packaged-task ectx)
                   (irony-iotask-packaged-task-continuation packaged-task))
-            (irony-iotask-pdata-run-next pdata))
+            (irony-iotask--start-next process))
         ;; no continuation or an error, call the callback
         ;; and skip any potential continuation
-        (irony-iotask-pdata--process-result pdata)
-        (irony-iotask-pdata-run-next-safe pdata)))))
+        (setq ectx (pop (process-get process :ectx-q)))
+        (irony-iotask-ectx-call-callback ectx result)
+        (irony-iotask--start-next-safe process)))))
 
 (irony-iotask--define-error 'irony-iotask-aborted "I/O task aborted")
 
-(defun irony-iotask-pdata-abort-current (pdata &rest reasons)
-  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
-    (apply #'irony-iotask-ectx-set-error ectx 'irony-iotask-aborted reasons)
-    (irony-iotask-pdata--process-result pdata)))
-
-(defun irony-iotask-pdata-abort-all (pdata &rest reasons)
-  (let (ectx)
-    (while (setq ectx (car (irony-iotask-pdata-queue pdata)))
-      (apply #'irony-iotask-ectx-set-error ectx 'irony-iotask-aborted reasons)
-      (irony-iotask-pdata--process-result pdata))))
+(defun irony-iotask--abort-all (process &rest reasons)
+  (let ((result (irony-iotask-result-create))
+        ectx)
+    (apply #'irony-iotask-result-set-error result 'irony-iotask-aborted reasons)
+    (while (setq ectx (pop (process-get process :ectx-q)))
+      (irony-iotask-ectx-call-callback ectx result))))
 
 
 ;;
 ;; Implementation details, internal mechanic
 ;;
 
-(defun irony-iotask-process-data (process)
-  (process-get process 'irony-iotask-pdata))
-
-;; removing the dependance to a process is useful for testing
-(defun irony-iotask-filter (pdata output)
-  (let ((ectx (car (irony-iotask-pdata-queue pdata))))
-    ;; if no task this is an error, a spurious message is an error
-    (unless ectx
-      (signal 'irony-iotask-filter-error (list "spurious output" output)))
-    (irony-iotask-ectx--append-output ectx output)
-    (let ((bytes (irony-iotask-ectx--process-output ectx)))
-      (when (catch 'invalid-msg
-              (irony-iotask-ectx-call ectx :update bytes)
-              nil)
-        (irony-iotask-ectx-set-error ectx 'irony-iotask-bad-data ectx bytes)))
-    (irony-iotask-pdata-check-result pdata)))
-
 (defun irony-iotask-process-filter (process output)
-  (irony-iotask-filter (irony-iotask-process-data process) output))
+  (when (buffer-live-p (process-buffer process))
+    (with-current-buffer (process-buffer process)
+      (let ((ectx (car (process-get process :ectx-q)))
+            packaged-task
+            result)
+        ;; if no task this is an error, a spurious message is an error
+        (unless ectx
+          (signal 'irony-iotask-filter-error (list "spurious output" output)))
+        (setq packaged-task (irony-iotask-ectx-packaged-task ectx))
+        (setq result (irony-iotask-packaged-task-result packaged-task))
+        (goto-char (process-mark process))
+        (insert output)
+        (set-marker (process-mark process) (point))
+        ;; go to the first char, so the `:update' function is called at the
+        ;; beginning of the buffer, it is more convenient
+        (goto-char (point-min))
+        (when (catch 'invalid-msg
+                (save-current-buffer
+                  (irony-iotask-package-task-invoke packaged-task :update))
+                nil)
+          (irony-iotask-result-set-error result
+                                         'irony-iotask-bad-data
+                                         packaged-task
+                                         (buffer-string)))
+        (irony-iotask--check-result process)))))
 
 (defun irony-iotask-process-sentinel (process event)
   ;; events usually ends with a newline, we don't want it
   (setq event (replace-regexp-in-string "\n\\'" "" event))
-  (let ((pdata (irony-iotask-process-data process)))
-    (unless (process-live-p process)
-      (irony-iotask-pdata-abort-all pdata "process stopped running" event))))
+  (unless (process-live-p process)
+    (irony-iotask--abort-all process "process stopped running" event)))
 
 (defun irony-iotask-check-process (process)
-  (unless (process-live-p process)
-    (signal 'irony-iotask-error (list "Process ain't running!")))
-  (let ((pdata (irony-iotask-process-data process))
-        (pfilter (process-filter process))
+  (let ((pfilter (process-filter process))
         (psentinel (process-sentinel process)))
-    (unless (irony-iotask-pdata-p pdata)
-      (signal 'irony-iotask-error
-              (list (concat "invalid process data:"
-                            " did you call `irony-iotask-setup-process'?"))))
     (unless (eq pfilter 'irony-iotask-process-filter)
       (signal 'irony-iotask-error
-              (list "invalid process filter" pfilter)))
+              (list "invalid process filter" pfilter
+                    "did you call `irony-iotask-setup-process'?")))
     (unless (eq psentinel 'irony-iotask-process-sentinel)
       (signal 'irony-iotask-error
-              (list "invalid process sentinel" psentinel)))))
+              (list "invalid process sentinel" psentinel
+                    "did you call `irony-iotask-setup-process'?"))))
+  (unless (process-live-p process)
+    (signal 'irony-iotask-error (list "Process ain't running!")))
+  (unless (buffer-live-p (process-buffer process))
+    (signal 'irony-iotask-error (list "Process' buffer dead!"))))
 
 
 ;;
@@ -363,24 +323,25 @@ tasks on a process. pdata stands for \"process data\"."
   "Call after creating the asynchronous process to let
 irony-iotask setup the PROCESS filter and anything else that may
 be needed."
-  (set-process-filter process #'irony-iotask-process-filter)
-  (set-process-sentinel process #'irony-iotask-process-sentinel)
-  (process-put process 'irony-iotask-pdata
-               (irony-iotask-pdata-create process))
-  (buffer-disable-undo (process-buffer process)))
+  (with-current-buffer (process-buffer process)
+    (set-process-filter process #'irony-iotask-process-filter)
+    (set-process-sentinel process #'irony-iotask-process-sentinel)
+    (buffer-disable-undo)))
 
-(defun irony-iotask-schedule (process task callback)
-  ;; check argument
-  (irony-iotask-check-process process)
-  (let ((pdata (irony-iotask-process-data process)))
-    (irony-iotask-pdata-enqueue pdata (irony-iotask-ectx-create process
-                                                                task
-                                                                callback))
-    ;; run task if none were running
-    (when (= (length (irony-iotask-pdata-queue pdata)) 1)
-      (irony-iotask-pdata-run-next pdata))))
+(defun irony-iotask-schedule (process packaged-task callback)
+  (let ((ectx (irony-iotask-ectx--create :packaged-task packaged-task
+                                         :callback callback
+                                         :schedule-buffer (current-buffer))))
+    (irony-iotask-check-process process)
+    (with-current-buffer (process-buffer process)
+      ;; append the new task to the queue
+      (process-put process :ectx-q (append (process-get process :ectx-q)
+                                           (list ectx)))
+      ;; run task if none were running
+      (when (= (length (process-get process :ectx-q)) 1)
+        (irony-iotask--start-next process)))))
 
-(defun irony-iotask-run (process task)
+(defun irony-iotask-run (process packaged-task)
   "Blocking/waiting counterpart of `irony-iotask-schedule'.
 
 Return the result (or signal the stored error) instead of passing
@@ -391,8 +352,10 @@ Returns nil when quitting.
 This function isn't reentrant, do not call it from another task."
   (lexical-let (run-result)
     ;; schedule an asynchronous task that set result when done
-    (irony-iotask-schedule process task (lambda (result)
-                                          (setq run-result result)))
+    (irony-iotask-schedule process
+                           packaged-task
+                           (lambda (result)
+                             (setq run-result result)))
 
     ;; wait for the task to complete
     ;; quitting is allowed, in this case the task will still run but
@@ -406,9 +369,24 @@ This function isn't reentrant, do not call it from another task."
         (irony-iotask-result-get run-result)
       ;; C-g was used
       ;; TODO: We cannot abort the task because that may break the other tasks,
-      ;; the process will be in an unpredictable state. Howewer we cancel the
-      ;; continuations.
+      ;; the process will be in an unpredictable state. Howewer we can cancel
+      ;; the continuations.
       )))
+
+(defun irony-iotask-set-result (value)
+  (irony-iotask-result-set-value irony-iotask--result value))
+
+(defun irony-iotask-set-error (err &rest error-data)
+  (apply #'irony-iotask-result-set-error irony-iotask--result err error-data))
+
+(defun irony-iotask-send-string (string)
+  (process-send-string irony-iotask--process string))
+
+(defun irony-iotask-send-region (start end)
+  (process-send-region irony-iotask--process start end))
+
+(defun irony-iotask-send-eof (string)
+  (process-send-eof irony-iotask--process))
 
 (provide 'irony-iotask)
 ;;; irony-iotask.el ends here
