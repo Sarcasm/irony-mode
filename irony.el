@@ -561,13 +561,14 @@ list (and undo information is not kept).")
           (process-adaptive-read-buffering nil)
           process)
       (setq process
-            (start-process "Irony" irony--server-buffer
-                           irony--server-executable
-                           "-i"
-                           "--log-file"
-                           (expand-file-name
-                            (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
-                            temporary-file-directory)))
+            (start-process-shell-command
+             "Irony"                    ;process name
+             irony--server-buffer       ;buffer
+             (format "%s -i 2> %s"      ;command
+                     (shell-quote-argument irony--server-executable)
+                     (expand-file-name
+                      (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
+                      temporary-file-directory))))
       (buffer-disable-undo irony--server-buffer)
       (set-process-query-on-exit-flag process nil)
       (set-process-sentinel process 'irony--server-process-sentinel)
