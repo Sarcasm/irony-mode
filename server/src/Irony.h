@@ -20,10 +20,16 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
+#if HAS_COMPILATION_DATABASE
+class CompilationDatabase;
+#endif
 
 class Irony {
 public:
   Irony();
+  ~Irony();
 
   bool isDebugEnabled() const {
     return debug_;
@@ -96,14 +102,17 @@ public:
   /// \endcode
   ///
   void getCompileOptions(const std::string &buildDir,
-                         const std::string &file) const;
+                         const std::string &file);
 
   /// \}
 
 private:
+  bool loadCompilationDatabase(const std::string &buildDir);
+
   TUManager tuManager_;
   CXTranslationUnit activeTu_;
   bool debug_;
+  std::unique_ptr<CompilationDatabase> db;
 };
 
 #endif // IRONY_MODE_SERVER_IRONY_H_
