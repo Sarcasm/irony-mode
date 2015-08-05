@@ -116,7 +116,7 @@ The slash is expected at the end."
 
 ;;;###autoload
 (defcustom irony-additional-clang-options nil
-  "Additionnal command line options to pass down to libclang.
+  "Additional command line options to pass down to libclang.
 
 Please, do NOT use this variable to add header search paths, only
 additional warnings or compiler options.
