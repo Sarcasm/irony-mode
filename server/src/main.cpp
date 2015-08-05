@@ -9,6 +9,7 @@
 #include "Irony.h"
 #include "Command.h"
 
+#include "support/CIndex.h"
 #include "support/CommandLineParser.h"
 
 #include <cassert>
@@ -42,6 +43,10 @@ static void printVersion() {
   // do not change the format for the first line, external programs should be
   // able to rely on it
   std::cout << "irony-server version " IRONY_PACKAGE_VERSION "\n";
+
+  CXString cxVersionString = clang_getClangVersion();
+  std::cout << clang_getCString(cxVersionString) << "\n";
+  clang_disposeString(cxVersionString);
 }
 
 static void dumpUnsavedFiles(Command &command) {
