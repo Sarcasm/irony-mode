@@ -63,4 +63,8 @@ and the cdr holds the working directory where the compile command was issued."
 
 (provide 'irony-cdb-libclang)
 
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
+
 ;;; irony-cdb-libclang ends here
