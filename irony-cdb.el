@@ -122,10 +122,11 @@ for files that it cannot handle."
 (defun irony-cdb--autodetect-compile-options ()
   (catch 'found
     (dolist (compilation-database irony-cdb-compilation-databases)
-      (irony--awhen (funcall compilation-database 'get-compile-options)
-        (throw 'found (list compilation-database
-                            (caar it)
-                            (cdar it)))))))
+      (with-demoted-errors "Irony CDB: error in compilation database: %S"
+        (irony--awhen (funcall compilation-database 'get-compile-options)
+          (throw 'found (list compilation-database
+                              (caar it)
+                              (cdar it))))))))
 
 (defun irony-cdb--remove-compiler-from-flags (flags)
   "Removes the compiler from flags read from a compilation database.
