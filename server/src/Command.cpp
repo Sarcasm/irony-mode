@@ -1,7 +1,7 @@
 /**
  * \file
  * \author Guillaume Papin <guillaume.papin@epitech.eu>
- * 
+ *
  * \brief Command parser definitions.
  *
  * This file is distributed under the GNU General Public License. See
@@ -111,7 +111,6 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
     first = false;
   }
   os << "], "
-     << "unsavedFiles.count=" << command.unsavedFiles.size() << ", "
      << "opt=" << (command.opt ? "on" : "off");
 
   return os << "}";
@@ -143,7 +142,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   command_.action = actionFromString(actionStr);
 
-  bool handleUnsaved = false;
   bool readCompileOptions = false;
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
@@ -154,7 +152,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   case Command::Parse:
     positionalArgs.push_back(StringConverter(&command_.file));
-    handleUnsaved = true;
     readCompileOptions = true;
     break;
 
@@ -162,7 +159,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     positionalArgs.push_back(StringConverter(&command_.file));
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
-    handleUnsaved = true;
     readCompileOptions = true;
     break;
 
@@ -190,30 +186,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   auto argIt = argv.begin() + 1;
   int argCount = std::distance(argIt, argv.end());
 
-  // parse optional arguments come first
-  while (argIt != argv.end()) {
-    // '-' is allowed as a "default" file, this isn't an option but a positional
-    // argument
-    if ((*argIt)[0] != '-' || *argIt == "-")
-      break;
-
-    const std::string &opt = *argIt;
-
-    ++argIt;
-    argCount--;
-
-    if (handleUnsaved) {
-      // TODO: handle multiple unsaved files
-      if (opt == "--num-unsaved=1") {
-        command_.unsavedFiles.resize(1);
-      }
-    } else {
-      std::clog << "error: invalid option for '" << actionStr << "': '" << opt
-                << "' unknown\n";
-      return 0;
-    }
-  }
-
   if (argCount != static_cast<int>(positionalArgs.size())) {
     std::clog << "error: invalid number of arguments for '" << actionStr
               << "' (requires " << positionalArgs.size() << " got " << argCount
@@ -233,7 +205,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   // '-' is used as a special file to inform that the buffer hasn't been saved
   // on disk and only the buffer content is available. libclang needs a file, so
   // this is treated as a special value for irony-server to create a temporary
-  // file for this. note taht libclang will gladly accept '-' as a filename but
+  // file for this. note that libclang will gladly accept '-' as a filename but
   // we don't want to let this happen since irony already reads stdin.
   if (command_.file == "-") {
     command_.file = tempFile_.getPath();
@@ -246,42 +218,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     std::getline(std::cin, compileOptions);
 
     command_.flags = unescapeCommandLine(compileOptions);
-  }
-
-  // read unsaved files
-  // filename
-  // filesize
-  // <file content...>
-  for (auto &p : command_.unsavedFiles) {
-    std::getline(std::cin, p.first);
-
-    unsigned length;
-    std::string filesizeStr;
-    std::getline(std::cin, filesizeStr);
-
-    UnsignedIntConverter uintConverter(&length);
-
-    if (!uintConverter(filesizeStr)) {
-      std::clog << "error: invalid file size '" << filesizeStr << "'\n";
-      return 0;
-    }
-
-    p.second.resize(length);
-    std::cin.read(p.second.data(), p.second.size());
-
-    CXUnsavedFile cxUnsavedFile;
-
-    cxUnsavedFile.Filename = p.first.c_str();
-    cxUnsavedFile.Contents = p.second.data();
-    cxUnsavedFile.Length = p.second.size();
-    command_.cxUnsavedFiles.push_back(cxUnsavedFile);
-
-    char nl;
-    std::cin.read(&nl, 1);
-    if (nl != '\n') {
-      std::clog << "error: missing newline for unsaved file content\n";
-      return 0;
-    }
   }
 
   return &command_;

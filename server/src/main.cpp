@@ -49,18 +49,6 @@ static void printVersion() {
   clang_disposeString(cxVersionString);
 }
 
-static void dumpUnsavedFiles(Command &command) {
-  for (int i = 0; i < static_cast<int>(command.unsavedFiles.size()); ++i) {
-    std::clog << "unsaved file " << i + 1 << ": "
-              << command.unsavedFiles[i].first << "\n"
-              << "----\n";
-    std::copy(command.unsavedFiles[i].second.begin(),
-              command.unsavedFiles[i].second.end(),
-              std::ostream_iterator<char>(std::clog));
-    std::clog << "----" << std::endl;
-  }
-}
-
 struct CommandProviderInterface {
   virtual ~CommandProviderInterface() { }
 
@@ -185,10 +173,6 @@ int main(int ac, const char *av[]) {
   while (Command *c = commandParser.parse(commandProvider->nextCommand())) {
     if (c->action != Command::Exit) {
       std::clog << "execute: " << *c << std::endl;
-
-      if (irony.isDebugEnabled()) {
-        dumpUnsavedFiles(*c);
-      }
     }
 
     switch (c->action) {
@@ -197,7 +181,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Complete:
-      irony.complete(c->file, c->line, c->column, c->flags, c->cxUnsavedFiles);
+      irony.complete(c->file, c->line, c->column, c->flags);
       break;
 
     case Command::Diagnostics:
@@ -216,7 +200,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Parse:
-      irony.parse(c->file, c->flags, c->cxUnsavedFiles);
+      irony.parse(c->file, c->flags);
       break;
 
     case Command::SetDebug:

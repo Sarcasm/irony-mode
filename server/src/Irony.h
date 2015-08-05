@@ -46,9 +46,7 @@ public:
   /// succeeded.
   ///
   /// \sa diagnostics(), getType()
-  void parse(const std::string &file,
-             const std::vector<std::string> &flags,
-             const std::vector<CXUnsavedFile> &unsavedFiles);
+  void parse(const std::string &file, const std::vector<std::string> &flags);
 
   /// \}
 
@@ -94,8 +92,7 @@ public:
   void complete(const std::string &file,
                 unsigned line,
                 unsigned col,
-                const std::vector<std::string> &flags,
-                const std::vector<CXUnsavedFile> &unsavedFiles);
+                const std::vector<std::string> &flags);
 
   /// \brief Get compile options from JSON database.
   ///
@@ -120,6 +117,7 @@ private:
   TUManager tuManager_;
   CXTranslationUnit activeTu_;
   std::string file_;
+  std::vector<CXUnsavedFile> unsavedFiles_;
   bool debug_;
 };
 

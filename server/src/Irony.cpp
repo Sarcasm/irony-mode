@@ -101,10 +101,10 @@ static void dumpDiagnostics(const CXTranslationUnit &tu) {
 }
 
 void Irony::parse(const std::string &file,
-                  const std::vector<std::string> &flags,
-                  const std::vector<CXUnsavedFile> &unsavedFiles) {
-  activeTu_ = tuManager_.parse(file, flags, unsavedFiles);
+                  const std::vector<std::string> &flags) {
+  activeTu_ = tuManager_.parse(file, flags, unsavedFiles_);
   file_ = file;
+
   std::cout << (activeTu_ ? "t" : "nil") << "\n";
 }
 
@@ -200,9 +200,8 @@ private:
 void Irony::complete(const std::string &file,
                      unsigned line,
                      unsigned col,
-                     const std::vector<std::string> &flags,
-                     const std::vector<CXUnsavedFile> &unsavedFiles) {
-  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
+                     const std::vector<std::string> &flags) {
+  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles_);
 
   if (tu == nullptr) {
     std::cout << "nil\n";
@@ -214,8 +213,8 @@ void Irony::complete(const std::string &file,
                                file.c_str(),
                                line,
                                col,
-                               const_cast<CXUnsavedFile *>(unsavedFiles.data()),
-                               unsavedFiles.size(),
+                               const_cast<CXUnsavedFile *>(unsavedFiles_.data()),
+                               unsavedFiles_.size(),
                                (clang_defaultCodeCompleteOptions() &
                                 ~CXCodeComplete_IncludeCodePatterns)
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION
