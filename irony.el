@@ -689,6 +689,13 @@ list (and undo information is not kept).")
                               "\n")))
     (irony-iotask-send-string command-line)))
 
+(defun irony--set-iotask-result (result)
+  (cl-case (car result)
+    (success
+     (irony-iotask-set-result (cdr result)))
+    (error
+     (apply #'irony-iotask-set-error 'irony-server-error (cdr result)))))
+
 ;; XXX: this code can run in very tight very sensitive on big inputs,
 ;; every change should be measured
 (defun irony--iotask-update-parser (&rest _args)
@@ -697,7 +704,7 @@ list (and undo information is not kept).")
                             (- (point-max) (length irony--eot)) (point-max))
                            irony--eot))
     (condition-case-unless-debug nil
-        (irony-iotask-set-result (read (current-buffer)))
+        (irony--set-iotask-result (read (current-buffer)))
       (error
        (throw 'invalid-msg t)))))
 

@@ -392,7 +392,16 @@ void Irony::getCompileOptions(const std::string &buildDir,
   (void)buildDir;
   (void)file;
 
-  std::cout << "nil\n";
+  CXString cxVersionString = clang_getClangVersion();
+
+  std::cout << "(error . ("
+            << "unsupported"
+            << " \"compilation database requires Clang >= 3.2\""
+            << " " << support::quoted(clang_getCString(cxVersionString))
+            << "))\n";
+
+  clang_disposeString(cxVersionString);
+
   return;
 
 #else
@@ -402,9 +411,10 @@ void Irony::getCompileOptions(const std::string &buildDir,
 
   switch (error) {
   case CXCompilationDatabase_CanNotLoadDatabase:
-    std::clog << "I: could not load compilation database in '" << buildDir
-              << "'\n";
-    std::cout << "nil\n";
+    std::cout << "(error . ("
+              << "cannot-load-database"
+              << " \"failed to load compilation database from directory\""
+              << " " << support::quoted(buildDir) << "))\n";
     return;
 
   case CXCompilationDatabase_NoError:
@@ -414,7 +424,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
   CXCompileCommands compileCommands =
       clang_CompilationDatabase_getCompileCommands(db, file.c_str());
 
-  std::cout << "(\n";
+  std::cout << "(success . (\n";
 
   for (unsigned i = 0, numCompileCommands =
                            clang_CompileCommands_getSize(compileCommands);
@@ -442,7 +452,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
     std::cout << ")\n";
   }
 
-  std::cout << ")\n";
+  std::cout << "))\n";
 
   clang_CompileCommands_dispose(compileCommands);
   clang_CompilationDatabase_dispose(db);
