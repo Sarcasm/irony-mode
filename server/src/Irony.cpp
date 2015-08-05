@@ -335,7 +335,15 @@ void Irony::complete(const std::string &file,
 
 void Irony::getCompileOptions(const std::string &buildDir,
                               const std::string &file) const {
-#if HAS_COMPILATION_DATABASE
+#if !(HAS_COMPILATION_DATABASE)
+
+  (void)buildDir;
+  (void)file;
+
+  std::cout << "nil\n";
+  return;
+
+#else
   CXCompilationDatabase_Error error;
   CXCompilationDatabase db =
       clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
@@ -386,10 +394,5 @@ void Irony::getCompileOptions(const std::string &buildDir,
 
   clang_CompileCommands_dispose(compileCommands);
   clang_CompilationDatabase_dispose(db);
-
-#else // !HAS_COMPILATION_DATABASE
-
-  std::cout << "nil\n";
-
 #endif
 }
