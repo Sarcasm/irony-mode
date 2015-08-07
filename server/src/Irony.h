@@ -29,7 +29,7 @@ public:
     return debug_;
   }
 
-  /// \name Modifiers
+  /// \name Command
   /// \{
 
   /// \brief Set or unset debugging of commands.
@@ -50,7 +50,7 @@ public:
 
   /// \}
 
-  /// \name Observers
+  /// \name Queries
   /// \{
 
   /// \brief Retrieve the last parse diagnostics for the given file.

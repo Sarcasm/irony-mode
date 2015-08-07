@@ -19,7 +19,7 @@ X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "
   "get compile options for FILE from JSON database in PROJECT_ROOT")
 X(GetType, "get-type", "LINE COL - get type of symbol at a given location")
 X(Help, "help", "show this message")
-X(Parse, "parse", "FILE - parse the given file")
+X(Parse, "parse", "FILE [-- [COMPILE_OPTIONS...]] - parse the given file")
 X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
 
 // sentinel value, should be the last one

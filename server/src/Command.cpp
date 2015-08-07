@@ -183,8 +183,14 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     return 0;
   }
 
-  auto argIt = argv.begin() + 1;
-  int argCount = std::distance(argIt, argv.end());
+  auto argsBegin = argv.begin() + 1;
+  const auto argsEnd = std::find(argsBegin, argv.end(), "--");
+  const int argCount = std::distance(argsBegin, argsEnd);
+
+  // compile options are provided after '--'
+  if (readCompileOptions && argsEnd != argv.end()) {
+    command_.flags.assign(std::next(argsEnd), argv.end());
+  }
 
   if (argCount != static_cast<int>(positionalArgs.size())) {
     std::clog << "error: invalid number of arguments for '" << actionStr
@@ -194,12 +200,12 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   }
 
   for (auto fn : positionalArgs) {
-    if (!fn(*argIt)) {
+    if (!fn(*argsBegin)) {
       std::clog << "error: parsing command '" << actionStr
-                << "': invalid argument '" << *argIt << "'\n";
+                << "': invalid argument '" << *argsBegin << "'\n";
       return 0;
     }
-    ++argIt;
+    ++argsBegin;
   }
 
   // '-' is used as a special file to inform that the buffer hasn't been saved
@@ -209,15 +215,6 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   // we don't want to let this happen since irony already reads stdin.
   if (command_.file == "-") {
     command_.file = tempFile_.getPath();
-  }
-
-  // When a file is provided, the next line contains the compilation options to
-  // pass to libclang.
-  if (readCompileOptions) {
-    std::string compileOptions;
-    std::getline(std::cin, compileOptions);
-
-    command_.flags = unescapeCommandLine(compileOptions);
   }
 
   return &command_;

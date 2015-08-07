@@ -105,13 +105,19 @@ void Irony::parse(const std::string &file,
   activeTu_ = tuManager_.parse(file, flags, unsavedFiles_);
   file_ = file;
 
-  std::cout << (activeTu_ ? "t" : "nil") << "\n";
+  if (activeTu_ == nullptr) {
+    std::cout << "(error . ("
+              << "parse-error"
+              << " \"failed to parse file\""
+              << " " << support::quoted(file) << "))\n";
+    return;
+  }
+
+  std::cout << "(success . t)\n";
 }
 
 void Irony::diagnostics() const {
   if (activeTu_ == nullptr) {
-    std::clog << "W: diagnostics - parse wasn't called\n";
-
     std::cout << "nil\n";
     return;
   }

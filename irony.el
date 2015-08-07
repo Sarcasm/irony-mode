@@ -684,27 +684,42 @@ list (and undo information is not kept).")
 (defun irony--run-task (task)
   (irony-iotask-run (irony--get-server-process-create) task))
 
+(defun irony--run-task-asynchronously (task callback)
+  (irony-iotask-schedule (irony--get-server-process-create) task callback))
+
 (defun irony--server-send-command (command &rest args)
   (let ((command-line (concat (combine-and-quote-strings (cons command args))
                               "\n")))
     (irony-iotask-send-string command-line)))
 
-(defun irony--set-iotask-result (result)
-  (cl-case (car result)
-    (success
-     (irony-iotask-set-result (cdr result)))
-    (error
-     (apply #'irony-iotask-set-error 'irony-server-error (cdr result)))))
-
 ;; XXX: this code can run in very tight very sensitive on big inputs,
 ;; every change should be measured
-(defun irony--iotask-update-parser (&rest _args)
+(defun irony--server-command-update (&rest _args)
   (when (and (> (buffer-size) (length irony--eot))
              (string-equal (buffer-substring-no-properties
                             (- (point-max) (length irony--eot)) (point-max))
                            irony--eot))
     (condition-case-unless-debug nil
-        (irony--set-iotask-result (read (current-buffer)))
+        (let ((result (read (current-buffer))))
+          (cl-case (car result)
+            (success
+             (irony-iotask-set-result (cdr result)))
+            (error
+             (apply #'irony-iotask-set-error 'irony-server-error
+                    (cdr result)))))
+      (error
+       (throw 'invalid-msg t)))))
+
+;; FIXME: code duplication with `irony--server-command-update'
+;; XXX: this code can run in very tight very sensitive on big inputs,
+;; every change should be measured
+(defun irony--server-query-update (&rest _args)
+  (when (and (> (buffer-size) (length irony--eot))
+             (string-equal (buffer-substring-no-properties
+                            (- (point-max) (length irony--eot)) (point-max))
+                           irony--eot))
+    (condition-case-unless-debug nil
+        (irony-iotask-set-result (read (current-buffer)))
       (error
        (throw 'invalid-msg t)))))
 
@@ -717,10 +732,34 @@ list (and undo information is not kept).")
   "`get-compile-options' server command."
   :start (lambda (build-dir file)
            (irony--server-send-command "get-compile-options" build-dir file))
-  :update irony--iotask-update-parser)
+  :update irony--server-command-update)
 
 (defun irony--get-compile-options-task (build-dir file)
   (irony-iotask-package-task irony--t-get-compile-options build-dir file))
+
+(irony-iotask-define-task irony--t-parse
+  "`parse' server command."
+  :start (lambda (file compile-options)
+           (apply #'irony--server-send-command "parse" file "--"
+                  compile-options))
+  :update irony--server-command-update)
+
+(defun irony--parse-task (&optional buffer)
+  (with-current-buffer (or buffer (current-buffer))
+    (irony-iotask-package-task irony--t-parse
+                               (irony--get-buffer-path-for-server)
+                               (irony--adjust-compile-options))))
+
+(irony-iotask-define-task irony--t-diagnostics
+  "`parse' server command."
+  :start (lambda ()
+           (irony--server-send-command "diagnostics"))
+  :update irony--server-query-update)
+
+(defun irony--diagnostics-task (&optional buffer)
+  (irony-iotask-chain
+   (irony--parse-task buffer)
+   (irony-iotask-package-task irony--t-diagnostics)))
 
 (defun irony--get-buffer-path-for-server ()
   "Get the path of the current buffer to send to irony-server.
