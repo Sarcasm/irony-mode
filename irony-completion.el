@@ -59,17 +59,6 @@
 
 
 ;;
-;; Public variables
-;;
-
-(defvar-local irony-completion-mode nil
-  "Non-nil when irony-mode completion is enabled.
-
-This is usually true when irony-mode is enabled but can be
-disable if irony-server isn't available.")
-
-
-;;
 ;; Internal variables
 ;;
 
@@ -130,11 +119,9 @@ disable if irony-server isn't available.")
 
 (defun irony-completion--enter ()
   (add-hook 'post-command-hook 'irony-completion--post-command nil t)
-  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t)
-  (setq irony-completion-mode t))
+  (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t))
 
 (defun irony-completion--exit ()
-  (setq irony-completion-mode nil)
   (remove-hook 'post-command-hook 'irony-completion--post-command t)
   (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
   (setq irony-completion--context nil
@@ -353,8 +340,7 @@ Note that:
 
 ;;;###autoload
 (defun irony-completion-at-point ()
-  (when (and irony-completion-mode
-             (irony-completion-candidates-available-p))
+  (when (and irony-mode (irony-completion-candidates-available-p))
     (let ((symbol-bounds (irony-completion-symbol-bounds)))
       (list
        (car symbol-bounds)              ;start
