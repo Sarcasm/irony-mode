@@ -493,19 +493,20 @@ The installation requires CMake and the libclang developpement package."
                  (shell-quote-argument irony-cmake-executable))))
            (irony--install-server-read-command command))))
   (let ((build-dir (or irony-server-build-dir
-                       (format "%s/build-irony-server-%s"
-                               temporary-file-directory
-                               (irony-version)))))
-  (make-directory build-dir t)
-  (let ((default-directory build-dir))
-    ;; we need to kill the process to be able to install a new one,
-    ;; at least on Windows
-    (irony-server-kill)
-    (with-current-buffer (compilation-start command nil
-                                            #'(lambda (maj-mode)
-                                                "*irony-server build*"))
-      (setq-local compilation-finish-functions
-                  '(irony--server-install-finish-function))))))
+                       (concat 
+                        (file-name-as-directory temporary-file-directory)
+                        (file-name-as-directory (format "build-irony-server-%s"
+                                                        (irony-version)))))))
+    (make-directory build-dir t)
+    (let ((default-directory build-dir))
+      ;; we need to kill the process to be able to install a new one,
+      ;; at least on Windows
+      (irony-server-kill)
+      (with-current-buffer (compilation-start command nil
+                                              #'(lambda (maj-mode)
+                                                  "*irony-server build*"))
+        (setq-local compilation-finish-functions
+                    '(irony--server-install-finish-function))))))
 
 (defun irony--server-install-finish-function (buffer msg)
   (if (string= "finished\n" msg)
