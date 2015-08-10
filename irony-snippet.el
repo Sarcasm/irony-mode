@@ -49,8 +49,8 @@ Will be set to nil if no snippet expansion function is found.")
 ;;
 (defun irony-snippet-available-p ()
   "Return t if snippets are supported."
-  (if (irony-snippet-get-expand-function)
-      t))
+  (and (irony-snippet--get-expand-function)
+       (not (irony-snippet--yas-disabled-p))))
 
 (defun irony-snippet-expand (snippet-str &optional pos)
   "Expand SNIPPET-STR starting at POS.
