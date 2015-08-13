@@ -200,17 +200,6 @@ buffer file.")
 (defconst irony--eot "\n;;EOT\n"
   "String sent by the server to signal the end of a response.")
 
-(defvar irony--server-install-command-history nil)
-
-(defvar-local irony--initial-compile-check-status nil
-  "Non-nil when an initial compile check as already been requested.
-
-Possible values are:
-- nil
-- 'requested, when the compile check for the current buffer has
-  been requested.
-- 'done, when the compile check has been received and processed")
-
 
 ;;
 ;; Utility functions & macros
@@ -469,6 +458,7 @@ Note: WORK-DIR is not used when the compile option
 ;; Irony-Server setup
 ;;
 
+(defvar irony--server-install-command-history nil)
 (defun irony--install-server-read-command (command)
   (read-shell-command
    "Install command: " command
