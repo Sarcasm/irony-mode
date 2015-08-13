@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2016  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.2.2-cvs
+;; Version: 0.3.0-cvs
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -30,15 +30,6 @@
 ;;     (add-hook 'c++-mode-hook 'irony-mode)
 ;;     (add-hook 'c-mode-hook 'irony-mode)
 ;;     (add-hook 'objc-mode-hook 'irony-mode)
-;;
-;;     ;; replace the `completion-at-point' and `complete-symbol' bindings in
-;;     ;; irony-mode's buffers by irony-mode's asynchronous function
-;;     (defun my-irony-mode-hook ()
-;;       (define-key irony-mode-map [remap completion-at-point]
-;;         'irony-completion-at-point-async)
-;;       (define-key irony-mode-map [remap complete-symbol]
-;;         'irony-completion-at-point-async))
-;;     (add-hook 'irony-mode-hook 'my-irony-mode-hook)
 ;;
 ;;     ;; Windows performance tweaks
 ;;     ;;
@@ -688,7 +679,12 @@ list (and undo information is not kept).")
   (irony-iotask-schedule (irony--get-server-process-create) task callback))
 
 (defun irony--server-send-command (command &rest args)
-  (let ((command-line (concat (combine-and-quote-strings (cons command args))
+  (let ((command-line (concat (combine-and-quote-strings
+                               (mapcar (lambda (arg)
+                                         (if (numberp arg)
+                                             (number-to-string arg)
+                                           arg))
+                                       (cons command args)))
                               "\n")))
     (irony-iotask-send-string command-line)))
 

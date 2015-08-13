@@ -72,18 +72,6 @@ that can be validly accessed are deemed not-accessible."
 
 
 ;;
-;; Internal variables
-;;
-
-(defvar-local irony-completion--context nil)
-(defvar-local irony-completion--context-tick 0)
-(defvar-local irony-completion--request-callbacks nil)
-(defvar-local irony-completion--request-tick 0)
-(defvar-local irony-completion--candidates nil)
-(defvar-local irony-completion--candidates-tick 0)
-
-
-;;
 ;; Utility functions
 ;;
 
@@ -114,16 +102,28 @@ that can be validly accessed are deemed not-accessible."
 (defun irony-completion-end-of-symbol ()
   (cdr (irony-completion-symbol-bounds)))
 
-(defsubst irony-completion--skip-whitespace-backwards ()
+(defsubst irony-completion--skip-whitespaces-backward ()
   ;;(skip-syntax-backward "-") doesn't seem to care about newlines
   (skip-chars-backward " \t\n\r"))
 
-(defun irony-completion--context-pos ()
-  (irony--awhen (irony-completion-beginning-of-symbol)
-    (save-excursion
-      (goto-char it)
-      (irony-completion--skip-whitespace-backwards)
-      (point))))
+(defun irony-completion--parse-context-position (&optional pos)
+  (save-excursion
+    (when pos
+      (goto-char pos))
+    (irony-completion--skip-whitespaces-backward)
+    (point)))
+
+(defun irony--completion-line-column (&optional pos)
+  (save-excursion
+    (when pos
+      (goto-char pos))
+    ;; `position-bytes' to handle multibytes and 'multicolumns' (i.e
+    ;; tabulations) characters properly
+    (irony--without-narrowing
+      (cons
+       (line-number-at-pos)
+       (1+ (- (position-bytes (point))
+              (position-bytes (point-at-bol))))))))
 
 
 ;;
@@ -131,43 +131,10 @@ that can be validly accessed are deemed not-accessible."
 ;;
 
 (defun irony-completion--enter ()
-  (add-hook 'post-command-hook 'irony-completion--post-command nil t)
   (add-hook 'completion-at-point-functions 'irony-completion-at-point nil t))
 
 (defun irony-completion--exit ()
-  (remove-hook 'post-command-hook 'irony-completion--post-command t)
-  (remove-hook 'completion-at-point-functions 'irony-completion-at-point t)
-  (setq irony-completion--context nil
-        irony-completion--candidates nil
-        irony-completion--context-tick 0
-        irony-completion--request-tick 0
-        irony-completion--request-callbacks nil
-        irony-completion--candidates-tick 0))
-
-(defun irony-completion--post-command ()
-  (when (and (memq this-command irony-completion-trigger-commands)
-             (irony-completion--update-context)
-             (irony-completion-at-trigger-point-p))
-    (irony-completion--send-request)))
-
-(defun irony-completion--update-context ()
-  "Update the completion context variables based on the current position.
-
-Return t if the context has been updated, nil otherwise."
-  (let ((ctx (irony-completion--context-pos)))
-    (if (eq ctx irony-completion--context)
-        nil
-      (setq irony-completion--context ctx
-            irony-completion--candidates nil
-            irony-completion--context-tick (1+ irony-completion--context-tick))
-      (unless irony-completion--context
-        ;; when there is no context, assume that the candidates are available
-        ;; even though they are nil
-        irony-completion--request-tick irony-completion--context-tick
-        irony-completion--request-callbacks nil
-        irony-completion--candidates nil
-        irony-completion--candidates-tick irony-completion--context-tick)
-      t)))
+  (remove-hook 'completion-at-point-functions 'irony-completion-at-point t))
 
 (defun irony-completion--post-complete-yas-snippet (str placeholders)
   (let ((ph-count 0)
@@ -193,34 +160,32 @@ Return t if the context has been updated, nil otherwise."
 ;; Interface with irony-server
 ;;
 
-(defun irony-completion--send-request ()
-  (let (line column)
-    (save-excursion
-      (goto-char (irony-completion-beginning-of-symbol))
-      ;; `position-bytes' to handle multibytes and 'multicolumns' (i.e
-      ;; tabulations) characters properly
-      (irony--without-narrowing
-        (setq line (line-number-at-pos)
-              column (1+ (- (position-bytes (point))
-                            (position-bytes (point-at-bol)))))))
-    (setq irony-completion--request-callbacks nil
-          irony-completion--request-tick irony-completion--context-tick)
-    (irony--send-parse-request
-     "complete"
-     (list 'irony-completion--request-handler irony-completion--context-tick)
-     (number-to-string line)
-     (number-to-string column))))
+(irony-iotask-define-task irony--t-complete
+  "`complete' server command."
+  :start (lambda (file line column compile-options)
+           (apply #'irony--server-send-command "complete" file line column "--"
+                  compile-options))
+  :update irony--server-command-update)
 
-(defun irony-completion--request-handler (candidates tick)
-  (when (eq tick irony-completion--context-tick)
-    (setq
-     irony-completion--candidates-tick tick
-     irony-completion--candidates candidates)
-    (mapc 'funcall irony-completion--request-callbacks)))
+(defun irony--complete-task (&optional buffer pos)
+  (with-current-buffer (or buffer (current-buffer))
+    (let ((line-column (irony--completion-line-column pos)))
+      (irony-iotask-package-task irony--t-complete
+                                 (irony--get-buffer-path-for-server)
+                                 (car line-column)
+                                 (cdr line-column)
+                                 (irony--adjust-compile-options)))))
 
-(defun irony-completion--still-completing-p ()
-  (unless (irony-completion-candidates-available-p)
-    (eq irony-completion--request-tick irony-completion--context-tick)))
+(irony-iotask-define-task irony--t-candidates
+  "`candidates' server command."
+  :start (lambda ()
+           (irony--server-send-command "candidates"))
+  :update irony--server-query-update)
+
+(defun irony--candidates-task (&optional buffer pos)
+  (irony-iotask-chain
+   (irony--complete-task buffer pos)
+   (irony-iotask-package-task irony--t-candidates)))
 
 
 ;;
@@ -252,15 +217,8 @@ Return t if the context has been updated, nil otherwise."
   "See `irony-completion-availability-filter'"
   (nth 7 candidate))
 
-(defun irony-completion-candidates-available-p ()
-  (and (eq (irony-completion--context-pos) irony-completion--context)
-       (eq irony-completion--candidates-tick irony-completion--context-tick)))
-
 (defun irony-completion-candidates ()
-  "Return the list of candidates at point, if available.
-
-Use the function `irony-completion-candidates-available-p' to
-know if the candidate list is available.
+  "Return the list of candidates at point.
 
 A candidate is composed of the following elements:
  0. The typed text. Multiple candidates can share the same string
@@ -278,29 +236,21 @@ A candidate is composed of the following elements:
     of placeholder text.
     Example: (\"(int a, int b)\" 1 6 8 13)
  7. The availability of the candidate."
-  (when (irony-completion-candidates-available-p)
+  (irony--awhen (irony-completion-symbol-bounds)
     (cl-remove-if-not
      (lambda (candidate)
        (memq (irony-completion-availability candidate)
              irony-completion-availability-filter))
-     irony-completion--candidates)))
+     (irony--run-task (irony--candidates-task nil (car it))))))
 
 (defun irony-completion-candidates-async (callback)
-  "Call CALLBACK when asynchronous completion is available.
-
-Note that:
- - If the candidates are already available, CALLBACK is called
-   immediately.
- - In some circumstances, CALLBACK may not be called. i.e:
-   irony-server crashes, ..."
-  (irony-completion--update-context)
-  (if (irony-completion-candidates-available-p)
-      (funcall callback)
-    (when irony-completion--context
-      (unless (irony-completion--still-completing-p)
-        (irony-completion--send-request))
-      (setq irony-completion--request-callbacks
-            (cons callback irony-completion--request-callbacks)))))
+  (irony--aif (irony-completion-symbol-bounds)
+      (lexical-let ((cb callback))
+        (irony--run-task-asynchronously
+         (irony--candidates-task nil (car it))
+         (lambda (candidates-result)
+           (funcall cb (irony-iotask-result-get candidates-result)))))
+    (funcall callback nil)))
 
 (defun irony-completion-post-complete (candidate)
   (let ((str (irony-completion-post-comp-str candidate))
@@ -333,7 +283,7 @@ Note that:
                   (looking-back "[^_a-zA-Z0-9][[:digit:]]+" (point-at-bol))))
           ;; except the above exceptions we use a "whitelist" for the places
           ;; where it looks like a member access
-          (irony-completion--skip-whitespace-backwards)
+          (irony-completion--skip-whitespaces-backward)
           (or
            ;; after brackets consider it's a member access so things like
            ;; 'getFoo().|' match
@@ -356,21 +306,20 @@ Note that:
 ;; Irony CAPF
 ;;
 
-(defun irony-completion--at-point-annotate (candidate)
+(defun irony-completion--capf-annotate (candidate)
   (irony-completion-annotation
    (get-text-property 0 'irony-capf candidate)))
 
 ;;;###autoload
 (defun irony-completion-at-point ()
-  (when (and irony-mode (irony-completion-candidates-available-p))
-    (let ((symbol-bounds (irony-completion-symbol-bounds)))
-      (list
-       (car symbol-bounds)              ;start
-       (cdr symbol-bounds)              ;end
-       (mapcar #'(lambda (candidate)    ;completion table
-                   (propertize (car candidate) 'irony-capf candidate))
-               (irony-completion-candidates))
-       :annotation-function 'irony-completion--at-point-annotate))))
+  (irony--awhen (and irony-mode (irony-completion-symbol-bounds))
+    (list
+     (car it)                           ;start
+     (cdr it)                           ;end
+     (mapcar #'(lambda (candidate)      ;completion table
+                 (propertize (car candidate) 'irony-capf candidate))
+             (irony--run-task (irony--candidates-task nil (car it))))
+     :annotation-function 'irony-completion--capf-annotate)))
 
 ;;;###autoload
 (defun irony-completion-at-point-async ()

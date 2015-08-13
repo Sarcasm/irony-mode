@@ -180,6 +180,14 @@ int main(int ac, const char *av[]) {
       printHelp();
       break;
 
+    case Command::Candidates:
+      irony.candidates();
+      break;
+
+    case Command::CompletionDiagnostics:
+      irony.completionDiagnostics();
+      break;
+
     case Command::Complete:
       irony.complete(c->file, c->line, c->column, c->flags);
       break;

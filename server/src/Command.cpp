@@ -167,6 +167,8 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     break;
 
+  case Command::Candidates:
+  case Command::CompletionDiagnostics:
   case Command::Diagnostics:
   case Command::Help:
   case Command::Exit:

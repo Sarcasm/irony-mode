@@ -12,7 +12,11 @@
 #error Please define the 'X(id, command, description)' macro before inclusion!
 #endif
 
-X(Complete, "complete", "FILE LINE COL - perform code completion at a given location")
+X(Candidates, "candidates", "print completion candidates (require previous complete)")
+X(Complete, "complete",
+  "FILE LINE COL [-- [COMPILE_OPTIONS...]] - perform code completion at a given location")
+X(CompletionDiagnostics, "completion-diagnostics",
+  "print the diagnostics generated during complete")
 X(Diagnostics, "diagnostics", "print the diagnostics of the last parse")
 X(Exit, "exit", "exit interactive mode, print nothing")
 X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "

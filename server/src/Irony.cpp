@@ -18,7 +18,9 @@
 #include <cassert>
 #include <iostream>
 
-static std::string cxStringToStd(CXString cxString) {
+namespace {
+
+std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
 
   if (const char *cstr = clang_getCString(cxString)) {
@@ -29,10 +31,7 @@ static std::string cxStringToStd(CXString cxString) {
   return stdStr;
 }
 
-Irony::Irony() : activeTu_(nullptr), debug_(false) {
-}
-
-static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
+const char *diagnosticSeverity(const CXDiagnostic &diagnostic) {
   switch (clang_getDiagnosticSeverity(diagnostic)) {
   case CXDiagnostic_Ignored:
     return "ignored";
@@ -49,59 +48,46 @@ static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
   return "unknown";
 }
 
-static void dumpDiagnostics(const CXTranslationUnit &tu) {
-  std::cout << "(\n";
-
+void dumpDiagnostic(const CXDiagnostic &diagnostic) {
   std::string file;
-
-  for (unsigned i = 0, diagnosticCount = clang_getNumDiagnostics(tu);
-       i < diagnosticCount;
-       ++i) {
-    CXDiagnostic diagnostic = clang_getDiagnostic(tu, i);
-
-    CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
-
-    unsigned line, column, offset;
-    if (clang_equalLocations(location, clang_getNullLocation())) {
-      file.clear();
-      line = 0;
-      column = 0;
-      offset = 0;
-    } else {
-      CXFile cxFile;
+  unsigned line = 0, column = 0, offset = 0;
+  CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
+  if (!clang_equalLocations(location, clang_getNullLocation())) {
+    CXFile cxFile;
 
 // clang_getInstantiationLocation() has been marked deprecated and
 // is aimed to be replaced by clang_getExpansionLocation().
 #if CINDEX_VERSION >= 6
-      clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
+    clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
 #else
-      clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
+    clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
 #endif
 
-      file = cxStringToStd(clang_getFileName(cxFile));
-    }
-
-    const char *severity = diagnosticSeverity(diagnostic);
-
-    std::string message =
-        cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
-
-    std::cout << '(' << support::quoted(file)    //
-              << ' ' << line                     //
-              << ' ' << column                   //
-              << ' ' << offset                   //
-              << ' ' << severity                 //
-              << ' ' << support::quoted(message) //
-              << ")\n";
-
-    clang_disposeDiagnostic(diagnostic);
+    file = cxStringToStd(clang_getFileName(cxFile));
   }
 
-  std::cout << ")\n";
+  const char *severity = diagnosticSeverity(diagnostic);
+
+  std::string message = cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
+
+  std::cout << '(' << support::quoted(file)    //
+            << ' ' << line                     //
+            << ' ' << column                   //
+            << ' ' << offset                   //
+            << ' ' << severity                 //
+            << ' ' << support::quoted(message) //
+            << ")\n";
+}
+
+} // unnamed namespace
+
+Irony::Irony()
+  : activeTu_(nullptr), activeCompletionResults_(nullptr), debug_(false) {
 }
 
 void Irony::parse(const std::string &file,
                   const std::vector<std::string> &flags) {
+  resetCache();
   activeTu_ = tuManager_.parse(file, flags, unsavedFiles_);
   file_ = file;
 
@@ -117,12 +103,34 @@ void Irony::parse(const std::string &file,
 }
 
 void Irony::diagnostics() const {
+  unsigned diagnosticCount;
+
   if (activeTu_ == nullptr) {
-    std::cout << "nil\n";
-    return;
+    diagnosticCount = 0;
+  } else {
+    diagnosticCount = clang_getNumDiagnostics(activeTu_);
   }
 
-  dumpDiagnostics(activeTu_);
+  std::cout << "(\n";
+
+  for (unsigned i = 0; i < diagnosticCount; ++i) {
+    CXDiagnostic diagnostic = clang_getDiagnostic(activeTu_, i);
+
+    dumpDiagnostic(diagnostic);
+
+    clang_disposeDiagnostic(diagnostic);
+  }
+
+  std::cout << ")\n";
+}
+
+void Irony::resetCache() {
+  activeTu_ = nullptr;
+
+  if (activeCompletionResults_ != nullptr) {
+    clang_disposeCodeCompleteResults(activeCompletionResults_);
+    activeCompletionResults_ = nullptr;
+  }
 }
 
 void Irony::getType(unsigned line, unsigned col) const {
@@ -190,6 +198,7 @@ public:
     return clang_getCompletionChunkKind(completionString_, chunkIdx_);
   }
 
+  // TODO: operator>> so that one can re-use string allocated buffer
   std::string text() const {
     return cxStringToStd(
         clang_getCompletionChunkText(completionString_, chunkIdx_));
@@ -207,187 +216,210 @@ void Irony::complete(const std::string &file,
                      unsigned line,
                      unsigned col,
                      const std::vector<std::string> &flags) {
-  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles_);
+  resetCache();
 
-  if (tu == nullptr) {
+  if (CXTranslationUnit tu =
+          tuManager_.getOrCreateTU(file, flags, unsavedFiles_)) {
+    activeCompletionResults_ =
+        clang_codeCompleteAt(tu,
+                             file.c_str(),
+                             line,
+                             col,
+                             const_cast<CXUnsavedFile *>(unsavedFiles_.data()),
+                             unsavedFiles_.size(),
+                             (clang_defaultCodeCompleteOptions() &
+                              ~CXCodeComplete_IncludeCodePatterns)
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+                                 |
+                                 CXCodeComplete_IncludeBriefComments
+#endif
+                             );
+  }
+
+  if (activeCompletionResults_ == nullptr) {
+    std::cout << "(error . ("
+              << "complete-error"
+              << " \"failed to perform code completion\""
+              << " " << support::quoted(file) << " " << line << " " << col
+              << "))\n";
+    return;
+  }
+
+  clang_sortCodeCompletionResults(activeCompletionResults_->Results,
+                                  activeCompletionResults_->NumResults);
+
+  std::cout << "(success . t)\n";
+}
+
+void Irony::completionDiagnostics() const {
+  unsigned diagnosticCount;
+
+  if (activeCompletionResults_ == nullptr) {
+    diagnosticCount = 0;
+  } else {
+    diagnosticCount =
+        clang_codeCompleteGetNumDiagnostics(activeCompletionResults_);
+  }
+
+  std::cout << "(\n";
+
+  for (unsigned i = 0; i < diagnosticCount; ++i) {
+    CXDiagnostic diagnostic =
+        clang_codeCompleteGetDiagnostic(activeCompletionResults_, i);
+
+    dumpDiagnostic(diagnostic);
+    clang_disposeDiagnostic(diagnostic);
+  }
+
+  std::cout << ")\n";
+}
+
+void Irony::candidates() const {
+  if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
   }
 
-  if (CXCodeCompleteResults *completions =
-          clang_codeCompleteAt(tu,
-                               file.c_str(),
-                               line,
-                               col,
-                               const_cast<CXUnsavedFile *>(unsavedFiles_.data()),
-                               unsavedFiles_.size(),
-                               (clang_defaultCodeCompleteOptions() &
-                                ~CXCodeComplete_IncludeCodePatterns)
-#if HAS_BRIEF_COMMENTS_IN_COMPLETION
-                                   |
-                                   CXCodeComplete_IncludeBriefComments
-#endif
-                               )) {
+  CXCodeCompleteResults *completions = activeCompletionResults_;
 
-    if (debug_) {
-      unsigned numDiags = clang_codeCompleteGetNumDiagnostics(completions);
-      std::clog << "debug: complete: " << numDiags << " diagnostic(s)\n";
-      for (unsigned i = 0; i < numDiags; ++i) {
-        CXDiagnostic diagnostic =
-            clang_codeCompleteGetDiagnostic(completions, i);
-        CXString s = clang_formatDiagnostic(
-            diagnostic, clang_defaultDiagnosticDisplayOptions());
+  std::cout << "(\n";
 
-        std::clog << clang_getCString(s) << std::endl;
-        clang_disposeString(s);
-        clang_disposeDiagnostic(diagnostic);
-      }
+  // re-use the same buffers to avoid unnecessary allocations
+  std::string typedtext, brief, resultType, prototype, postCompCar, available;
+
+  std::vector<unsigned> postCompCdr;
+
+  for (unsigned i = 0; i < completions->NumResults; ++i) {
+    CXCompletionResult candidate = completions->Results[i];
+    CXAvailabilityKind availability =
+      clang_getCompletionAvailability(candidate.CompletionString);
+
+    unsigned priority =
+      clang_getCompletionPriority(candidate.CompletionString);
+    unsigned annotationStart = 0;
+    bool typedTextSet = false;
+
+    typedtext.clear();
+    brief.clear();
+    resultType.clear();
+    prototype.clear();
+    postCompCar.clear();
+    postCompCdr.clear();
+    available.clear();
+
+    switch (availability) {
+    case CXAvailability_NotAvailable:
+      // No benefits to expose this to elisp for now
+      continue;
+
+    case CXAvailability_Available:
+      available = "available";
+      break;
+    case CXAvailability_Deprecated:
+      available = "deprecated";
+      break;
+    case CXAvailability_NotAccessible:
+      available = "not-accessible";
+      break;
     }
 
-    clang_sortCodeCompletionResults(completions->Results,
-                                    completions->NumResults);
+    for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
+         chunk.next()) {
+      char ch = 0;
 
-    std::cout << "(\n";
+      auto chunkKind = chunk.kind();
 
-    // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar, available;
-
-    std::vector<unsigned> postCompCdr;
-
-    for (unsigned i = 0; i < completions->NumResults; ++i) {
-      CXCompletionResult candidate = completions->Results[i];
-      CXAvailabilityKind availability =
-          clang_getCompletionAvailability(candidate.CompletionString);
-
-      unsigned priority =
-          clang_getCompletionPriority(candidate.CompletionString);
-      unsigned annotationStart = 0;
-      bool typedTextSet = false;
-
-      typedtext.clear();
-      brief.clear();
-      resultType.clear();
-      prototype.clear();
-      postCompCar.clear();
-      postCompCdr.clear();
-      available.clear();
-
-      switch (availability) {
-      case CXAvailability_NotAvailable:
-        // No benefits to expose this to elisp for now
-        continue;
-
-      case CXAvailability_Available:
-        available = "available";
+      switch (chunkKind) {
+      case CXCompletionChunk_ResultType:
+        resultType = chunk.text();
         break;
-      case CXAvailability_Deprecated:
-        available = "deprecated";
+
+      case CXCompletionChunk_TypedText:
+      case CXCompletionChunk_Text:
+      case CXCompletionChunk_Placeholder:
+      case CXCompletionChunk_Informative:
+      case CXCompletionChunk_CurrentParameter:
+        prototype += chunk.text();
         break;
-      case CXAvailability_NotAccessible:
-        available = "not-accessible";
+
+      case CXCompletionChunk_LeftParen:       ch = '(';  break;
+      case CXCompletionChunk_RightParen:      ch = ')';  break;
+      case CXCompletionChunk_LeftBracket:     ch = '[';  break;
+      case CXCompletionChunk_RightBracket:    ch = ']';  break;
+      case CXCompletionChunk_LeftBrace:       ch = '{';  break;
+      case CXCompletionChunk_RightBrace:      ch = '}';  break;
+      case CXCompletionChunk_LeftAngle:       ch = '<';  break;
+      case CXCompletionChunk_RightAngle:      ch = '>';  break;
+      case CXCompletionChunk_Comma:           ch = ',';  break;
+      case CXCompletionChunk_Colon:           ch = ':';  break;
+      case CXCompletionChunk_SemiColon:       ch = ';';  break;
+      case CXCompletionChunk_Equal:           ch = '=';  break;
+      case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
+      case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
+
+      case CXCompletionChunk_Optional:
+        // ignored for now
         break;
       }
 
-      for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
-           chunk.next()) {
-        char ch = 0;
-
-        auto chunkKind = chunk.kind();
-
-        switch (chunkKind) {
-        case CXCompletionChunk_ResultType:
-          resultType = chunk.text();
-          break;
-
-        case CXCompletionChunk_TypedText:
-        case CXCompletionChunk_Text:
-        case CXCompletionChunk_Placeholder:
-        case CXCompletionChunk_Informative:
-        case CXCompletionChunk_CurrentParameter:
-          prototype += chunk.text();
-          break;
-
-        case CXCompletionChunk_LeftParen:       ch = '(';  break;
-        case CXCompletionChunk_RightParen:      ch = ')';  break;
-        case CXCompletionChunk_LeftBracket:     ch = '[';  break;
-        case CXCompletionChunk_RightBracket:    ch = ']';  break;
-        case CXCompletionChunk_LeftBrace:       ch = '{';  break;
-        case CXCompletionChunk_RightBrace:      ch = '}';  break;
-        case CXCompletionChunk_LeftAngle:       ch = '<';  break;
-        case CXCompletionChunk_RightAngle:      ch = '>';  break;
-        case CXCompletionChunk_Comma:           ch = ',';  break;
-        case CXCompletionChunk_Colon:           ch = ':';  break;
-        case CXCompletionChunk_SemiColon:       ch = ';';  break;
-        case CXCompletionChunk_Equal:           ch = '=';  break;
-        case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
-        case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
-
-        case CXCompletionChunk_Optional:
-          // ignored for now
-          break;
+      if (ch != 0) {
+        prototype += ch;
+        // commas look better followed by a space
+        if (ch == ',') {
+          prototype += ' ';
         }
+      }
 
+      if (typedTextSet) {
         if (ch != 0) {
-          prototype += ch;
-          // commas look better followed by a space
+          postCompCar += ch;
           if (ch == ',') {
-            prototype += ' ';
+            postCompCar += ' ';
           }
-        }
-
-        if (typedTextSet) {
-          if (ch != 0) {
-            postCompCar += ch;
-            if (ch == ',') {
-              postCompCar += ' ';
-            }
-          } else if (chunkKind == CXCompletionChunk_Text ||
-                     chunkKind == CXCompletionChunk_TypedText) {
-            postCompCar += chunk.text();
-          } else if (chunkKind == CXCompletionChunk_Placeholder ||
-                     chunkKind == CXCompletionChunk_CurrentParameter) {
-            postCompCdr.push_back(postCompCar.size());
-            postCompCar += chunk.text();
-            postCompCdr.push_back(postCompCar.size());
-          }
-        }
-
-        // Consider only the first typed text. The CXCompletionChunk_TypedText
-        // doc suggests that exactly one typed text will be given but at least
-        // in Objective-C it seems that more than one can appear, see:
-        // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
-        if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
-          typedtext = chunk.text();
-          // annotation is what comes after the typedtext
-          annotationStart = prototype.size();
-          typedTextSet = true;
+        } else if (chunkKind == CXCompletionChunk_Text ||
+                   chunkKind == CXCompletionChunk_TypedText) {
+          postCompCar += chunk.text();
+        } else if (chunkKind == CXCompletionChunk_Placeholder ||
+                   chunkKind == CXCompletionChunk_CurrentParameter) {
+          postCompCdr.push_back(postCompCar.size());
+          postCompCar += chunk.text();
+          postCompCdr.push_back(postCompCar.size());
         }
       }
 
-#if HAS_BRIEF_COMMENTS_IN_COMPLETION
-      brief = cxStringToStd(
-          clang_getCompletionBriefComment(candidate.CompletionString));
-#endif
-
-      // see irony-completion.el#irony-completion-candidates
-      std::cout << '(' << support::quoted(typedtext)
-                << ' ' << priority
-                << ' ' << support::quoted(resultType)
-                << ' ' << support::quoted(brief)
-                << ' ' << support::quoted(prototype)
-                << ' ' << annotationStart
-                << " (" << support::quoted(postCompCar);
-      for (unsigned index : postCompCdr)
-        std::cout << ' ' << index;
-      std::cout << ")"
-                << ' ' << available
-                << ")\n";
+      // Consider only the first typed text. The CXCompletionChunk_TypedText
+      // doc suggests that exactly one typed text will be given but at least
+      // in Objective-C it seems that more than one can appear, see:
+      // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
+      if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
+        typedtext = chunk.text();
+        // annotation is what comes after the typedtext
+        annotationStart = prototype.size();
+        typedTextSet = true;
+      }
     }
 
-    clang_disposeCodeCompleteResults(completions);
-    std::cout << ")\n";
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+    brief = cxStringToStd(
+        clang_getCompletionBriefComment(candidate.CompletionString));
+#endif
+
+    // see irony-completion.el#irony-completion-candidates
+    std::cout << '(' << support::quoted(typedtext)
+              << ' ' << priority
+              << ' ' << support::quoted(resultType)
+              << ' ' << support::quoted(brief)
+              << ' ' << support::quoted(prototype)
+              << ' ' << annotationStart
+              << " (" << support::quoted(postCompCar);
+    for (unsigned index : postCompCdr)
+      std::cout << ' ' << index;
+    std::cout << ")"
+              << ' ' << available
+              << ")\n";
   }
 
+  std::cout << ")\n";
 }
 
 void Irony::getCompileOptions(const std::string &buildDir,
