@@ -733,6 +733,71 @@ list (and undo information is not kept).")
 (defun irony--get-compile-options-task (build-dir file)
   (irony-iotask-package-task irony--t-get-compile-options build-dir file))
 
+(cl-defstruct (irony--buffer-state
+               (:constructor irony--buffer-state-create-1))
+  file
+  exists
+  modified
+  tick)
+
+(defun irony--buffer-state-create (buffer)
+  (let ((file (buffer-file-name buffer)))
+    (irony--buffer-state-create-1 :file file
+                                  :exists (and file (file-exists-p file))
+                                  :modified (buffer-modified-p buffer)
+                                  :tick (buffer-chars-modified-tick buffer))))
+
+(defun irony--buffer-state-compare (old new)
+  (unless (equal old new)
+    (cond
+     ((irony--buffer-state-modified new) 'set-unsaved)
+     ((null old) nil)                   ;noop
+     ((irony--buffer-state-modified old) 'reset-unsaved))))
+
+(irony-iotask-define-task irony--t-set-unsaved
+  "`set-unsaved' server command."
+  :start (lambda (process buffer)
+           (let ((temp-file (make-temp-file "irony-unsaved-")))
+             (irony-iotask-put :unsaved-buffer-file temp-file)
+             (process-put process :unsaved-buffer-state
+                          (irony--buffer-state-create buffer))
+             (with-current-buffer buffer
+               (irony--without-narrowing
+                 (write-region nil nil temp-file nil 0))
+               (irony--server-send-command "set-unsaved"
+                                           (irony--get-buffer-path-for-server)
+                                           temp-file))))
+  :update irony--server-command-update
+  :finish (lambda (&rest _args)
+            (delete-file (irony-iotask-get :unsaved-buffer-file))))
+
+(defun irony--set-unsaved-task (process buffer)
+  (irony-iotask-package-task irony--t-set-unsaved process buffer))
+
+(irony-iotask-define-task irony--t-reset-unsaved
+  "`reset-unsaved' server command."
+  :start (lambda (process buffer)
+           (process-put process :unsaved-buffer-state
+                        (irony--buffer-state-create buffer))
+           (irony--server-send-command
+            "reset-unsaved"
+            (irony--get-buffer-path-for-server buffer)))
+  :update irony--server-command-update)
+
+(defun irony--reset-unsaved-task (process buffer)
+  (irony-iotask-package-task irony--t-reset-unsaved process buffer))
+
+(defun irony--unsaved-buffers-tasks ()
+  (let* ((process (irony--get-server-process-create))
+         (buffer (current-buffer))
+         (new-state (irony--buffer-state-create buffer))
+         (old-state (process-get process :unsaved-buffer-state)))
+    (cl-case (irony--buffer-state-compare old-state new-state)
+      (set-unsaved
+       (irony--set-unsaved-task process buffer))
+      (reset-unsaved
+       (irony--reset-unsaved-task process buffer)))))
+
 (irony-iotask-define-task irony--t-parse
   "`parse' server command."
   :start (lambda (file compile-options)
@@ -740,11 +805,18 @@ list (and undo information is not kept).")
                   compile-options))
   :update irony--server-command-update)
 
-(defun irony--parse-task (&optional buffer)
+(defun irony--parse-task-1 (&optional buffer)
   (with-current-buffer (or buffer (current-buffer))
     (irony-iotask-package-task irony--t-parse
                                (irony--get-buffer-path-for-server)
                                (irony--adjust-compile-options))))
+
+(defun irony--parse-task (&optional buffer)
+  (let ((unsaved-tasks (irony--unsaved-buffers-tasks))
+        (parse-task (irony--parse-task-1 buffer)))
+    (if unsaved-tasks
+        (irony-iotask-chain unsaved-tasks parse-task)
+      parse-task)))
 
 (irony-iotask-define-task irony--t-diagnostics
   "`parse' server command."
@@ -757,14 +829,15 @@ list (and undo information is not kept).")
    (irony--parse-task buffer)
    (irony-iotask-package-task irony--t-diagnostics)))
 
-(defun irony--get-buffer-path-for-server ()
+(defun irony--get-buffer-path-for-server (&optional buffer)
   "Get the path of the current buffer to send to irony-server.
 
 If no such file exists on the filesystem the special file '-' is
   returned instead."
-  (if (and buffer-file-name (file-exists-p buffer-file-name))
-      buffer-file-name
-    "-"))
+  (let ((file (buffer-file-name buffer)))
+    (if (and file (file-exists-p file))
+        file
+      "-")))
 
 (defun irony--send-request (request callback &rest args)
   (let ((process (irony--get-server-process-create))

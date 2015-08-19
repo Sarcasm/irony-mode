@@ -23,6 +23,11 @@
 
 class Irony {
 public:
+  // use std::string over std::vector<char> because I have some doubts
+  // that libclang expect unsaved buffers to be a null terminated C strings
+  typedef std::string UnsavedBuffer;
+
+public:
   Irony();
 
   bool isDebugEnabled() const {
@@ -57,6 +62,11 @@ public:
                 unsigned line,
                 unsigned col,
                 const std::vector<std::string> &flags);
+
+  void setUnsaved(const std::string &file,
+                  const std::string &unsavedContentFile);
+
+  void resetUnsaved(const std::string &file);
 
   /// \}
 
@@ -118,12 +128,14 @@ public:
 
 private:
   void resetCache();
+  void computeCxUnsaved();
 
 private:
   TUManager tuManager_;
+  std::map<std::string, UnsavedBuffer> filenameToContent_;
   CXTranslationUnit activeTu_;
   std::string file_;
-  std::vector<CXUnsavedFile> unsavedFiles_;
+  std::vector<CXUnsavedFile> cxUnsavedFiles_;
   CXCodeCompleteResults *activeCompletionResults_;
   bool debug_;
 };

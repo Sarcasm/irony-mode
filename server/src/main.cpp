@@ -215,6 +215,14 @@ int main(int ac, const char *av[]) {
       irony.setDebug(c->opt);
       break;
 
+    case Command::SetUnsaved:
+      irony.setUnsaved(c->file, c->unsavedFile);
+      break;
+
+    case Command::ResetUnsaved:
+      irony.resetUnsaved(c->file);
+      break;
+
     case Command::Unknown:
       assert(0 && "unreacheable code...reached!");
       break;

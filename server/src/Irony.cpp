@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
 namespace {
 
@@ -79,6 +80,40 @@ void dumpDiagnostic(const CXDiagnostic &diagnostic) {
             << ")\n";
 }
 
+bool readFileContent(const std::string &filename,
+                     Irony::UnsavedBuffer &outBuf) {
+  std::ifstream ifs(filename.c_str(),
+                    std::ios::in | std::ios::binary | std::ios::ate);
+
+  if (!ifs.is_open()) {
+    return false;
+  }
+
+  // FIXME: it's possible that this method of reading the file is 100% reliable,
+  // I can't confirm that tellg() is guaranteed to return a byte count.
+  // std::streamoff does not mention 'byte'.
+  // In practice it seems to work but this may be just luck.
+  // See also this discussion:
+  // - http://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486#22986486
+  auto nbytes = ifs.tellg();
+
+  if (nbytes == -1) {
+    return false;
+  }
+
+  outBuf.resize(nbytes);
+  ifs.seekg(0, std::ios::beg);
+
+  ifs.read(&outBuf[0], outBuf.size());
+
+  if (!ifs){
+    outBuf.clear();
+    return false;
+  }
+
+  return true;
+}
+
 } // unnamed namespace
 
 Irony::Irony()
@@ -88,7 +123,7 @@ Irony::Irony()
 void Irony::parse(const std::string &file,
                   const std::vector<std::string> &flags) {
   resetCache();
-  activeTu_ = tuManager_.parse(file, flags, unsavedFiles_);
+  activeTu_ = tuManager_.parse(file, flags, cxUnsavedFiles_);
   file_ = file;
 
   if (activeTu_ == nullptr) {
@@ -219,14 +254,14 @@ void Irony::complete(const std::string &file,
   resetCache();
 
   if (CXTranslationUnit tu =
-          tuManager_.getOrCreateTU(file, flags, unsavedFiles_)) {
+          tuManager_.getOrCreateTU(file, flags, cxUnsavedFiles_)) {
     activeCompletionResults_ =
         clang_codeCompleteAt(tu,
                              file.c_str(),
                              line,
                              col,
-                             const_cast<CXUnsavedFile *>(unsavedFiles_.data()),
-                             unsavedFiles_.size(),
+                             const_cast<CXUnsavedFile *>(cxUnsavedFiles_.data()),
+                             cxUnsavedFiles_.size(),
                              (clang_defaultCodeCompleteOptions() &
                               ~CXCodeComplete_IncludeCodePatterns)
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION
@@ -420,6 +455,56 @@ void Irony::candidates() const {
   }
 
   std::cout << ")\n";
+}
+
+void Irony::computeCxUnsaved() {
+  cxUnsavedFiles_.clear();
+
+  for (const auto &p : filenameToContent_) {
+    CXUnsavedFile cxUnsavedFile;
+
+    cxUnsavedFile.Filename = p.first.c_str();
+    cxUnsavedFile.Contents = p.second.data();
+    cxUnsavedFile.Length = p.second.size();
+    cxUnsavedFiles_.push_back(cxUnsavedFile);
+  }
+}
+
+void Irony::setUnsaved(const std::string &file,
+                       const std::string &unsavedContentFile) {
+  resetCache();
+
+  UnsavedBuffer content;
+  if (!readFileContent(unsavedContentFile, content)) {
+    filenameToContent_.erase(file);
+    std::cout << "(error . ("
+              << "file-read-error"
+              << " \"failed to read unsaved buffer\""
+              << " " << support::quoted(file) << " "
+              << support::quoted(unsavedContentFile) << ")\n";
+  } else {
+    filenameToContent_[file] = content;
+    std::cout << "(success . t)\n";
+  }
+
+  computeCxUnsaved();
+}
+
+void Irony::resetUnsaved(const std::string &file) {
+  resetCache();
+
+  const auto erasedCount = filenameToContent_.erase(file);
+
+  if (erasedCount == 0) {
+    std::cout << "(error . ("
+              << "no-such-entry"
+              << " \"failed reset unsaved buffer\""
+              << " " << support::quoted(file) << ")\n";
+  } else {
+    std::cout << "(success . t)\n";
+  }
+
+  computeCxUnsaved();
 }
 
 void Irony::getCompileOptions(const std::string &buildDir,

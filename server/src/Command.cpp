@@ -99,6 +99,7 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
 std::ostream &operator<<(std::ostream &os, const Command &command) {
   os << "Command{action=" << command.action << ", "
      << "file='" << command.file << "', "
+     << "unsavedFile='" << command.unsavedFile << "', "
      << "dir='" << command.dir << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
@@ -165,6 +166,15 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::GetType:
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
+    break;
+
+  case Command::SetUnsaved:
+    positionalArgs.push_back(StringConverter(&command_.file));
+    positionalArgs.push_back(StringConverter(&command_.unsavedFile));
+    break;
+
+  case Command::ResetUnsaved:
+    positionalArgs.push_back(StringConverter(&command_.file));
     break;
 
   case Command::Candidates:

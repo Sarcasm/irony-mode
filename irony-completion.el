@@ -167,7 +167,7 @@ that can be validly accessed are deemed not-accessible."
                   compile-options))
   :update irony--server-command-update)
 
-(defun irony--complete-task (&optional buffer pos)
+(defun irony--complete-task-1 (&optional buffer pos)
   (with-current-buffer (or buffer (current-buffer))
     (let ((line-column (irony--completion-line-column pos)))
       (irony-iotask-package-task irony--t-complete
@@ -175,6 +175,13 @@ that can be validly accessed are deemed not-accessible."
                                  (car line-column)
                                  (cdr line-column)
                                  (irony--adjust-compile-options)))))
+
+(defun irony--complete-task (&optional buffer pos)
+  (let ((unsaved-tasks (irony--unsaved-buffers-tasks))
+        (complete-task (irony--complete-task-1 buffer pos)))
+    (if unsaved-tasks
+        (irony-iotask-chain unsaved-tasks complete-task)
+      complete-task)))
 
 (irony-iotask-define-task irony--t-candidates
   "`candidates' server command."

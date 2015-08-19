@@ -20,6 +20,7 @@
 
 class TemporaryFile;
 
+// TODO: a tagged union?
 struct Command {
   Command() {
     clear();
@@ -29,6 +30,7 @@ struct Command {
     action = Unknown;
     flags.clear();
     file.clear();
+    unsavedFile.clear();
     dir.clear();
     line = 0;
     column = 0;
@@ -42,6 +44,7 @@ struct Command {
 
   std::vector<std::string> flags;
   std::string file;
+  std::string unsavedFile;
   std::string dir;
   unsigned line;
   unsigned column;
