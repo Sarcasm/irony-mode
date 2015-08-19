@@ -118,9 +118,9 @@ Defaults to `error'."
 Each of these function are called in the buffer they were
 originally created (at schedule time).
 
-The function `irony-iotask-set-result' and
-`irony-iotask-set-error' are available to the task's functions to
-set the task's result.
+The functions `irony-iotask-put', `irony-iotask-get',
+`irony-iotask-set-result' and `irony-iotask-set-error' are
+available to the task's functions to set the task's result.
 
 Properties:
 
@@ -149,7 +149,17 @@ Properties:
      value of t in this case. If the message is incomplete, the
      function should do nothing.
 
-     The process output is the current buffer."
+     The process output is the current buffer.
+
+`:finish' (optional)
+
+     Function to call after the result has been set but before
+     the callback is called.
+
+     Usually performs some kind of cleanup operation.
+
+     Note: it makes no sense to set a result or error in this
+     function as it is necessarily been set beforehand."
   (declare (indent 1)
            (doc-string 2))
   `(progn
@@ -164,6 +174,7 @@ Properties:
   task
   args
   result
+  plist
   continuation)
 
 (defun irony-iotask-package-task (task &rest args)
@@ -171,23 +182,26 @@ Properties:
                                       :result (irony-iotask-result-create)
                                       :args args))
 
-(defvar irony-iotask--result)
+(defvar irony-iotask--current-packaged-task) ;dynamically bound
 (defun irony-iotask-package-task-invoke (packaged-task prop-fn
+                                                       &optional ignore-missing
                                                        &rest leading-args)
   (let* ((task (irony-iotask-packaged-task-task packaged-task))
          (args (irony-iotask-packaged-task-args packaged-task))
-         (result (irony-iotask-packaged-task-result packaged-task))
          (fn (plist-get task prop-fn)))
     (condition-case err
         (if fn
-            ;; let binding for `irony-iotask-set-result' and
-            ;; `irony-iotask-set-error'
-            (let ((irony-iotask--result result))
+            ;; let binding for irony-iotask-{get,put}
+            ;; and irony-iotask-set-{result,error}
+            (let ((irony-iotask--current-packaged-task packaged-task))
               (apply fn (append leading-args args)))
-          (signal 'irony-iotask-bad-task
-                  (list task (format "no %s function" prop-fn))))
+          (unless ignore-missing
+            (signal 'irony-iotask-bad-task
+                    (list task (format "no %s function" prop-fn)))))
       (error
-       (apply #'irony-iotask-result-set-error result (car err) (cdr err))))))
+       (apply #'irony-iotask-result-set-error
+              (irony-iotask-packaged-task-result packaged-task)
+              (car err) (cdr err))))))
 
 (defun irony-iotask--chain-1 (packaged-task-1 packaged-task-2)
   (while (irony-iotask-packaged-task-continuation packaged-task-1)
@@ -238,6 +252,8 @@ Properties:
          (packaged-task (irony-iotask-ectx-packaged-task ectx))
          (result (irony-iotask-packaged-task-result packaged-task)))
     (when (irony-iotask-result-valid-p result)
+      (save-current-buffer
+        (irony-iotask-package-task-invoke packaged-task :finish t))
       (if (and (irony-iotask-packaged-task-continuation packaged-task)
                (irony-iotask-result-value-p result))
           ;; we got a non-error, we can chain to the next continuation
@@ -373,11 +389,26 @@ This function isn't reentrant, do not call it from another task."
       ;; the continuations.
       )))
 
+(defun irony-iotask-get (propname)
+  (plist-get (irony-iotask-packaged-task-plist
+              irony-iotask--current-packaged-task)
+             propname))
+
+(defun irony-iotask-put (propname value)
+  (setf (irony-iotask-packaged-task-plist irony-iotask--current-packaged-task)
+        (plist-put (irony-iotask-packaged-task-plist
+                    irony-iotask--current-packaged-task)
+                   propname
+                   value)))
+
+(defun irony-iotask--result ()
+  (irony-iotask-packaged-task-result irony-iotask--current-packaged-task))
+
 (defun irony-iotask-set-result (value)
-  (irony-iotask-result-set-value irony-iotask--result value))
+  (irony-iotask-result-set-value (irony-iotask--result) value))
 
 (defun irony-iotask-set-error (err &rest error-data)
-  (apply #'irony-iotask-result-set-error irony-iotask--result err error-data))
+  (apply #'irony-iotask-result-set-error (irony-iotask--result) err error-data))
 
 (defun irony-iotask-send-string (string)
   (process-send-string irony-iotask--process string))

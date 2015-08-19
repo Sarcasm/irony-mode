@@ -166,3 +166,27 @@ available on all OSes irony-iotask support."
        (message (read-from-minibuffer ""))
        (message (read-from-minibuffer "")))
      (should (equal "hej ok" (irony-iotask-run process task))))))
+
+(defvar irony-iotask/task-finish-var nil)
+(irony-iotask-define-task irony-iotask/task-finish-t
+  "doc"
+  :start (lambda ()
+           (irony-iotask-put :text "how")
+           (irony-iotask-send-string "hello\n"))
+  :update (lambda ()
+            (cond
+             ((string= (buffer-string) "hello\n")
+              (irony-iotask-put :text (concat (irony-iotask-get :text) " are"))
+              (irony-iotask-set-result t))
+             ((>= (buffer-size) (1+ (length "hello\n")))
+              (throw 'invalid-msg t))))
+  :finish (lambda ()
+            (setq irony-iotask/task-finish-var (concat (irony-iotask-get :text)
+                                                       " you?"))))
+
+(ert-deftest irony-iotask-schedule/task-finish/simple ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-finish-t)))
+    (irony-iotask/with-echo-process-setup
+     (setq irony-iotask/task-finish-var nil)
+     (irony-iotask-run process task)
+     (should (equal "how are you?" irony-iotask/task-finish-var)))))
