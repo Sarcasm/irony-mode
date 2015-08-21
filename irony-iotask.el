@@ -159,7 +159,15 @@ Properties:
      Usually performs some kind of cleanup operation.
 
      Note: it makes no sense to set a result or error in this
-     function as it is necessarily been set beforehand."
+     function as it is necessarily been set beforehand.
+
+`:on-success' (optional)
+
+     Same as `:finish' but called only if the result IS NOT an error.
+
+`:on-error' (optional)
+
+     Same as `:finish' but called only if the result IS an error."
   (declare (indent 1)
            (doc-string 2))
   `(progn
@@ -252,6 +260,10 @@ Properties:
          (packaged-task (irony-iotask-ectx-packaged-task ectx))
          (result (irony-iotask-packaged-task-result packaged-task)))
     (when (irony-iotask-result-valid-p result)
+      (save-current-buffer
+        (if (irony-iotask-result-value-p result)
+            (irony-iotask-package-task-invoke packaged-task :on-success t)
+          (irony-iotask-package-task-invoke packaged-task :on-error t)))
       (save-current-buffer
         (irony-iotask-package-task-invoke packaged-task :finish t))
       (if (and (irony-iotask-packaged-task-continuation packaged-task)

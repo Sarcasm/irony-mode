@@ -168,6 +168,7 @@ available on all OSes irony-iotask support."
      (should (equal "hej ok" (irony-iotask-run process task))))))
 
 (defvar irony-iotask/task-finish-var nil)
+(defvar irony-iotask/task-on-var nil)
 (irony-iotask-define-task irony-iotask/task-finish-t
   "doc"
   :start (lambda ()
@@ -180,6 +181,8 @@ available on all OSes irony-iotask support."
               (irony-iotask-set-result t))
              ((>= (buffer-size) (1+ (length "hello\n")))
               (throw 'invalid-msg t))))
+  :on-success (lambda ()
+                (setq irony-iotask/task-on-var "success"))
   :finish (lambda ()
             (setq irony-iotask/task-finish-var (concat (irony-iotask-get :text)
                                                        " you?"))))
@@ -190,3 +193,26 @@ available on all OSes irony-iotask support."
      (setq irony-iotask/task-finish-var nil)
      (irony-iotask-run process task)
      (should (equal "how are you?" irony-iotask/task-finish-var)))))
+
+(ert-deftest irony-iotask-schedule/task-on-success/simple ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-finish-t)))
+    (irony-iotask/with-echo-process-setup
+     (setq irony-iotask/task-on-var nil)
+     (irony-iotask-run process task)
+     (should (equal "success" irony-iotask/task-on-var)))))
+
+(irony-iotask-define-task irony-iotask/task-on-error-t
+  "doc"
+  :start (lambda ()
+           (irony-iotask-set-error 'irony-iotask-error))
+  :on-error (lambda ()
+              (setq irony-iotask/task-on-var "error")))
+
+(ert-deftest irony-iotask-schedule/task-on-error/simple ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-on-error-t)))
+    (irony-iotask/with-elisp-process-setup
+     () ;; no-op
+     (setq irony-iotask/task-on-var nil)
+     (ignore-errors
+       (irony-iotask-run process task))
+     (should (equal "error" irony-iotask/task-on-var)))))
