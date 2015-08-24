@@ -756,47 +756,94 @@ list (and undo information is not kept).")
 
 (irony-iotask-define-task irony--t-set-unsaved
   "`set-unsaved' server command."
-  :start (lambda (process buffer)
-           (let ((temp-file (make-temp-file "irony-unsaved-")))
-             (irony-iotask-put :unsaved-buffer-file temp-file)
-             (process-put process :unsaved-buffer-state
-                          (irony--buffer-state-create buffer))
-             (with-current-buffer buffer
-               (irony--without-narrowing
-                 (write-region nil nil temp-file nil 0))
-               (irony--server-send-command "set-unsaved"
-                                           (irony--get-buffer-path-for-server)
-                                           temp-file))))
+  :start (lambda (process buffer buf-state)
+           (let ((elem (assq buffer (process-get process :unsaved-buffers)))
+                 temp-file)
+             (if (eq (cdr elem) buf-state)
+                 ;; early exit if already cached
+                 (irony-iotask-set-result t)
+               (setq temp-file (make-temp-file "irony-unsaved-"))
+               (irony-iotask-put :temp-file temp-file)
+               (irony-iotask-put :buffer-state buf-state)
+               (process-put process :buffer-state buf-state)
+               (with-current-buffer buffer
+                 (irony--without-narrowing
+                   (write-region nil nil temp-file nil 0))
+                 (irony--server-send-command "set-unsaved"
+                                             (irony--get-buffer-path-for-server)
+                                             temp-file)))))
   :update irony--server-command-update
   :finish (lambda (&rest _args)
-            (delete-file (irony-iotask-get :unsaved-buffer-file))))
+            (delete-file (irony-iotask-get :temp-file)))
+  :on-success
+  (lambda (process buffer &rest _args)
+    (let* ((unsaved-buffers (process-get process :unsaved-buffers))
+           (elem (assq buffer unsaved-buffers))
+           (buf-state (irony-iotask-get :buffer-state)))
+      (if elem
+          (setcdr elem buf-state)
+        (process-put process :unsaved-buffers (cons (cons buffer buf-state)
+                                                    unsaved-buffers))))))
 
-(defun irony--set-unsaved-task (process buffer)
-  (irony-iotask-package-task irony--t-set-unsaved process buffer))
+(defun irony--set-unsaved-task (process buffer buf-state)
+  (irony-iotask-package-task irony--t-set-unsaved process buffer buf-state))
 
 (irony-iotask-define-task irony--t-reset-unsaved
   "`reset-unsaved' server command."
   :start (lambda (process buffer)
-           (process-put process :unsaved-buffer-state
-                        (irony--buffer-state-create buffer))
-           (irony--server-send-command
-            "reset-unsaved"
-            (irony--get-buffer-path-for-server buffer)))
-  :update irony--server-command-update)
+           (if (assq buffer (process-get process :unsaved-buffers))
+               ;; skip if already reset by an earlier command
+               (irony-iotask-set-result t)
+             (irony--server-send-command
+              "reset-unsaved"
+              (irony--get-buffer-path-for-server buffer))))
+  :update irony--server-command-update
+  :finish (lambda (process buffer)
+            (process-put
+             process
+             :unsaved-buffers
+             (assq-delete-all buffer (process-get process :unsaved-buffers)))))
 
 (defun irony--reset-unsaved-task (process buffer)
   (irony-iotask-package-task irony--t-reset-unsaved process buffer))
 
+(defun irony--list-unsaved-irony-mode-buffers (&optional ignore-list)
+  (delq nil (mapcar (lambda (buf)
+                      (unless (memq buf ignore-list)
+                        (when (buffer-modified-p buf)
+                          (with-current-buffer buf
+                            (and irony-mode buf)))))
+                    (buffer-list))))
+
+(defun irony--get-buffer-change-alist (process)
+  "Return a list of (buffer . old-state).
+
+old-state can be nil if the old state isn't known."
+  (let ((unsaved-list (process-get process :unsaved-buffers)))
+    (append unsaved-list
+            (mapcar (lambda (buf)
+                      (cons buf nil))
+                    (irony--list-unsaved-irony-mode-buffers
+                     (mapcar #'car unsaved-list))))))
+
 (defun irony--unsaved-buffers-tasks ()
-  (let* ((process (irony--get-server-process-create))
-         (buffer (current-buffer))
-         (new-state (irony--buffer-state-create buffer))
-         (old-state (process-get process :unsaved-buffer-state)))
-    (cl-case (irony--buffer-state-compare old-state new-state)
-      (set-unsaved
-       (irony--set-unsaved-task process buffer))
-      (reset-unsaved
-       (irony--reset-unsaved-task process buffer)))))
+  (let ((process (irony--get-server-process-create))
+        result)
+    (dolist (buffer-old-state-cons (irony--get-buffer-change-alist process)
+                                   result)
+      (let* ((buffer (car buffer-old-state-cons))
+             (old-state (cdr buffer-old-state-cons))
+             (new-state (irony--buffer-state-create buffer))
+             (task
+              (cl-case (irony--buffer-state-compare old-state new-state)
+                (set-unsaved
+                 (irony--set-unsaved-task process buffer new-state))
+                (reset-unsaved
+                 (irony--reset-unsaved-task process buffer)))))
+        (when task
+          (setq result (if result
+                           (irony-iotask-chain result task)
+                         task)))))))
 
 (irony-iotask-define-task irony--t-parse
   "`parse' server command."
