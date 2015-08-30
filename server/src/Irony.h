@@ -17,6 +17,7 @@
 #define IRONY_MODE_SERVER_IRONY_H_
 
 #include "TUManager.h"
+#include "CompilationDatabase.h"
 
 #include <string>
 #include <vector>
@@ -80,8 +81,8 @@ public:
 
   /// \brief Get compile options from JSON database.
   ///
-  /// \param buildDir Directory containing compile_commands.json
-  /// \param file File to obtain compile commands for.
+  /// \param DatabaseFile File containing the compilation commands.
+  /// \param File File to obtain compile commands for.
   ///
   /// Example output:
   ///
@@ -92,8 +93,8 @@ public:
   ///    )
   /// \endcode
   ///
-  void getCompileOptions(const std::string &buildDir,
-                         const std::string &file) const;
+  void getCompileOptions(const std::string &DatabaseFile,
+                         const std::string &File);
 
   /// \}
 
@@ -101,6 +102,7 @@ private:
   TUManager tuManager_;
   CXTranslationUnit activeTu_;
   bool debug_;
+  CompilationDatabase database;
 };
 
 #endif // IRONY_MODE_SERVER_IRONY_H_

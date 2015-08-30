@@ -23,11 +23,4 @@
 #define HAS_BRIEF_COMMENTS_IN_COMPLETION 0
 #endif
 
-#if CINDEX_VERSION >= 6
-#define HAS_COMPILATION_DATABASE 1
-#include <clang-c/CXCompilationDatabase.h>
-#else
-#define HAS_COMPILATION_DATABASE 0
-#endif
-
 #endif /* !IRONY_MODE_SERVER_SUPPORT_CINDEXVERSION_H_ */
