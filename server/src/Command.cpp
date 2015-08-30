@@ -99,7 +99,7 @@ std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
 std::ostream &operator<<(std::ostream &os, const Command &command) {
   os << "Command{action=" << command.action << ", "
      << "file='" << command.file << "', "
-     << "dir='" << command.dir << "', "
+     << "db='" << command.db << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
      << "flags=[";
@@ -174,11 +174,13 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::Diagnostics:
   case Command::Help:
   case Command::Exit:
+  case Command::HasCompilationDatabase:
     // no-arguments commands
     break;
 
   case Command::GetCompileOptions:
-    positionalArgs.push_back(StringConverter(&command_.dir));
+  case Command::GuessCompileOptions:
+    positionalArgs.push_back(StringConverter(&command_.db));
     positionalArgs.push_back(StringConverter(&command_.file));
     break;
 

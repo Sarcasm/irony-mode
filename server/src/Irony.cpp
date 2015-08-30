@@ -371,66 +371,69 @@ void Irony::complete(const std::string &file,
 
 }
 
-void Irony::getCompileOptions(const std::string &buildDir,
-                              const std::string &file) const {
-#if !(HAS_COMPILATION_DATABASE)
+#ifdef HAS_BOOST_FILESYSTEM
 
-  (void)buildDir;
-  (void)file;
+static void printCompileCommand(const CompileCommand &cmd) {
+  std::cout << "( (";
 
-  std::cout << "nil\n";
-  return;
+  for (const std::string &cmdArg : cmd.cmd_)
+    std::cout << support::quoted(cmdArg) << " ";
 
-#else
-  CXCompilationDatabase_Error error;
-  CXCompilationDatabase db =
-      clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
+  std::cout << ") . " << support::quoted(cmd.dir_) << ")\n";
+}
 
-  switch (error) {
-  case CXCompilationDatabase_CanNotLoadDatabase:
-    std::clog << "I: could not load compilation database in '" << buildDir
-              << "'\n";
-    std::cout << "nil\n";
-    return;
+void Irony::hasCompilationDatabase() {
+  std::cout << "t\n";
+}
 
-  case CXCompilationDatabase_NoError:
-    break;
-  }
-
-  CXCompileCommands compileCommands =
-      clang_CompilationDatabase_getCompileCommands(db, file.c_str());
+void Irony::getCompileOptions(const std::string &databaseFile,
+                              const std::string &file) {
+  database_.readOrUpdateDatabase(databaseFile);
+  std::vector<const CompileCommand*> cmds = database_.getCommands(file);
 
   std::cout << "(\n";
+  for (const CompileCommand *cmd : cmds)
+    printCompileCommand(*cmd);
+  std::cout << ")\n";
+}
 
-  for (unsigned i = 0, numCompileCommands =
-                           clang_CompileCommands_getSize(compileCommands);
-       i < numCompileCommands; ++i) {
-    CXCompileCommand compileCommand =
-        clang_CompileCommands_getCommand(compileCommands, i);
+void Irony::guessCompileOptions(const std::string &databaseFile,
+                                const std::string &srcFile) {
+  database_.readOrUpdateDatabase(databaseFile);
 
-    std::cout << "("
-              << "(";
-    for (unsigned j = 0,
-                  numArgs = clang_CompileCommand_getNumArgs(compileCommand);
-         j < numArgs; ++j) {
-      CXString arg = clang_CompileCommand_getArg(compileCommand, j);
-      std::cout << support::quoted(clang_getCString(arg)) << " ";
-      clang_disposeString(arg);
-    }
+  std::pair<const std::string *, const CompileCommand *> cmdPair =
+      database_.guessCommand(srcFile);
 
-    std::cout << ")"
-              << " . ";
-
-    CXString directory = clang_CompileCommand_getDirectory(compileCommand);
-    std::cout << support::quoted(clang_getCString(directory));
-    clang_disposeString(directory);
-
-    std::cout << ")\n";
+  // TODO: Assert here when ready
+  if (!cmdPair.second) {
+    std::clog << "I: Couldn't guess compilation command for file " << srcFile
+              << ".\n";
+    std::cout << "nil\n";
+    return;
   }
 
-  std::cout << ")\n";
+  if (debug_)
+    std::clog << "I: Using compilation command for " << *cmdPair.first << "\n";
 
-  clang_CompileCommands_dispose(compileCommands);
-  clang_CompilationDatabase_dispose(db);
-#endif
+  std::cout << "( " << support::quoted(*cmdPair.first) << " . ";
+  printCompileCommand(*cmdPair.second);
+  std::cout << ")\n";
 }
+
+#else // HAS_BOOST_FILESYSTEM
+
+void Irony::hasCompilationDatabase() {
+  std::cout << "nil\n";
+}
+
+void Irony::getCompileOptions(const std::string &databaseFile,
+                              const std::string &file) {
+  std::cout << "nil\n";
+}
+
+void Irony::guessCompileOptions(const std::string &databaseFile,
+                                const std::string &srcFile) {
+  std::cout << "nil\n";
+}
+
+#endif // HAS_BOOST_FILESYSTEM
