@@ -15,7 +15,8 @@
 
 # most recent versions come first
 # http://llvm.org/apt/
-set(LIBCLANG_KNOWN_LLVM_VERSIONS 3.7.0 3.7
+set(LIBCLANG_KNOWN_LLVM_VERSIONS 3.8.0 3.8
+  3.7.0 3.7
   3.6.2 3.6.1 3.6.0 3.6
   3.5.2 3.5.1 3.5.0 3.5
   3.4.2 3.4.1 3.4
