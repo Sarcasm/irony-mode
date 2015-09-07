@@ -196,16 +196,24 @@ int main(int ac, const char *av[]) {
       printHelp();
       break;
 
-    case Command::Diagnostics:
-      irony.diagnostics();
-      break;
-
     case Command::Complete:
       irony.complete(c->file, c->line, c->column, c->flags, c->cxUnsavedFiles);
       break;
 
+    case Command::Diagnostics:
+      irony.diagnostics();
+      break;
+
     case Command::Exit:
       return 0;
+
+    case Command::GetCompileOptions:
+      irony.getCompileOptions(c->dir, c->file);
+      break;
+
+    case Command::GetType:
+      irony.getType(c->line, c->column);
+      break;
 
     case Command::Parse:
       irony.parse(c->file, c->flags, c->cxUnsavedFiles);
@@ -213,10 +221,6 @@ int main(int ac, const char *av[]) {
 
     case Command::SetDebug:
       irony.setDebug(c->opt);
-      break;
-
-    case Command::GetCompileOptions:
-      irony.getCompileOptions(c->dir, c->file);
       break;
 
     case Command::Unknown:

@@ -104,7 +104,7 @@ void Irony::parse(const std::string &file,
                   const std::vector<std::string> &flags,
                   const std::vector<CXUnsavedFile> &unsavedFiles) {
   activeTu_ = tuManager_.parse(file, flags, unsavedFiles);
-
+  file_ = file;
   std::cout << (activeTu_ ? "t" : "nil") << "\n";
 }
 
@@ -117,6 +117,44 @@ void Irony::diagnostics() const {
   }
 
   dumpDiagnostics(activeTu_);
+}
+
+void Irony::getType(unsigned line, unsigned col) const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: get-type - parse wasn't called\n";
+
+    std::cout << "nil\n";
+    return;
+  }
+
+  CXFile cxFile = clang_getFile(activeTu_, file_.c_str());
+  CXSourceLocation sourceLoc = clang_getLocation(activeTu_, cxFile, line, col);
+  CXCursor cursor = clang_getCursor(activeTu_, sourceLoc);
+
+  if (clang_Cursor_isNull(cursor)) {
+    // TODO: "error: no type at point"?
+    std::cout << "nil";
+    return;
+  }
+
+  CXType cxTypes[2];
+  cxTypes[0] = clang_getCursorType(cursor);
+  cxTypes[1] = clang_getCanonicalType(cxTypes[0]);
+
+  std::cout << "(";
+
+  for (const CXType &cxType : cxTypes) {
+    CXString typeDescr = clang_getTypeSpelling(cxType);
+    std::string typeStr = clang_getCString(typeDescr);
+    clang_disposeString(typeDescr);
+
+    if (typeStr.empty())
+      break;
+
+    std::cout << support::quoted(typeStr) << " ";
+  }
+
+  std::cout << ")\n";
 }
 
 namespace {

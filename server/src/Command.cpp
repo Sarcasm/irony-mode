@@ -166,6 +166,11 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     readCompileOptions = true;
     break;
 
+  case Command::GetType:
+    positionalArgs.push_back(UnsignedIntConverter(&command_.line));
+    positionalArgs.push_back(UnsignedIntConverter(&command_.column));
+    break;
+
   case Command::Diagnostics:
   case Command::Help:
   case Command::Exit:

@@ -789,6 +789,30 @@ symbol:
       ;; it's safer to call this last, since the function may be called recursively
       (mapc #'(lambda (cb) (funcall cb 'cancelled)) obselete-callbacks))))
 
+(defun irony-get-type--request-handler (types)
+  (when types
+    (if (cdr types)
+        (if (string= (car types) (cadr types))
+            (message "%s" (car types))
+          (message "%s (aka '%s')" (car types) (cadr types)))
+      (message "%s" (car types)))))
+
+;;;###autoload
+(defun irony-get-type ()
+    "Get the type of symbol under cursor."
+  (interactive)
+  (let ((line (line-number-at-pos))
+        (column (1+ (- (position-bytes (point))
+                       (position-bytes (point-at-bol))))))
+    (irony--parse-buffer-async
+     (lambda (parse-status)
+       (when (eq parse-status 'success)
+         (irony--send-request
+          "get-type"
+          (list 'irony-get-type--request-handler)
+          (number-to-string line)
+          (number-to-string column)))))))
+
 (provide 'irony)
 
 ;; Local Variables:

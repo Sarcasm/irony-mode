@@ -45,7 +45,7 @@ public:
   /// Output \c nil or \c t, whether or not parsing the translation unit
   /// succeeded.
   ///
-  /// \sa diagnostics()
+  /// \sa diagnostics(), getType()
   void parse(const std::string &file,
              const std::vector<std::string> &flags,
              const std::vector<CXUnsavedFile> &unsavedFiles);
@@ -57,6 +57,25 @@ public:
 
   /// \brief Retrieve the last parse diagnostics for the given file.
   void diagnostics() const;
+
+  /// \brief Get types of symbol at a given location.
+  ///
+  /// Example:
+  ///
+  /// \code
+  ///   typedef int MyType;
+  ///   MyType a;
+  /// \endcode
+  ///
+  /// Type of cursor location for 'a' is:
+  ///
+  /// \code{.el}
+  ///    ("MyType" "int")
+  /// \endcode
+  ///
+  /// TODO: test with CXString(), seems to be twice the same string
+  ///
+  void getType(unsigned line, unsigned col) const;
 
   /// \brief Perform code completion at a given location.
   ///
@@ -100,6 +119,7 @@ public:
 private:
   TUManager tuManager_;
   CXTranslationUnit activeTu_;
+  std::string file_;
   bool debug_;
 };
 

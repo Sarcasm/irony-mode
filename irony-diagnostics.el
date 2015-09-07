@@ -69,7 +69,7 @@ CALLBACK is called with at least one argument, a symbol
 representing the status of the request. Depending on the status
 more argument are provided. Possible values are explained below:
 
-- success 
+- success
 
   When quering the diagnostics work, the additional argument is a
   list of diagnostic object, diagnostics fields can be queried
