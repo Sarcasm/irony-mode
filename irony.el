@@ -768,7 +768,8 @@ list (and undo information is not kept).")
                (process-put process :buffer-state buf-state)
                (with-current-buffer buffer
                  (irony--without-narrowing
-                   (write-region nil nil temp-file nil 0))
+                   (let ((write-region-inhibit-fsync t))
+                     (write-region nil nil temp-file nil 0)))
                  (irony--server-send-command "set-unsaved"
                                              (irony--get-buffer-path-for-server)
                                              temp-file)))))
