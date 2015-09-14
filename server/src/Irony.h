@@ -98,6 +98,9 @@ public:
 
   /// \}
 
+  void guessCompileOptions(const std::string &DatabaseFile,
+                           const std::string &File);
+
 private:
   TUManager tuManager_;
   CXTranslationUnit activeTu_;

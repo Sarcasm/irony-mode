@@ -352,3 +352,22 @@ void Irony::getCompileOptions(const std::string &databaseFile,
     printCompileCommand(*cmd);
   std::cout << ")\n";
 }
+
+void Irony::guessCompileOptions(const std::string &databaseFile,
+                                const std::string &srcFile) {
+  database.readOrUpdateDatabase(databaseFile);
+
+  std::pair<const std::string *, const CompileCommand *> cmdPair  = database.guessCommand(srcFile);
+
+  // TODO: Assert here when ready
+  if (!cmdPair.second) {
+    std::clog << "I: Couldn't guess compilation command for file " << srcFile << ".\n";
+    std::cout << "nil\n";
+    return;
+  }
+
+  if (debug_)
+    std::clog << "I: Using compilation command for " << *cmdPair.first << "\n";
+
+  printCompileCommand(*cmdPair.second);
+}

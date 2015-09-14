@@ -32,7 +32,8 @@
 
 (defun irony-cdb-server--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
-    (irony-cdb-server--server-exact-flags buffer-file-name it)))
+    (or (irony-cdb-server--server-exact-flags buffer-file-name it)
+        (irony-cdb-server--server-guess-flags buffer-file-name it))))
 
 (defun irony-cdb-server--server-exact-flags (src-file db-file)
   "Get compilation options from irony-server.
@@ -44,6 +45,17 @@ DB-FILE is the database file."
    (irony--send-request-sync "get-compile-options"
                              db-file
                              src-file)))
+
+(defun irony-cdb-server--server-guess-flags (src-file db-file)
+  "Make irony-server guess compilation arguments of a file.
+
+The parameter SRC-FILE is the source file we seek the compile command of and
+DB-FILE is the database file."
+  (irony-cdb-server--adjust-options-and-remove-compiler
+   src-file
+   (list (irony--send-request-sync "guess-compile-options"
+                                   db-file
+                                   src-file))))
 
 (defun irony-cdb-server--adjust-options-and-remove-compiler (file cmds)
   "Remove compiler, target file FILE and output file from CMDS.

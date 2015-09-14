@@ -35,6 +35,7 @@ class CompilationDatabase {
 public:
   // TODO: Use something more optimal for storing file names?
   using FileMapType = std::unordered_multimap<std::string, CompileCommand>;
+  using size_type = FileMapType::size_type;
   using iterator = FileMapType::iterator;
   using const_iterator = FileMapType::const_iterator;
 
@@ -53,12 +54,18 @@ public:
   iterator end() { return cmdMap_.end(); }
   const_iterator end() const { return cmdMap_.end(); }
 
+  size_type size() const { return cmdMap_.size(); }
+
   // Get all compile commands of a file
   std::vector<const CompileCommand *>
   getCommands(const std::string &fileName) const;
 
+  // Guess the compilation command of a file
+  std::pair<const std::string *, const CompileCommand *>
+  guessCommand(const std::string &srcFile) const;
+
   void printDatabase() const;
-  void readOrUpdateDatabase(const std::string &fileName);
+  void readOrUpdateDatabase(const std::string &srcFile);
 
 private:
   void readDatabase(const std::string &fileName);
