@@ -17,16 +17,13 @@
 #include <unordered_map>
 
 struct CompileCommand {
-  std::string Dir;
-  std::vector<std::string> Cmd;
-
-  static std::vector<std::string> splitCommand(const std::string &Command);
+  static std::vector<std::string> splitCommand(const std::string &command);
 
   CompileCommand(const std::string &directory, const std::string &command)
-    : Dir(directory), Cmd(splitCommand(command)) {
+    : dir_(directory), cmd_(splitCommand(command)) {
   }
   CompileCommand(std::string &&directory, std::string &&command)
-    : Dir(directory), Cmd(splitCommand(command)) {
+    : dir_(directory), cmd_(splitCommand(command)) {
   }
 
   CompileCommand(const CompileCommand&) = delete;
@@ -36,6 +33,10 @@ struct CompileCommand {
   CompileCommand &operator=(CompileCommand &&) noexcept = default;
 
   ~CompileCommand() = default;
+
+  // Data members
+  std::string dir_;
+  std::vector<std::string> cmd_;
 };
 
 class CompilationDatabase {
@@ -45,14 +46,6 @@ public:
   using iterator = FileMapType::iterator;
   using const_iterator = FileMapType::const_iterator;
 
-private:
-  static constexpr unsigned bufferSize = 65536;
-
-  std::string DatabaseFile{};
-  time_t ReadTime{0};
-  FileMapType CmdMap;
-
-public:
   CompilationDatabase() = default;
 
   // Don't allow copy or move
@@ -63,21 +56,26 @@ public:
 
   ~CompilationDatabase() = default;
 
-  iterator begin() { return CmdMap.begin(); }
-  const_iterator begin() const { return CmdMap.begin(); }
-  iterator end() { return CmdMap.end(); }
-  const_iterator end() const { return CmdMap.end(); }
+  iterator begin() { return cmdMap_.begin(); }
+  const_iterator begin() const { return cmdMap_.begin(); }
+  iterator end() { return cmdMap_.end(); }
+  const_iterator end() const { return cmdMap_.end(); }
 
   // Get all compile commands of a file
   std::vector<const CompileCommand *>
-  getCommands(const std::string &FileName) const;
+  getCommands(const std::string &fileName) const;
 
   void printDatabase() const;
-  void readOrUpdateDatabase(const std::string &FileName);
+  void readOrUpdateDatabase(const std::string &fileName);
 
 private:
-  void readDatabase(const std::string &FileName);
-  static time_t getModTime(const std::string &filename);
+  void readDatabase(const std::string &fileName);
+  static time_t getModTime(const std::string &fileName);
+
+  static constexpr unsigned bufferSize = 65536;
+  std::string databaseFile_{};
+  time_t readTime_{0};
+  FileMapType cmdMap_;
 };
 
 #endif

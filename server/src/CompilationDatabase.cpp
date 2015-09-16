@@ -22,33 +22,34 @@
 #include <iostream>
 
 struct FileHandle {
-  FILE *fp;
-  FileHandle(std::string FileName, const char *Mode)
-    : fp(fopen(FileName.c_str(), Mode)) {
+  FileHandle(std::string fileName, const char *mode)
+    : fp_(fopen(fileName.c_str(), mode)) {
   }
   ~FileHandle() {
-    if (fp)
-      fclose(fp);
+    if (fp_)
+      fclose(fp_);
   }
+
+  FILE *fp_;
 };
 
 std::vector<std::string> CompileCommand::splitCommand(const std::string &Command) {
-  std::vector<std::string> CmdSplit;
-  std::istringstream S(Command);
+  std::vector<std::string> cmdSplit;
+  std::istringstream iss(Command);
 
-  std::string CmdArg;
-  while (S >> CmdArg)
-    CmdSplit.emplace_back(CmdArg);
+  std::string cmdArg;
+  while (iss >> cmdArg)
+    cmdSplit.emplace_back(cmdArg);
 
-  return CmdSplit;
+  return cmdSplit;
 }
 
-time_t CompilationDatabase::getModTime(const std::string &FileName) {
+time_t CompilationDatabase::getModTime(const std::string &fileName) {
   // TODO: Add suport for Windows
   time_t time = 0;
 
   struct stat dbStats;
-  if (stat(FileName.c_str(), &dbStats) != 0)
+  if (stat(fileName.c_str(), &dbStats) != 0)
     return time;
 
   time = dbStats.st_atime;
@@ -56,32 +57,37 @@ time_t CompilationDatabase::getModTime(const std::string &FileName) {
   return time;
 }
 
-void CompilationDatabase::readOrUpdateDatabase(const std::string &FileName) {
-  if (DatabaseFile != FileName ||
-      difftime(getModTime(FileName), ReadTime) >= 0.0) {
+void CompilationDatabase::readOrUpdateDatabase(const std::string &fileName) {
+  if (databaseFile_ != fileName ||
+      difftime(getModTime(fileName), readTime_) >= 0.0) {
     std::clog << "I: Reloading database.\n";
-    readDatabase(FileName);
+    readDatabase(fileName);
   }
 }
 
-void CompilationDatabase::readDatabase(const std::string &filename) {
-  FileHandle file(filename, "r");
+void CompilationDatabase::readDatabase(const std::string &fileName) {
+  FileHandle file(fileName, "r");
 
-  if (!file.fp) {
+  if (!file.fp_) {
     std::clog << "I: Couldn't open compilation database file!\n";
     return;
   }
 
   char buffer[bufferSize];
-  rapidjson::FileReadStream stream{file.fp, buffer, sizeof(buffer)};
+  rapidjson::FileReadStream stream{file.fp_, buffer, sizeof(buffer)};
   // TODO: What if the database isn't encoded as UTF8?
   rapidjson::EncodedInputStream<rapidjson::UTF8<>, rapidjson::FileReadStream>
     encStream{stream};
 
-  rapidjson::Document Doc;
-  Doc.ParseStream(encStream);
+  rapidjson::Document doc;
+  doc.ParseStream(encStream);
 
-  if (!Doc.IsArray()) {
+  if (doc.HasParseError()) {
+    std::clog << "I: Error parsing compilation database file!\n";
+    return;
+  }
+
+  if (!doc.IsArray()) {
     std::clog << "I: Expected top level array when reading compilation "
                  "database!\n";
     return;
@@ -90,48 +96,48 @@ void CompilationDatabase::readDatabase(const std::string &filename) {
   // If we've gotten this far without failure, consider the database read. Set
   // the name of the database file, record the time of reading and clear the
   // compile commands.
-  DatabaseFile = filename;
-  ReadTime = time(nullptr);
-  CmdMap.clear();
+  databaseFile_ = fileName;
+  readTime_ = time(nullptr);
+  cmdMap_.clear();
 
-  for (unsigned i = 0, e = Doc.Size(); i != e; ++i) {
-    rapidjson::Value &CompileCmd = Doc[i];
+  for (unsigned i = 0, e = doc.Size(); i != e; ++i) {
+    rapidjson::Value &compileCmd = doc[i];
 
-    if (!CompileCmd.IsObject() || !CompileCmd.HasMember("file") ||
-        !CompileCmd.HasMember("directory") ||
-        !CompileCmd.HasMember("command")) {
+    if (!compileCmd.IsObject() || !compileCmd.HasMember("file") ||
+        !compileCmd.HasMember("directory") ||
+        !compileCmd.HasMember("command")) {
       std::clog << "I: Badly formatted compile command in database!\n";
       continue;
     }
 
-    std::string File{CompileCmd["file"].GetString()};
-    CompileCommand cmd{std::string{CompileCmd["directory"].GetString()},
-                       std::string{CompileCmd["command"].GetString()}};
-    CmdMap.emplace(std::move(File), std::move(cmd));
+    std::string file{compileCmd["file"].GetString()};
+    CompileCommand cmd{std::string{compileCmd["directory"].GetString()},
+                       std::string{compileCmd["command"].GetString()}};
+    cmdMap_.emplace(std::move(file), std::move(cmd));
   }
 }
 
 void CompilationDatabase::printDatabase() const {
-  for (const auto &cmd_pair : CmdMap) {
+  for (const auto &cmd_pair : cmdMap_) {
     std::cout << "file: " << cmd_pair.first << "\n"
-              << "directory: " << cmd_pair.second.Dir << "\n";
+              << "directory: " << cmd_pair.second.dir_ << "\n";
 
     std::cout << "command:";
-    for (const std::string &CmdArg : cmd_pair.second.Cmd)
-      std::cout << " " << CmdArg;
+    for (const std::string &cmdArg : cmd_pair.second.cmd_)
+      std::cout << " " << cmdArg;
     std::cout << "\n";
   }
 }
 
 std::vector<const CompileCommand *>
-CompilationDatabase::getCommands(const std::string &File) const {
-  std::vector<const CompileCommand*> Cmds;
+CompilationDatabase::getCommands(const std::string &srcFile) const {
+  std::vector<const CompileCommand*> cmds;
 
-  auto Range = CmdMap.equal_range(File);
-  Cmds.reserve(std::distance(Range.first, Range.second));
+  auto range = cmdMap_.equal_range(srcFile);
+  cmds.reserve(std::distance(range.first, range.second));
 
-  std::transform(Range.first, Range.second, std::back_inserter(Cmds),
+  std::transform(range.first, range.second, std::back_inserter(cmds),
                  [] (const FileMapType::value_type &v) { return &v.second; });
 
-  return Cmds;
+  return cmds;
 }

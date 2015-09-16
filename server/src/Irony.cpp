@@ -333,19 +333,22 @@ void Irony::complete(const std::string &file,
 
 }
 
-void Irony::getCompileOptions(const std::string &DatabaseFile,
-                              const std::string &File) {
-  database.readOrUpdateDatabase(DatabaseFile);
-  std::vector<const CompileCommand*> Cmds = database.getCommands(File);
+static void printCompileCommand(const CompileCommand &cmd) {
+  std::cout << "( (";
+
+  for (const std::string &cmdArg : cmd.cmd_)
+    std::cout << '"' << cmdArg << '"' << " ";
+
+  std::cout << ") . " << '"' << cmd.dir_ << '"' << ")\n";
+}
+
+void Irony::getCompileOptions(const std::string &databaseFile,
+                              const std::string &file) {
+  database.readOrUpdateDatabase(databaseFile);
+  std::vector<const CompileCommand*> cmds = database.getCommands(file);
 
   std::cout << "(\n";
-  for (const CompileCommand *Cmd : Cmds) {
-    std::cout << "( (";
-
-    for (const std::string &CmdArg : Cmd->Cmd)
-      std::cout << '"' << CmdArg << '"' << " ";
-
-    std::cout << ") . " << '"' << Cmd->Dir << '"' << ")\n";
-  }
+  for (const CompileCommand *cmd : cmds)
+    printCompileCommand(*cmd);
   std::cout << ")\n";
 }
