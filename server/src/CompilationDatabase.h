@@ -26,14 +26,6 @@ struct CompileCommand {
     : dir_(directory), cmd_(splitCommand(command)) {
   }
 
-  CompileCommand(const CompileCommand&) = delete;
-  CompileCommand &operator=(const CompileCommand&) = delete;
-
-  CompileCommand(CompileCommand &&) noexcept = default;
-  CompileCommand &operator=(CompileCommand &&) noexcept = default;
-
-  ~CompileCommand() = default;
-
   // Data members
   std::string dir_;
   std::vector<std::string> cmd_;

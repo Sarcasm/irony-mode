@@ -22,7 +22,7 @@
 #include <iostream>
 
 struct FileHandle {
-  FileHandle(std::string fileName, const char *mode)
+  FileHandle(const std::string &fileName, const char *mode)
     : fp_(fopen(fileName.c_str(), mode)) {
   }
   ~FileHandle() {
