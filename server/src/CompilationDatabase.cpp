@@ -237,8 +237,8 @@ CompilationDatabase::guessCommand(const std::string &srcFile) const {
   CmdPair minElem{nullptr, nullptr};
   for (const CmdPair scoreEntry : filteredCmds) {
     path entryPath{*scoreEntry.first};
-    unsigned score = levenshteinDistance(entryPath.filename().native(),
-                                           srcPath.filename().native());
+    unsigned score = levenshteinDistance(entryPath.stem().native(),
+                                           srcPath.stem().native());
 
     if (score < minScore) {
       minScore = score;
