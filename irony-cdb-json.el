@@ -66,7 +66,10 @@ directories to project directory."
   (add-to-list 'irony-cdb-json--project-alist
                (cons (expand-file-name project-root)
                      (expand-file-name compile-commands-path)))
-  (irony-cdb-json--save-project-alist))
+  (irony-cdb-json--save-project-alist)
+
+  ; and tell irony to load it now
+  (irony-cdb-autosetup-compile-options))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
