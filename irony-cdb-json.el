@@ -115,9 +115,11 @@ directories to project directory."
 
 (defun irony-cdb-json--locate-db ()
   (irony-cdb-json--ensure-project-alist-loaded)
-  (irony--aif (locate-dominating-file (irony-cdb-json--target-path)
-                                      "compile_commands.json")
-      (expand-file-name "compile_commands.json" it)
+  (irony--aif (irony-cdb--locate-dominating-file-with-dirs
+               (irony-cdb-json--target-path)
+               "compile_commands.json"
+               irony-cdb-search-directory-list)
+      (expand-file-name it)
     ;; if not in a parent directory, look in the project alist
     (irony--awhen (irony-cdb-json--find-best-prefix-path
                    (irony-cdb-json--target-path)
