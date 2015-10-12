@@ -63,6 +63,20 @@ for files that it cannot handle."
   :type '(repeat function)
   :group 'irony-cdb)
 
+(defcustom irony-cdb-search-directory-list '("." "build")
+  "List of relative subdirectory paths to be searched for cdb files
+
+Irony looks for cdb files in any of the supported format by checking
+each directory from the currently loaded file and recursively through
+parent directories until it hits the root directory or a cdb is
+found. At each level of the search irony looks at the subdirectories
+listed in `'irony-cdb-search-directory-list` for the files. Customize this
+list if your cdb is held in a custom directory within you project,
+such as a custom named build directory.
+"
+  :type '(repeat string)
+  :group 'irony-cdb)
+
 
 ;;
 ;; Internal variables
@@ -113,6 +127,57 @@ for files that it cannot handle."
 ;;
 ;; Functions
 ;;
+
+(defun irony-cdb--choose-closest-path (file paths)
+  "Find the \"best\" path in PATHS matching FILE
+
+If any paths in PATHS is belongs to the same directory
+or a subdirectory of file, we disregard other candidates.
+
+For remaining candidates, \"nearest\" is measured as abs. difference
+in path depth.
+- We prefer deeper paths at level +N to those at level -N.
+- If multiple paths are equally good, we return the last one.
+
+Returns nil if paths isn't a list of at least one element.
+"
+  (when (listp paths)
+    (let ((paths (or
+                  ;; if we find a cdb in cwd or below, don't consider other candidates
+                  (cl-remove-if-not (lambda (x) (string-prefix-p (file-name-directory file) x)) paths)
+                  paths)))
+      (cl-loop for path in paths
+         with best-depth-delta = 999999 ; start at +inf
+         with best-path = nil ; we keep the best so far here
+         ;; all candidates have their depth compared to that of target file
+         with file-depth = (length (split-string file "/")) ;
+         for candidate-depth = (length (split-string path "/"))
+         ;; Our metric. We use signum as a tie-breaker to choose deeper candidates
+         for depth-delta = (+ (abs (- file-depth candidate-depth))
+                              (* 0.1 (- file-depth candidate-depth)))
+         do (when (< depth-delta best-depth-delta)
+              (progn
+                (setq best-depth-delta depth-delta)
+                (setq best-path path)))
+         finally return best-path))))
+
+(defun irony-cdb--locate-dominating-file-with-dirs (file
+                                                    name
+                                                    subdirectories)
+  "Convenience wrapper around `locate-dominating-file'
+
+Looks up the directory hierarchy from FILE for to locate any directory
+in `subdirectories` which contains NAME. If multiple files are found,
+chooses the one located at the nearest directory level. if multiple
+files are found at the same level, picks the first one encountered.
+returns the full path to file if found, or nil otherwise."
+  (let ((candidates
+         (cl-loop for subdir in subdirectories
+            for relpath = (concat (file-name-as-directory subdir) name)
+            for match-maybe = (locate-dominating-file file relpath)
+            when match-maybe collect (expand-file-name (concat match-maybe relpath)))))
+    (irony-cdb--choose-closest-path file candidates)))
+
 
 (defun irony-cdb--update-compile-options (compile-options
                                           &optional working-directory)
