@@ -4,6 +4,7 @@
          "test-config"))
 
 (require 'irony-cdb-json)
+(require 'cl-lib)
 
 (defconst irony-cdb/compile-command
   '((file      . "../src/file.cc")
@@ -57,3 +58,30 @@
    (equal nil
           (irony-cdb--choose-closest-path "/tmp/a/1"
                                           'ordures))))
+
+; http://endlessparentheses.com/understanding-letf-and-how-it-replaces-flet.html
+(ert-deftest cdb/locate-db/choose-among-candidates ()
+  (should
+   (equal "/foo/build/cdb"
+          (cl-letf (((symbol-function 'locate-dominating-file)
+                     (lambda  (file name)
+                       (cond
+                         ((string= name "./cdb") "/") ; found /cdb
+                         ((string= name "build/cdb") "/foo/") ; found /foo/build/cdb
+                         ))))
+            (irony-cdb--locate-dominating-file-with-dirs "/foo/bar/qux.cpp"
+                                                         "cdb"
+                                                         '("." "build" "out/x86_64"))))))
+
+(ert-deftest cdb/locate-dominating-file-with-dirs/children-first ()
+  (should
+   (equal "/tmp/foo/bar/out/x86_64/cdb"
+          (cl-letf (((symbol-function 'locate-dominating-file)
+                     (lambda  (file name)
+                       (cond
+                         ((string= name "./cdb") "/tmp/foo/") ; found /tmp/foo/cdb
+                         ((string= name "out/x86_64/cdb") "/tmp/foo/bar/") ;found /tmp/foo/bar/out/x86_64/cdb
+                         ))))
+                    (irony-cdb--locate-dominating-file-with-dirs "/tmp/foo/bar/qux.cpp"
+                                                                 "cdb"
+                                                                 '("." "out/x86_64" ))))))
