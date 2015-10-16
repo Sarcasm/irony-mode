@@ -150,8 +150,8 @@ Returns nil if paths isn't a list of at least one element.
          with best-depth-delta = 999999 ; start at +inf
          with best-path = nil ; we keep the best so far here
          ;; all candidates have their depth compared to that of target file
-         with file-depth = (length (split-string file "/")) ;
-         for candidate-depth = (length (split-string path "/"))
+         with file-depth = (length (split-string (expand-file-name file) "/")) ;
+         for candidate-depth = (length (split-string (expand-file-name path) "/"))
          ;; Our metric. We use signum as a tie-breaker to choose deeper candidates
          for depth-delta = (+ (abs (- file-depth candidate-depth))
                               (* 0.1 (- file-depth candidate-depth)))
