@@ -685,17 +685,23 @@ care of."
       (irony--server-process-push-callback process callback)
       ;; skip narrowing to compute buffer size and content
       (irony--without-narrowing
-        (process-send-string process
-                             (format "%s\n%s\n%s\n%d\n"
-                                     (combine-and-quote-strings argv)
-                                     (combine-and-quote-strings compile-options)
-                                     buffer-file-name
-                                     (irony--buffer-size-in-bytes)))
-        (process-send-region process (point-min) (point-max))
         ;; always make sure to finish with a newline (required by irony-server
         ;; to play nice with line buffering even when the file doesn't end with
         ;; a newline)
-        (process-send-string process "\n")))))
+        ;;
+        ;; it is important to send the request atomically rather than using
+        ;; multiple process-send calls. On Windows at least, if the request is
+        ;; not atomic, content from subsequent requests can get intermixed with
+        ;; earlier requests. This may be because of how Emacs behaves when the
+        ;; buffers to communicate with processes are full (see
+        ;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Input-to-Processes.html).
+        (process-send-string process
+                             (format "%s\n%s\n%s\n%d\n%s\n"
+                                     (combine-and-quote-strings argv)
+                                     (combine-and-quote-strings compile-options)
+                                     buffer-file-name
+                                     (irony--buffer-size-in-bytes)
+                                     (buffer-substring (point-min) (point-max))))))))
 
 
 ;;
