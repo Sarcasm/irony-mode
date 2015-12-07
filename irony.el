@@ -588,7 +588,7 @@ list (and undo information is not kept).")
 (defun irony--process-server-response (process response)
   (let ((sexp (read response))
         (callback (irony--server-process-pop-callback process)))
-    (ignore-errors
+    (with-demoted-errors "Warning: %S"
       (apply (car callback) sexp (cdr callback)))))
 
 (defun irony--server-process-filter (process output)
