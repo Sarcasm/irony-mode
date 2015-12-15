@@ -68,3 +68,12 @@ set_source_files_properties(main.cpp
 target_link_libraries(irony-server ${LIBCLANG_LIBRARIES})
 
 install(TARGETS irony-server DESTINATION bin)
+
+# don't use @rpath
+if (APPLE)
+  add_custom_command(
+    TARGET irony-server
+    POST_BUILD COMMAND
+    ${CMAKE_INSTALL_NAME_TOOL} "-change" "@rpath/libclang.dylib" "${LIBCLANG_LIBRARY}" "$<TARGET_FILE:irony-server>"
+    )
+endif()
