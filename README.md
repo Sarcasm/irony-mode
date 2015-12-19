@@ -169,6 +169,13 @@ enable rpath in CMake use the following command:
 
     cmake -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON <args...>
 
+If you're running OS X, you can also use `install_name_tool` to explicitly
+tell `irony-server` where an appropriate version of `libclang.dylib` lives.
+For example, Homebrew (with `brew install llvm --with-clang`) will install
+a `libclang.dylib` library at `/usr/local/opt/llvm/lib/libclang.dylib`;
+you can instruct `irony-server` to use this with something like:
+
+    install_name_tool -change @rpath/libclang.dylib /usr/local/opt/llvm/lib/libclang.dylib irony-server
 
 [ac-irony-ref]: https://github.com/Sarcasm/ac-irony "AC Irony"
 [ac-ref]: https://github.com/auto-complete/auto-complete "Auto Complete"
