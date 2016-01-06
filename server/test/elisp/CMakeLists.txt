@@ -35,9 +35,11 @@ function(add_ert_test test_file)
     ${EMACS_EXECUTABLE} -batch
     -l package
     --eval "(package-initialize) (unless (require 'cl-lib nil t) (package-refresh-contents) (package-install 'cl-lib))"
+    --eval "(setq irony-elisp-test-dir \"${CMAKE_CURRENT_SOURCE_DIR}\")"
     -l ${CMAKE_CURRENT_SOURCE_DIR}/${test_file}
     -f ert-run-tests-batch-and-exit)
 endfunction()
 
 add_ert_test(irony.el)
 add_ert_test(irony-cdb-json.el)
+add_ert_test(irony-cdb-server.el)

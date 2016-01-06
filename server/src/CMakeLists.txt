@@ -2,8 +2,12 @@ include(CheckLibClangBuiltinHeadersDir)
 
 find_package(LibClang REQUIRED)
 
+find_library(BOOST_SYSTEM boost_system)
+find_library(BOOST_FILESYSTEM boost_filesystem)
+
 include_directories(${LIBCLANG_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(rapidjson/include)
 
 check_libclang_builtin_headers_dir()
 
@@ -32,6 +36,7 @@ add_executable(irony-server
   Irony.h
   TUManager.cpp
   TUManager.h
+  CompilationDatabase.cpp
 
   main.cpp)
 
@@ -65,6 +70,8 @@ set_source_files_properties(main.cpp
   PROPERTIES
   COMPILE_DEFINITIONS IRONY_PACKAGE_VERSION=\"${IRONY_PACKAGE_VERSION}\")
 
-target_link_libraries(irony-server ${LIBCLANG_LIBRARIES})
+target_link_libraries(irony-server ${LIBCLANG_LIBRARIES} ${BOOST_FILESYSTEM} ${BOOST_SYSTEM})
+
+# add_subdirectory(json-test)
 
 install(TARGETS irony-server DESTINATION bin)
