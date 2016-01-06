@@ -27,7 +27,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 	
 if(IRONY_COMPILER_IS_GCC_COMPATIBLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
 elseif(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /D_HAS_EXCEPTIONS=0")
   # irony-server uses some code that breaks when iterator debugging is enabled

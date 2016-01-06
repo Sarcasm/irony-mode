@@ -1,0 +1,457 @@
+[
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/APFloat.cpp.o -c /home/user/dev/llvm/lib/Support/APFloat.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/APFloat.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/APInt.cpp.o -c /home/user/dev/llvm/lib/Support/APInt.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/APInt.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/APSInt.cpp.o -c /home/user/dev/llvm/lib/Support/APSInt.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/APSInt.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ARMBuildAttrs.cpp.o -c /home/user/dev/llvm/lib/Support/ARMBuildAttrs.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ARMBuildAttrs.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ARMWinEH.cpp.o -c /home/user/dev/llvm/lib/Support/ARMWinEH.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ARMWinEH.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Allocator.cpp.o -c /home/user/dev/llvm/lib/Support/Allocator.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Allocator.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/BlockFrequency.cpp.o -c /home/user/dev/llvm/lib/Support/BlockFrequency.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/BlockFrequency.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/BranchProbability.cpp.o -c /home/user/dev/llvm/lib/Support/BranchProbability.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/BranchProbability.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/circular_raw_ostream.cpp.o -c /home/user/dev/llvm/lib/Support/circular_raw_ostream.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/circular_raw_ostream.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/COM.cpp.o -c /home/user/dev/llvm/lib/Support/COM.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/COM.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/CommandLine.cpp.o -c /home/user/dev/llvm/lib/Support/CommandLine.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/CommandLine.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Compression.cpp.o -c /home/user/dev/llvm/lib/Support/Compression.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Compression.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/ConvertUTF.c.o   -c /home/user/dev/llvm/lib/Support/ConvertUTF.c",
+  "file": "/home/user/dev/llvm/lib/Support/ConvertUTF.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ConvertUTFWrapper.cpp.o -c /home/user/dev/llvm/lib/Support/ConvertUTFWrapper.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ConvertUTFWrapper.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/CrashRecoveryContext.cpp.o -c /home/user/dev/llvm/lib/Support/CrashRecoveryContext.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/CrashRecoveryContext.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/DataExtractor.cpp.o -c /home/user/dev/llvm/lib/Support/DataExtractor.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/DataExtractor.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/DataStream.cpp.o -c /home/user/dev/llvm/lib/Support/DataStream.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/DataStream.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Debug.cpp.o -c /home/user/dev/llvm/lib/Support/Debug.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Debug.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/DeltaAlgorithm.cpp.o -c /home/user/dev/llvm/lib/Support/DeltaAlgorithm.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/DeltaAlgorithm.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/DAGDeltaAlgorithm.cpp.o -c /home/user/dev/llvm/lib/Support/DAGDeltaAlgorithm.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/DAGDeltaAlgorithm.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Dwarf.cpp.o -c /home/user/dev/llvm/lib/Support/Dwarf.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Dwarf.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ErrorHandling.cpp.o -c /home/user/dev/llvm/lib/Support/ErrorHandling.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ErrorHandling.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/FileUtilities.cpp.o -c /home/user/dev/llvm/lib/Support/FileUtilities.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/FileUtilities.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/FileOutputBuffer.cpp.o -c /home/user/dev/llvm/lib/Support/FileOutputBuffer.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/FileOutputBuffer.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/FoldingSet.cpp.o -c /home/user/dev/llvm/lib/Support/FoldingSet.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/FoldingSet.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/FormattedStream.cpp.o -c /home/user/dev/llvm/lib/Support/FormattedStream.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/FormattedStream.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/GraphWriter.cpp.o -c /home/user/dev/llvm/lib/Support/GraphWriter.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/GraphWriter.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Hashing.cpp.o -c /home/user/dev/llvm/lib/Support/Hashing.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Hashing.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/IntEqClasses.cpp.o -c /home/user/dev/llvm/lib/Support/IntEqClasses.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/IntEqClasses.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/IntervalMap.cpp.o -c /home/user/dev/llvm/lib/Support/IntervalMap.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/IntervalMap.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/IntrusiveRefCntPtr.cpp.o -c /home/user/dev/llvm/lib/Support/IntrusiveRefCntPtr.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/IntrusiveRefCntPtr.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/LEB128.cpp.o -c /home/user/dev/llvm/lib/Support/LEB128.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/LEB128.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/LineIterator.cpp.o -c /home/user/dev/llvm/lib/Support/LineIterator.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/LineIterator.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Locale.cpp.o -c /home/user/dev/llvm/lib/Support/Locale.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Locale.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/LockFileManager.cpp.o -c /home/user/dev/llvm/lib/Support/LockFileManager.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/LockFileManager.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ManagedStatic.cpp.o -c /home/user/dev/llvm/lib/Support/ManagedStatic.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ManagedStatic.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/MathExtras.cpp.o -c /home/user/dev/llvm/lib/Support/MathExtras.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/MathExtras.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/MemoryBuffer.cpp.o -c /home/user/dev/llvm/lib/Support/MemoryBuffer.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/MemoryBuffer.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/MemoryObject.cpp.o -c /home/user/dev/llvm/lib/Support/MemoryObject.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/MemoryObject.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/MD5.cpp.o -c /home/user/dev/llvm/lib/Support/MD5.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/MD5.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Options.cpp.o -c /home/user/dev/llvm/lib/Support/Options.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Options.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/PluginLoader.cpp.o -c /home/user/dev/llvm/lib/Support/PluginLoader.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/PluginLoader.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/PrettyStackTrace.cpp.o -c /home/user/dev/llvm/lib/Support/PrettyStackTrace.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/PrettyStackTrace.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/RandomNumberGenerator.cpp.o -c /home/user/dev/llvm/lib/Support/RandomNumberGenerator.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/RandomNumberGenerator.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Regex.cpp.o -c /home/user/dev/llvm/lib/Support/Regex.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Regex.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ScaledNumber.cpp.o -c /home/user/dev/llvm/lib/Support/ScaledNumber.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ScaledNumber.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SmallPtrSet.cpp.o -c /home/user/dev/llvm/lib/Support/SmallPtrSet.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SmallPtrSet.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SmallVector.cpp.o -c /home/user/dev/llvm/lib/Support/SmallVector.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SmallVector.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SourceMgr.cpp.o -c /home/user/dev/llvm/lib/Support/SourceMgr.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SourceMgr.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SpecialCaseList.cpp.o -c /home/user/dev/llvm/lib/Support/SpecialCaseList.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SpecialCaseList.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Statistic.cpp.o -c /home/user/dev/llvm/lib/Support/Statistic.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Statistic.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StreamingMemoryObject.cpp.o -c /home/user/dev/llvm/lib/Support/StreamingMemoryObject.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StreamingMemoryObject.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StringExtras.cpp.o -c /home/user/dev/llvm/lib/Support/StringExtras.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StringExtras.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StringMap.cpp.o -c /home/user/dev/llvm/lib/Support/StringMap.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StringMap.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StringPool.cpp.o -c /home/user/dev/llvm/lib/Support/StringPool.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StringPool.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StringSaver.cpp.o -c /home/user/dev/llvm/lib/Support/StringSaver.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StringSaver.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/StringRef.cpp.o -c /home/user/dev/llvm/lib/Support/StringRef.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/StringRef.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SystemUtils.cpp.o -c /home/user/dev/llvm/lib/Support/SystemUtils.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SystemUtils.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/TargetParser.cpp.o -c /home/user/dev/llvm/lib/Support/TargetParser.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/TargetParser.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Timer.cpp.o -c /home/user/dev/llvm/lib/Support/Timer.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Timer.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ToolOutputFile.cpp.o -c /home/user/dev/llvm/lib/Support/ToolOutputFile.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ToolOutputFile.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Triple.cpp.o -c /home/user/dev/llvm/lib/Support/Triple.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Triple.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Twine.cpp.o -c /home/user/dev/llvm/lib/Support/Twine.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Twine.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Unicode.cpp.o -c /home/user/dev/llvm/lib/Support/Unicode.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Unicode.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/YAMLParser.cpp.o -c /home/user/dev/llvm/lib/Support/YAMLParser.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/YAMLParser.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/YAMLTraits.cpp.o -c /home/user/dev/llvm/lib/Support/YAMLTraits.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/YAMLTraits.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/raw_os_ostream.cpp.o -c /home/user/dev/llvm/lib/Support/raw_os_ostream.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/raw_os_ostream.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/raw_ostream.cpp.o -c /home/user/dev/llvm/lib/Support/raw_ostream.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/raw_ostream.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/regcomp.c.o   -c /home/user/dev/llvm/lib/Support/regcomp.c",
+  "file": "/home/user/dev/llvm/lib/Support/regcomp.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/regerror.c.o   -c /home/user/dev/llvm/lib/Support/regerror.c",
+  "file": "/home/user/dev/llvm/lib/Support/regerror.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/regexec.c.o   -c /home/user/dev/llvm/lib/Support/regexec.c",
+  "file": "/home/user/dev/llvm/lib/Support/regexec.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/regfree.c.o   -c /home/user/dev/llvm/lib/Support/regfree.c",
+  "file": "/home/user/dev/llvm/lib/Support/regfree.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/cc  -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-comment -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -o CMakeFiles/LLVMSupport.dir/regstrlcpy.c.o   -c /home/user/dev/llvm/lib/Support/regstrlcpy.c",
+  "file": "/home/user/dev/llvm/lib/Support/regstrlcpy.c"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Atomic.cpp.o -c /home/user/dev/llvm/lib/Support/Atomic.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Atomic.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/DynamicLibrary.cpp.o -c /home/user/dev/llvm/lib/Support/DynamicLibrary.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/DynamicLibrary.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Errno.cpp.o -c /home/user/dev/llvm/lib/Support/Errno.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Errno.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Host.cpp.o -c /home/user/dev/llvm/lib/Support/Host.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Host.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Memory.cpp.o -c /home/user/dev/llvm/lib/Support/Memory.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Memory.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Mutex.cpp.o -c /home/user/dev/llvm/lib/Support/Mutex.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Mutex.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Path.cpp.o -c /home/user/dev/llvm/lib/Support/Path.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Path.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Process.cpp.o -c /home/user/dev/llvm/lib/Support/Process.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Process.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Program.cpp.o -c /home/user/dev/llvm/lib/Support/Program.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Program.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/RWMutex.cpp.o -c /home/user/dev/llvm/lib/Support/RWMutex.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/RWMutex.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/SearchForAddressOfSpecialSymbol.cpp.o -c /home/user/dev/llvm/lib/Support/SearchForAddressOfSpecialSymbol.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/SearchForAddressOfSpecialSymbol.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Signals.cpp.o -c /home/user/dev/llvm/lib/Support/Signals.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Signals.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/TargetRegistry.cpp.o -c /home/user/dev/llvm/lib/Support/TargetRegistry.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/TargetRegistry.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/ThreadLocal.cpp.o -c /home/user/dev/llvm/lib/Support/ThreadLocal.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/ThreadLocal.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Threading.cpp.o -c /home/user/dev/llvm/lib/Support/Threading.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Threading.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/TimeValue.cpp.o -c /home/user/dev/llvm/lib/Support/TimeValue.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/TimeValue.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Valgrind.cpp.o -c /home/user/dev/llvm/lib/Support/Valgrind.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Valgrind.cpp"
+},
+{
+  "directory": "/home/user/dev/llvm-build/lib/Support",
+  "command": "/usr/bin/c++   -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -fPIC -I/home/user/dev/llvm-build/lib/Support -I/home/user/dev/llvm/lib/Support -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/LLVMSupport.dir/Watchdog.cpp.o -c /home/user/dev/llvm/lib/Support/Watchdog.cpp",
+  "file": "/home/user/dev/llvm/lib/Support/Watchdog.cpp"
+}
+]

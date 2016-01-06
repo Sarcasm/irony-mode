@@ -17,6 +17,7 @@
 #define IRONY_MODE_SERVER_IRONY_H_
 
 #include "TUManager.h"
+#include "CompilationDatabase.h"
 
 #include <string>
 #include <vector>
@@ -78,13 +79,15 @@ public:
                 const std::vector<std::string> &flags,
                 const std::vector<CXUnsavedFile> &unsavedFiles);
 
+  /// \brief Prints t if the compilation database is activated, nil otherwise.
+  static void hasCompilationDatabase();
+
   /// \brief Get compile options from JSON database.
   ///
-  /// \param buildDir Directory containing compile_commands.json
-  /// \param file File to obtain compile commands for.
+  /// \param DatabaseFile File containing the compilation commands.
+  /// \param File File to obtain compile commands for.
   ///
   /// Example output:
-  ///
   /// \code{.el}
   ///    (
   ///     (("-Wfoo" "-DBAR" "-Iqux") . "/path/to/working/directory")
@@ -92,15 +95,35 @@ public:
   ///    )
   /// \endcode
   ///
-  void getCompileOptions(const std::string &buildDir,
-                         const std::string &file) const;
+  void getCompileOptions(const std::string &DatabaseFile,
+                         const std::string &File);
 
   /// \}
+
+  /// \brief Guess compile options of file not present in the database, e.g. a
+  /// header.
+  ///
+  /// \param DatabaseFile File containing the compilation commands.
+  /// \param File File to guess compile commands for.
+  ///
+  /// The guessed command and the name of the source file are printed in Elisp
+  /// format to stdout.
+  ///
+  /// Example output:
+  /// \code{.el}
+  ///    ("/path/to/guessed/file.cpp" .
+  ///       (("-Wfoo" "-DBAR" "-Iqux") . "/path/to/working/directory")))
+  ///    )
+  /// \endcode
+  ///
+  void guessCompileOptions(const std::string &DatabaseFile,
+                           const std::string &File);
 
 private:
   TUManager tuManager_;
   CXTranslationUnit activeTu_;
   bool debug_;
+  CompilationDatabase database;
 };
 
 #endif // IRONY_MODE_SERVER_IRONY_H_

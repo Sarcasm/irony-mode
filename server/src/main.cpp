@@ -216,7 +216,15 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::GetCompileOptions:
-      irony.getCompileOptions(c->dir, c->file);
+      irony.getCompileOptions(c->db, c->file);
+      break;
+
+    case Command::GuessCompileOptions:
+      irony.guessCompileOptions(c->db, c->file);
+      break;
+
+    case Command::HasCompilationDatabase:
+      irony.hasCompilationDatabase();
       break;
 
     case Command::Unknown:

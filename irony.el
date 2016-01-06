@@ -544,6 +544,8 @@ The installation requires CMake and the libclang developpement package."
 
 When using a leading space, the buffer is hidden from the buffer
 list (and undo information is not kept).")
+(defvar irony--server-log nil
+  "The log file of irony-server.")
 
 (defun irony--start-server-process ()
   (when (setq irony--server-executable (or irony--server-executable
@@ -551,15 +553,17 @@ list (and undo information is not kept).")
     (let ((process-connection-type nil)
           (process-adaptive-read-buffering nil)
           process)
+      (setq irony--server-log (expand-file-name
+                               (format-time-string
+                                "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
+                               temporary-file-directory))
       (setq process
             (start-process-shell-command
              "Irony"                    ;process name
              irony--server-buffer       ;buffer
              (format "%s -i 2> %s"      ;command
                      (shell-quote-argument irony--server-executable)
-                     (expand-file-name
-                      (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
-                      temporary-file-directory))))
+                     irony--server-log)))
       (buffer-disable-undo irony--server-buffer)
       (set-process-query-on-exit-flag process nil)
       (set-process-sentinel process 'irony--server-process-sentinel)
@@ -573,6 +577,16 @@ list (and undo information is not kept).")
   (when (and irony--server-process (process-live-p irony--server-process))
     (kill-process irony--server-process)
     (setq irony--server-process nil)))
+
+;;;###autoload
+(defun irony-open-log-file ()
+  "Open irony server log file"
+  (interactive)
+  (if (and irony--server-log (file-exists-p irony--server-log))
+      (progn
+        (find-file irony--server-log)
+        (auto-revert-tail-mode))
+    (message "Log file doesn't exist yet!")))
 
 (defun irony--get-server-process-create ()
   (if (and irony--server-process
