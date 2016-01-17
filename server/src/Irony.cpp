@@ -14,9 +14,13 @@
 
 #include "support/iomanip_quoted.h"
 
+#include <boost/filesystem.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+
+using boost::filesystem::path;
 
 static std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
@@ -333,8 +337,185 @@ void Irony::complete(const std::string &file,
 
 }
 
+#if HAS_COMPILATION_DATABASE
+
+class CompilationDatabase {
+public:
+  explicit CompilationDatabase(std::string buildDir) : buildDir(buildDir) {
+    db = clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
+
+    switch (error) {
+    case CXCompilationDatabase_CanNotLoadDatabase:
+      std::clog << "I: could not load compilation database in '" << buildDir
+                << "'\n";
+      break;
+    case CXCompilationDatabase_NoError:
+      constructFileNames();
+      break;
+    }
+  }
+
+  CompilationDatabase &operator=(const CompilationDatabase&) = delete;
+  CompilationDatabase(const CompilationDatabase&) = delete;
+  CompilationDatabase &operator=(CompilationDatabase&&) = delete;
+  CompilationDatabase(CompilationDatabase&&) = delete;
+
+  ~CompilationDatabase() {
+    if (error == CXCompilationDatabase_NoError)
+      clang_CompilationDatabase_dispose(db);
+  }
+
+  bool isValid() const { return error == CXCompilationDatabase_NoError; }
+  const std::string &getBuildDir() const { return buildDir; }
+  const std::vector<std::string> &getAllFiles() const { return files; }
+  std::vector<std::vector<std::string>>
+  getCompileCommands(const std::string &file);
+  std::vector<std::string> guessCompileCommand(const std::string &file);
+
+private:
+  void constructFileNames();
+
+  std::string buildDir;
+  CXCompilationDatabase db;
+  CXCompilationDatabase_Error error;
+  std::vector<std::string> files;
+};
+
+void CompilationDatabase::constructFileNames() {
+  assert(error == CXCompilationDatabase_NoError &&
+         "Should only be called if database was loaded!");
+
+  CXCompileCommands cmds = clang_CompilationDatabase_getAllCompileCommands(db);
+  unsigned ncmds = clang_CompileCommands_getSize(cmds);
+
+  for (unsigned i = 0; i < ncmds; ++i) {
+    CXCompileCommand cmd = clang_CompileCommands_getCommand(cmds, i);
+
+    CXString wd = clang_CompileCommand_getDirectory(cmd);
+    std::string workingDir(clang_getCString(wd));
+    clang_disposeString(wd);
+
+    std::string file;
+
+    // Iterate through compile args to find file
+    unsigned nargs = clang_CompileCommand_getNumArgs(cmd);
+    for (unsigned j = 1; j < nargs; ++j) { // skip compiler
+      CXString arg = clang_CompileCommand_getArg(cmd, j);
+      std::string CompileArg(clang_getCString(arg));
+      clang_disposeString(arg);
+
+      if (CompileArg == "-o") {
+        // Skip output file
+        ++j;
+        continue;
+      }
+
+      if (CompileArg[0] == '-')
+        continue;
+
+      // Found compiled file
+      file = CompileArg;
+      break;
+    }
+
+    path filePath(file);
+
+    // Make absolute
+    if (filePath.is_relative())
+      filePath = path(workingDir) /= filePath;
+
+    files.push_back(filePath.make_preferred().native());
+  }
+
+  clang_CompileCommands_dispose(cmds);
+}
+
+std::vector<std::vector<std::string>>
+CompilationDatabase::getCompileCommands(const std::string &file) {
+  std::vector<std::vector<std::string>> compileCommands;
+
+  assert(isValid() && "Should have loaded the database without error!");
+
+  CXCompileCommands cxCompileCommands =
+      clang_CompilationDatabase_getCompileCommands(db, file.c_str());
+  unsigned numCompileCommands =
+      clang_CompileCommands_getSize(cxCompileCommands);
+
+  compileCommands.resize(numCompileCommands);
+
+  for (unsigned i = 0; i < numCompileCommands; ++i) {
+    std::vector<std::string> &compileCommand = compileCommands[i];
+
+    CXCompileCommand cxCompileCommand =
+        clang_CompileCommands_getCommand(cxCompileCommands, i);
+    unsigned numArgs = clang_CompileCommand_getNumArgs(cxCompileCommand);
+
+    CXString directory = clang_CompileCommand_getDirectory(cxCompileCommand);
+    compileCommand.reserve(numArgs + 1);
+    compileCommand.push_back(clang_getCString(directory));
+    clang_disposeString(directory);
+
+    for (unsigned j = 0; j < numArgs; ++j) {
+      CXString arg = clang_CompileCommand_getArg(cxCompileCommand, j);
+      compileCommand.push_back(clang_getCString(arg));
+      clang_disposeString(arg);
+    }
+  }
+
+  clang_CompileCommands_dispose(cxCompileCommands);
+  return compileCommands;
+}
+
+std::vector<std::string>
+CompilationDatabase::guessCompileCommand(const std::string &file) {
+  std::vector<std::string> compileCmd;
+  // TODO: Implement
+  return compileCmd;
+}
+
+bool Irony::loadCompilationDatabase(const std::string &buildDir) {
+  if (db && db->getBuildDir() == buildDir)
+    return true;
+
+  db.reset(new CompilationDatabase(buildDir));
+
+  if (!db->isValid()) {
+    db.reset();
+    return false;
+  }
+  return true;
+}
+
+#endif // HAS_COMPILATION_DATABASE
+
+// The destructor of Irony needs to see the complete type CompilationDatabase
+// because of the unique_ptr.
+Irony::~Irony() = default;
+
+void Irony::getAllFiles(const std::string &buildDir) {
+#if HAS_COMPILATION_DATABASE
+  if (!loadCompilationDatabase(buildDir)) {
+    std::cout << "nil\n";
+    return;
+  }
+
+  std::vector<std::string> files = db->getAllFiles();
+
+  std::cout << "(\n";
+  for (const std::string &file : files) {
+    std::cout << support::quoted(file) << "\n";
+  }
+  std::cout << ")\n";
+
+#else // !HAS_COMPILATION_DATABASE
+
+  std::cout << "nil\n";
+
+#endif
+}
+
 void Irony::getCompileOptions(const std::string &buildDir,
-                              const std::string &file) const {
+                              const std::string &file) {
 #if !(HAS_COMPILATION_DATABASE)
 
   (void)buildDir;
@@ -344,55 +525,39 @@ void Irony::getCompileOptions(const std::string &buildDir,
   return;
 
 #else
-  CXCompilationDatabase_Error error;
-  CXCompilationDatabase db =
-      clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
 
-  switch (error) {
-  case CXCompilationDatabase_CanNotLoadDatabase:
-    std::clog << "I: could not load compilation database in '" << buildDir
-              << "'\n";
+  if (!loadCompilationDatabase(buildDir)) {
     std::cout << "nil\n";
     return;
-
-  case CXCompilationDatabase_NoError:
-    break;
   }
 
-  CXCompileCommands compileCommands =
-      clang_CompilationDatabase_getCompileCommands(db, file.c_str());
+  std::vector<std::vector<std::string>> compileCommands =
+      db->getCompileCommands(file);
 
   std::cout << "(\n";
+  for (const std::vector<std::string>& compileCommand : compileCommands) {
+    assert(!compileCommand.empty() &&
+           "Should at least contain the working directory!");
 
-  for (unsigned i = 0, numCompileCommands =
-                           clang_CompileCommands_getSize(compileCommands);
-       i < numCompileCommands; ++i) {
-    CXCompileCommand compileCommand =
-        clang_CompileCommands_getCommand(compileCommands, i);
+    std::cout << "( ";
 
-    std::cout << "("
-              << "(";
-    for (unsigned j = 0,
-                  numArgs = clang_CompileCommand_getNumArgs(compileCommand);
-         j < numArgs; ++j) {
-      CXString arg = clang_CompileCommand_getArg(compileCommand, j);
-      std::cout << support::quoted(clang_getCString(arg)) << " ";
-      clang_disposeString(arg);
+    std::cout << "(";
+    for (std::vector<std::string>::const_iterator
+             i = std::next(compileCommand.begin()),
+             e = compileCommand.end();
+         i != e; ++i) {
+      const std::string& compileArg = *i;
+      std::cout << support::quoted(compileArg) << " ";
     }
+    std::cout << ")";
 
-    std::cout << ")"
-              << " . ";
+    std::cout << " . ";
 
-    CXString directory = clang_CompileCommand_getDirectory(compileCommand);
-    std::cout << support::quoted(clang_getCString(directory));
-    clang_disposeString(directory);
+    std::cout << support::quoted(compileCommand[0]);
+    std::cout << " )\n";
 
-    std::cout << ")\n";
   }
-
   std::cout << ")\n";
 
-  clang_CompileCommands_dispose(compileCommands);
-  clang_CompilationDatabase_dispose(db);
 #endif
 }

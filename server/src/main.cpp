@@ -215,6 +215,10 @@ int main(int ac, const char *av[]) {
       irony.setDebug(c->opt);
       break;
 
+    case Command::GetAllFiles:
+      irony.getAllFiles(c->dir);
+      break;
+
     case Command::GetCompileOptions:
       irony.getCompileOptions(c->dir, c->file);
       break;
