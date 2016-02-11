@@ -46,6 +46,14 @@
 (defun irony-cdb-clang-complete--load-db (cc-file)
   (with-temp-buffer
     (insert-file-contents cc-file)
+    ;; shell eval any forms in backticks
+    (save-excursion
+      (while (re-search-forward "`\\(.*?\\)`" nil t)
+        (replace-match
+         ;; strip newlines
+         (replace-regexp-in-string "\n\\'" ""
+                                   (shell-command-to-string
+                                    (match-string 1))))))
     (list
      (cons
       ;; compile options with trailing whitespaces removed
