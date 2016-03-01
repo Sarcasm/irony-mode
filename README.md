@@ -127,7 +127,7 @@ Right now `irony-cdb` supports the following compilation databases:
   it lists the compile options associated to each file in the project.
 
   * [CMake >= 2.8.5][cmake-ref] will generate a compilation database in the
-    build directory hen issuing the following command
+    build directory when issuing the following command
     `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON <...>`.
 
   * [ninja >= 1.2][ninja-ref] will generate a JSON Compilation Database when
