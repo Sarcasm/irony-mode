@@ -428,11 +428,15 @@ void Irony::hasCompilationDatabase() {
 
 void Irony::getCompileOptions(const std::string &databaseFile,
                               const std::string &file) {
+  (void) databaseFile;
+  (void) file;
   std::cout << "nil\n";
 }
 
 void Irony::guessCompileOptions(const std::string &databaseFile,
                                 const std::string &srcFile) {
+  (void) databaseFile;
+  (void) srcFile;
   std::cout << "nil\n";
 }
 

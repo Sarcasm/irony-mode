@@ -2,7 +2,7 @@ include(CheckLibClangBuiltinHeadersDir)
 
 find_package(LibClang REQUIRED)
 
-find_package(Boost 1.54.0 COMPONENTS system filesystem property_tree)
+find_package(Boost 1.54.0 COMPONENTS system filesystem)
 
 include_directories(${LIBCLANG_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
