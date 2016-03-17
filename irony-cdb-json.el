@@ -115,18 +115,18 @@ directories to project directory."
 
 (defun irony-cdb-json--locate-db ()
   (irony-cdb-json--ensure-project-alist-loaded)
-  (irony--aif (irony-cdb--locate-dominating-file-with-dirs
+  (irony--aif (irony-cdb-json--find-best-prefix-path
                (irony-cdb-json--target-path)
-               "compile_commands.json"
-               irony-cdb-search-directory-list)
-      (expand-file-name it)
-    ;; if not in a parent directory, look in the project alist
-    (irony--awhen (irony-cdb-json--find-best-prefix-path
-                   (irony-cdb-json--target-path)
-                   (mapcar 'car irony-cdb-json--project-alist))
+               (mapcar 'car irony-cdb-json--project-alist))
       (expand-file-name
        (cdr (assoc it irony-cdb-json--project-alist))
-       it))))
+       it)
+    ;; If not in the project table, look in the dominating directories
+    (irony--awhen (irony-cdb--locate-dominating-file-with-dirs
+                   (irony-cdb-json--target-path)
+                   "compile_commands.json"
+                   irony-cdb-search-directory-list)
+      (expand-file-name it))))
 
 (defun irony-cdb-json--load-db (json-file)
   (delq nil (mapcar #'irony-cdb-json--transform-compile-command
