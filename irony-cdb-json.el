@@ -71,6 +71,35 @@ directories to project directory."
   ; and tell irony to load it now
   (irony-cdb-autosetup-compile-options))
 
+(defun irony-cdb-json--put-first (pos target-list)
+  (if (>= pos (length target-list))
+      target-list
+    (let ((elm (nth pos target-list)))
+      (append (list elm) (delete elm target-list)))))
+
+(defun irony-cdb-json--choose-cdb ()
+  (let ((choices (mapcar (lambda (x) (cdr x)) irony-cdb-json--project-alist)))
+    (completing-read "Choose Irony CDB: " choices nil 'require-match nil)))
+
+;;;###autoload
+(defun irony-cdb-json-select ()
+  "Select CDB to use with a prompt.
+
+It is useful when you have several CDBs with the same project
+root.
+
+The completion function used internally is `completing-read' so
+it could easily be used with helm, for instance, by enabling
+`helm-mode' before calling the function."
+  (interactive)
+  (let ((pos (cl-position (irony-cdb-json--choose-cdb)
+                          irony-cdb-json--project-alist
+                          :test (lambda (x y) (string-equal x (cdr y))))))
+    (setq irony-cdb-json--project-alist
+          (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
+    (irony-cdb-json--save-project-alist)
+    (irony-cdb-autosetup-compile-options)))
+
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
     (let ((db (irony-cdb-json--load-db it)))
