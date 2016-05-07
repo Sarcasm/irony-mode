@@ -77,12 +77,17 @@ directories to project directory."
     (let ((elm (nth pos target-list)))
       (append (list elm) (delete elm target-list)))))
 
+(defun irony-cdb-json--cdb-list ()
+  (mapcar (lambda (x) (cdr x)) irony-cdb-json--project-alist))
+
 (defun irony-cdb-json--choose-cdb ()
-  (let ((choices (mapcar (lambda (x) (cdr x)) irony-cdb-json--project-alist)))
-    (completing-read "Choose Irony CDB: " choices nil 'require-match nil)))
+  (let ((cdbs (irony-cdb-json--cdb-list)))
+    (if (> (length cdbs) 0)
+        (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)
+      nil)))
 
 ;;;###autoload
-(defun irony-cdb-json-select ()
+(defun irony-cdb-json-select (&optional cdb)
   "Select CDB to use with a prompt.
 
 It is useful when you have several CDBs with the same project
@@ -90,15 +95,42 @@ root.
 
 The completion function used internally is `completing-read' so
 it could easily be used with helm, for instance, by enabling
-`helm-mode' before calling the function."
+`helm-mode' before calling the function using an advice."
   (interactive)
-  (let ((pos (cl-position (irony-cdb-json--choose-cdb)
-                          irony-cdb-json--project-alist
-                          :test (lambda (x y) (string-equal x (cdr y))))))
-    (setq irony-cdb-json--project-alist
-          (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
-    (irony-cdb-json--save-project-alist)
-    (irony-cdb-autosetup-compile-options)))
+  (let (the-cdb pos)
+    (setq the-cdb (or cdb (irony-cdb-json--choose-cdb)))
+    (if (or (null the-cdb)
+            (not (cl-member the-cdb (irony-cdb-json--cdb-list) :test 'string-equal)))
+        (message "CDB not in list: %s" the-cdb)
+      (progn
+        (setq pos (cl-position the-cdb
+                               irony-cdb-json--project-alist
+                               :test (lambda (x y) (string-equal x (cdr y)))))
+        (setq irony-cdb-json--project-alist
+              (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
+        (irony-cdb-json--save-project-alist)
+        (irony-cdb-autosetup-compile-options)
+        (message "%s" (first irony-cdb-json--project-alist))))))
+
+(defun irony-cdb-json--last-mod (file)
+  (nth 5 (file-attributes file)))
+
+(defun irony-cdb-json--last-mod-cdb ()
+  (let (cdbs result)
+    (progn
+      (setq cdbs (irony-cdb-json--cdb-list))
+      (setq result (first cdbs))
+      (dolist (cdb cdbs)
+        (when (time-less-p (irony-cdb-json--last-mod result)
+                           (irony-cdb-json--last-mod cdb))
+          (setq result cdb)))
+      result)))
+
+;;;###autoload
+(defun irony-cdb-json-select-most-recent ()
+  "Select CDB that is most recently modified."
+  (interactive)
+  (irony-cdb-json-select (irony-cdb-json--last-mod-cdb)))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
