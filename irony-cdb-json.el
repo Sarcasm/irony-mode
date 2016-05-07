@@ -109,28 +109,23 @@ it could easily be used with helm, for instance, by enabling
         (setq irony-cdb-json--project-alist
               (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
         (irony-cdb-json--save-project-alist)
-        (irony-cdb-autosetup-compile-options)
-        (message "%s" (first irony-cdb-json--project-alist))))))
+        (irony-cdb-autosetup-compile-options)))))
 
 (defun irony-cdb-json--last-mod (file)
   (nth 5 (file-attributes file)))
-
-(defun irony-cdb-json--last-mod-cdb ()
-  (let (cdbs result)
-    (progn
-      (setq cdbs (irony-cdb-json--cdb-list))
-      (setq result (first cdbs))
-      (dolist (cdb cdbs)
-        (when (time-less-p (irony-cdb-json--last-mod result)
-                           (irony-cdb-json--last-mod cdb))
-          (setq result cdb)))
-      result)))
 
 ;;;###autoload
 (defun irony-cdb-json-select-most-recent ()
   "Select CDB that is most recently modified."
   (interactive)
-  (irony-cdb-json-select (irony-cdb-json--last-mod-cdb)))
+  ;; Sort list so most recently modified files appear first.
+  (setq irony-cdb-json--project-alist
+        (sort irony-cdb-json--project-alist
+              (lambda (x y)
+                (time-less-p (irony-cdb-json--last-mod (cdr y))
+                             (irony-cdb-json--last-mod (cdr x))))))
+  (irony-cdb-json--save-project-alist)
+  (irony-cdb-autosetup-compile-options))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
