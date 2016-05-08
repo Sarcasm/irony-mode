@@ -78,8 +78,14 @@ directories to project directory."
       (append (list elm) (delete elm target-list)))))
 
 (defun irony-cdb-json--choose-cdb ()
-  (let ((choices (mapcar (lambda (x) (cdr x)) irony-cdb-json--project-alist)))
-    (completing-read "Choose Irony CDB: " choices nil 'require-match nil)))
+  "Prompt to select CDB from current project root."
+  (let* ((proot (irony-cdb-json--find-best-prefix-path
+                 (irony-cdb-json--target-path)
+                 (mapcar 'car irony-cdb-json--project-alist)))
+         (cdbs (mapcar 'cdr
+                       (cl-remove-if-not (lambda (x) (string-equal proot (car x)))
+                                         irony-cdb-json--project-alist))))
+    (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)))
 
 ;;;###autoload
 (defun irony-cdb-json-select ()
@@ -89,8 +95,9 @@ It is useful when you have several CDBs with the same project
 root.
 
 The completion function used internally is `completing-read' so
-it could easily be used with helm, for instance, by enabling
-`helm-mode' before calling the function."
+it could easily be used with other completion functions by
+temporarily using a let-bind on `completing-read-function'. Or
+even helm by enabling `helm-mode' before calling the function."
   (interactive)
   (let ((pos (cl-position (irony-cdb-json--choose-cdb)
                           irony-cdb-json--project-alist
@@ -99,6 +106,23 @@ it could easily be used with helm, for instance, by enabling
           (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
     (irony-cdb-json--save-project-alist)
     (irony-cdb-autosetup-compile-options)))
+
+(defun irony-cdb-json--last-mod (file)
+  "File modification time or null time if file doesn't exist."
+  (or (nth 5 (file-attributes file))
+      '(0 0 0 0)))
+
+;;;###autoload
+(defun irony-cdb-json-select-most-recent ()
+  "Select CDB that is most recently modified."
+  (interactive)
+    (setq irony-cdb-json--project-alist
+          (sort irony-cdb-json--project-alist
+                (lambda (x y)
+                  (time-less-p (irony-cdb-json--last-mod (cdr y))
+                               (irony-cdb-json--last-mod (cdr x))))))
+    (irony-cdb-json--save-project-alist)
+    (irony-cdb-autosetup-compile-options))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
