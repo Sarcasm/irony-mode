@@ -108,26 +108,21 @@ even helm by enabling `helm-mode' before calling the function."
     (irony-cdb-autosetup-compile-options)))
 
 (defun irony-cdb-json--last-mod (file)
-  (nth 5 (file-attributes file)))
+  "File modification time or null time if file doesn't exist."
+  (or (nth 5 (file-attributes file))
+      '(0 0 0 0)))
 
 ;;;###autoload
 (defun irony-cdb-json-select-most-recent ()
   "Select CDB that is most recently modified."
   (interactive)
-  (let (exists notexists)
-    (dolist (elm irony-cdb-json--project-alist)
-      (if (file-exists-p (cdr elm))
-          (setq exists (append exists (list elm)))
-        (setq notexists (append notexists (list elm)))))
-    ;; Sort list so most recently modified files appear first.
-    (setq exists
-          (sort exists
+    (setq irony-cdb-json--project-alist
+          (sort irony-cdb-json--project-alist
                 (lambda (x y)
                   (time-less-p (irony-cdb-json--last-mod (cdr y))
                                (irony-cdb-json--last-mod (cdr x))))))
-    (setq irony-cdb-json--project-alist (append exists notexists))
     (irony-cdb-json--save-project-alist)
-    (irony-cdb-autosetup-compile-options)))
+    (irony-cdb-autosetup-compile-options))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
