@@ -78,38 +78,41 @@ directories to project directory."
       (append (list elm) (delete elm target-list)))))
 
 (defun irony-cdb-json--cdb-list ()
-  (mapcar (lambda (x) (cdr x)) irony-cdb-json--project-alist))
+  (mapcar #'cdr irony-cdb-json--project-alist))
 
 (defun irony-cdb-json--choose-cdb ()
-  (let ((cdbs (irony-cdb-json--cdb-list)))
-    (if (> (length cdbs) 0)
-        (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)
-      nil)))
+  "Prompt to select CDB from current project root."
+  (let ((proot (irony-cdb-json--find-best-prefix-path
+                (irony-cdb-json--target-path)
+                (mapcar 'car irony-cdb-json--project-alist)))
+        (cdbs '()))
+    (progn
+      (dolist (elm irony-cdb-json--project-alist)
+        (when (string-equal proot (car elm))
+          (setq cdbs (append cdbs (list (cdr elm))))))
+      (if (> (length cdbs) 0)
+          (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)
+        nil))))
 
 ;;;###autoload
-(defun irony-cdb-json-select (&optional cdb)
+(defun irony-cdb-json-select ()
   "Select CDB to use with a prompt.
 
 It is useful when you have several CDBs with the same project
 root.
 
 The completion function used internally is `completing-read' so
-it could easily be used with helm, for instance, by enabling
-`helm-mode' before calling the function using an advice."
+it could easily be used with other completion functions by
+temporarily using a let-bind on `completing-read-function'. Or
+even helm by enabling `helm-mode' before calling the function."
   (interactive)
-  (let (the-cdb pos)
-    (setq the-cdb (or cdb (irony-cdb-json--choose-cdb)))
-    (if (or (null the-cdb)
-            (not (cl-member the-cdb (irony-cdb-json--cdb-list) :test 'string-equal)))
-        (message "CDB not in list: %s" the-cdb)
-      (progn
-        (setq pos (cl-position the-cdb
-                               irony-cdb-json--project-alist
-                               :test (lambda (x y) (string-equal x (cdr y)))))
-        (setq irony-cdb-json--project-alist
-              (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
-        (irony-cdb-json--save-project-alist)
-        (irony-cdb-autosetup-compile-options)))))
+  (let ((pos (cl-position (irony-cdb-json--choose-cdb)
+                          irony-cdb-json--project-alist
+                          :test (lambda (x y) (string-equal x (cdr y))))))
+    (setq irony-cdb-json--project-alist
+          (irony-cdb-json--put-first pos irony-cdb-json--project-alist))
+    (irony-cdb-json--save-project-alist)
+    (irony-cdb-autosetup-compile-options)))
 
 (defun irony-cdb-json--last-mod (file)
   (nth 5 (file-attributes file)))
@@ -118,14 +121,22 @@ it could easily be used with helm, for instance, by enabling
 (defun irony-cdb-json-select-most-recent ()
   "Select CDB that is most recently modified."
   (interactive)
-  ;; Sort list so most recently modified files appear first.
-  (setq irony-cdb-json--project-alist
-        (sort irony-cdb-json--project-alist
-              (lambda (x y)
-                (time-less-p (irony-cdb-json--last-mod (cdr y))
-                             (irony-cdb-json--last-mod (cdr x))))))
-  (irony-cdb-json--save-project-alist)
-  (irony-cdb-autosetup-compile-options))
+  (let (exists notexists)
+    (setq exists '())
+    (setq notexists '())
+    (dolist (elm irony-cdb-json--project-alist)
+      (if (file-exists-p (cdr elm))
+          (setq exists (append exists (list elm)))
+        (setq notexists (append notexists (list elm)))))
+    ;; Sort list so most recently modified files appear first.
+    (setq exists
+          (sort exists
+                (lambda (x y)
+                  (time-less-p (irony-cdb-json--last-mod (cdr y))
+                               (irony-cdb-json--last-mod (cdr x))))))
+    (setq irony-cdb-json--project-alist (append exists notexists))
+    (irony-cdb-json--save-project-alist)
+    (irony-cdb-autosetup-compile-options)))
 
 (defun irony-cdb-json--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
