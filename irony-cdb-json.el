@@ -77,9 +77,6 @@ directories to project directory."
     (let ((elm (nth pos target-list)))
       (append (list elm) (delete elm target-list)))))
 
-(defun irony-cdb-json--cdb-list ()
-  (mapcar #'cdr irony-cdb-json--project-alist))
-
 (defun irony-cdb-json--choose-cdb ()
   "Prompt to select CDB from current project root."
   (let ((proot (irony-cdb-json--find-best-prefix-path
