@@ -79,17 +79,13 @@ directories to project directory."
 
 (defun irony-cdb-json--choose-cdb ()
   "Prompt to select CDB from current project root."
-  (let ((proot (irony-cdb-json--find-best-prefix-path
-                (irony-cdb-json--target-path)
-                (mapcar 'car irony-cdb-json--project-alist)))
-        (cdbs '()))
-    (progn
-      (dolist (elm irony-cdb-json--project-alist)
-        (when (string-equal proot (car elm))
-          (setq cdbs (append cdbs (list (cdr elm))))))
-      (if (> (length cdbs) 0)
-          (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)
-        nil))))
+  (let* ((proot (irony-cdb-json--find-best-prefix-path
+                 (irony-cdb-json--target-path)
+                 (mapcar 'car irony-cdb-json--project-alist)))
+         (cdbs (mapcar 'cdr
+                       (cl-remove-if-not (lambda (x) (string-equal proot (car x)))
+                                         irony-cdb-json--project-alist))))
+    (completing-read "Choose Irony CDB: " cdbs nil 'require-match nil)))
 
 ;;;###autoload
 (defun irony-cdb-json-select ()
@@ -119,8 +115,6 @@ even helm by enabling `helm-mode' before calling the function."
   "Select CDB that is most recently modified."
   (interactive)
   (let (exists notexists)
-    (setq exists '())
-    (setq notexists '())
     (dolist (elm irony-cdb-json--project-alist)
       (if (file-exists-p (cdr elm))
           (setq exists (append exists (list elm)))
