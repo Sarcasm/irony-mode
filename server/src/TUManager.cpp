@@ -51,6 +51,13 @@ TUManager::TUManager()
   if (CINDEX_VERSION < 6) {
     parseTUOptions_ &= ~CXTranslationUnit_PrecompiledPreamble;
   }
+
+#if CINDEX_VERSION >= 34
+  // Keep going even after fatal errors, or syntax checking will stop after the
+  // first error. For instance unused variables will not be reported until the
+  // error has been fixed.
+  parseTUOptions_ |= CXTranslationUnit_KeepGoing;
+#endif
 }
 
 TUManager::~TUManager() {
