@@ -48,9 +48,15 @@ TUManager::TUManager()
   // significantly slower.
   //
   // -- https://github.com/Sarcasm/irony-mode/issues/4
-  if (CINDEX_VERSION < 6) {
-    parseTUOptions_ &= ~CXTranslationUnit_PrecompiledPreamble;
-  }
+#if CINDEX_VERSION < 6
+  parseTUOptions_ &= ~CXTranslationUnit_PrecompiledPreamble;
+#endif
+
+  // Keep going even after fatal errors, or flycheck-irony will only display the
+  // first error.
+#if CINDEX_VERSION >= 34
+  parseTUOptions_ |= CXTranslationUnit_KeepGoing;
+#endif
 }
 
 TUManager::~TUManager() {
