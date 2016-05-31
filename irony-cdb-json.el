@@ -211,7 +211,7 @@ even helm by enabling `helm-mode' before calling the function."
 
 (defun irony-cdb-json--compile-command-options (compile-command)
   "Return the compile options of COMPILE-COMMAND as a list."
-  (cdr                                  ;remove compiler from returned value
+  (irony-cdb--remove-compiler-from-flags
    (irony--split-command-line (cdr (assq 'command compile-command)))))
 
 (defun irony-cdb-json--adjust-compile-options (compile-options file default-dir)
