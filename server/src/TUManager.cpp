@@ -11,6 +11,7 @@
 
 #include "TUManager.h"
 
+#include <algorithm>
 #include <iostream>
 
 TUManager::TUManager()
@@ -105,9 +106,14 @@ TUManager::parse(const std::string &filename,
     argv.push_back(CLANG_BUILTIN_HEADERS_DIR);
 #endif
 
-    for (auto &flag : flags) {
+    // Add spell checking; benefits diagnostics output.
+    if (std::find_if(flags.begin(), flags.end(),
+                     [] (const std::string& arg) { return arg == "-fspell-checking"; })
+        == flags.end())
+      argv.push_back("-fspell-checking");
+
+    for (auto &flag : flags)
       argv.push_back(flag.c_str());
-    }
 
     tu = clang_parseTranslationUnit(
         index_,
