@@ -17,8 +17,12 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <string>
+#include <vector>
 
-static std::string cxStringToStd(CXString cxString) {
+namespace {
+
+std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
 
   if (const char *cstr = clang_getCString(cxString)) {
@@ -29,75 +33,313 @@ static std::string cxStringToStd(CXString cxString) {
   return stdStr;
 }
 
-Irony::Irony() : activeTu_(nullptr), debug_(false) {
-}
+std::string diagnosticSeverityStr(const CXDiagnosticSeverity severity) {
+  std::string ret;
 
-static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
-  switch (clang_getDiagnosticSeverity(diagnostic)) {
+  switch (severity) {
   case CXDiagnostic_Ignored:
-    return "ignored";
+    ret = "ignored";
+    break;
   case CXDiagnostic_Note:
-    return "note";
+    ret = "note";
+    break;
   case CXDiagnostic_Warning:
-    return "warning";
+    ret = "warning";
+    break;
   case CXDiagnostic_Error:
-    return "error";
+    ret = "error";
+    break;
   case CXDiagnostic_Fatal:
-    return "fatal";
+    ret = "fatal";
+    break;
+  default:
+    ret = "unknown";
   }
 
-  return "unknown";
+  return ret;
 }
 
-static void dumpDiagnostics(const CXTranslationUnit &tu) {
-  std::cout << "(\n";
-
+struct ParsedLocation_t {
+  ParsedLocation_t() : line(0), column(0), endColumn(0), filtered(false) {}
   std::string file;
+  unsigned line;
+  unsigned column;
+  unsigned endColumn;
+  CXDiagnosticSeverity severity;
+  std::string message;
+  std::vector<std::string> notes;
+  std::vector<std::string> hints;
+  bool filtered;
+};
 
-  for (unsigned i = 0, diagnosticCount = clang_getNumDiagnostics(tu);
-       i < diagnosticCount;
-       ++i) {
-    CXDiagnostic diagnostic = clang_getDiagnostic(tu, i);
+typedef std::vector<ParsedLocation_t> ParsedLocations_t;
 
-    CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
+unsigned getLocationEndColumn(const CXTranslationUnit &tu, const CXSourceLocation& location, const unsigned startColumn) {
+  unsigned endColumn(0);
+  CXCursor cursor = clang_getCursor(tu, location);
+  CXSourceRange range = clang_getCursorExtent(cursor);
+  CXToken* tokens;
+  uint numTokens;
 
-    unsigned line, column, offset;
-    if (clang_equalLocations(location, clang_getNullLocation())) {
-      file.clear();
-      line = 0;
-      column = 0;
-      offset = 0;
-    } else {
-      CXFile cxFile;
+  clang_tokenize(tu, range, &tokens, &numTokens);
 
-// clang_getInstantiationLocation() has been marked deprecated and
-// is aimed to be replaced by clang_getExpansionLocation().
+  for (unsigned t = 0; t < numTokens && endColumn == 0; ++t) {
+    CXSourceLocation tokenLocation = clang_getTokenLocation(tu, tokens[t]);
+
+    if (clang_equalLocations(tokenLocation, location)) {
+      const std::string name = cxStringToStd(clang_getTokenSpelling(tu, tokens[t]));
+      endColumn = startColumn + name.length();
+    }
+  }
+
+  clang_disposeTokens(tu, tokens, numTokens);
+
+  return endColumn;
+}
+
+void getLocationInformation(const CXTranslationUnit &tu, const CXSourceLocation &location, std::string *file, unsigned *line, unsigned *column, unsigned *endColumn) {
+  assert(location != nullptr);
+  assert(line != nullptr);
+  assert(column != nullptr);
+  // clang_getInstantiationLocation() has been marked deprecated and
+  // is aimed to be replaced by clang_getExpansionLocation().
+  CXFile cxFile;
 #if CINDEX_VERSION >= 6
-      clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
+  clang_getExpansionLocation(location, (file == nullptr ? nullptr : &cxFile), line, column, nullptr);
 #else
-      clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
+  clang_getInstantiationLocation(location, (file == nullptr ? nullptr : &cxFile), line, column, nullptr);
 #endif
+  if (file != nullptr)
+    *file = cxStringToStd(clang_getFileName(cxFile));
+  if (endColumn != nullptr && *column > 0)
+    *endColumn = getLocationEndColumn(tu, location, *column);
+}
 
-      file = cxStringToStd(clang_getFileName(cxFile));
+ParsedLocations_t parseDiagnostic(const CXTranslationUnit &tu, const CXDiagnostic &diagnostic) {
+  ParsedLocations_t ret;
+  CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
+
+  if (!clang_equalLocations(location, clang_getNullLocation())) {
+    ParsedLocation_t parsedLocation;
+
+    getLocationInformation(tu, location, &parsedLocation.file, &parsedLocation.line, &parsedLocation.column, &parsedLocation.endColumn);
+
+    parsedLocation.severity = clang_getDiagnosticSeverity(diagnostic);
+    parsedLocation.message = cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
+
+    // Extract hints.
+    // Hint ranges can be used to fine tune start/end locations.
+    // Especially nice for things such as:
+    // if (foo = 15) {...}
+    // where only the equal sign will be marked, but one of the hints will be
+    // about adding parentheses around the expression, on both sides.
+    // Adjust start/end column accordingly means the entire expression
+    // within the parentheses will be marked.
+
+    const unsigned hintCount = clang_getDiagnosticNumFixIts(diagnostic);
+    if (hintCount > 0) {
+      CXSourceRange range;
+      unsigned line(0), column(0);
+
+      for (unsigned h = 0; h < hintCount; ++h) {
+        CXString cxHint = clang_getDiagnosticFixIt(diagnostic, h, &range);
+        parsedLocation.hints.emplace_back(cxStringToStd(cxHint));
+
+        location = clang_getRangeStart(range);
+        getLocationInformation(tu, location, nullptr, &line, &column, nullptr);
+        if (line == parsedLocation.line && column < parsedLocation.column)
+          parsedLocation.column = column;
+
+        location = clang_getRangeEnd(range);
+        getLocationInformation(tu, location, nullptr, &line, &column, nullptr);
+        if (line == parsedLocation.line && column > parsedLocation.endColumn)
+          parsedLocation.endColumn = column;
+      }
     }
 
-    const char *severity = diagnosticSeverity(diagnostic);
+    ret.push_back(parsedLocation);
 
-    std::string message =
-        cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
+    // Clang documentation states that we don't have to release the CXDiagnosticSet
+    // obtained from clang_getChildDiagnostics() with clang_diposeDiagnosticSet().
+    CXDiagnosticSet children = clang_getChildDiagnostics(diagnostic);
+    const unsigned childrenCount = clang_getNumDiagnosticsInSet(children);
+    for (unsigned c = 0; c < childrenCount; ++c) {
+      CXDiagnostic childDiagnostic = clang_getDiagnosticInSet(children, c);
+      ParsedLocations_t childLocations = parseDiagnostic(tu, childDiagnostic);
 
-    std::cout << '(' << support::quoted(file)    //
-              << ' ' << line                     //
-              << ' ' << column                   //
-              << ' ' << offset                   //
-              << ' ' << severity                 //
-              << ' ' << support::quoted(message) //
-              << ")\n";
+      ret.reserve(ret.size() + childLocations.size());
+      ret.insert(ret.end(), childLocations.begin(), childLocations.end());
 
+      // But I suppose we _do_ have to dispose of the child diagnostic itself,
+      // since the documentation for clang_getDiagnosticInSet() says it must
+      // be disposed with clang_disposeDiagnostic().,
+      clang_disposeDiagnostic(childDiagnostic);
+    }
+  }
+
+  return ret;
+}
+
+void dumpDiagnostics(const CXTranslationUnit &tu) {
+  //
+  // A note on child diagnostics, "notes" and "hints" (fix-its):
+  //
+  // Children are the "notes". I.e. for something like:
+  //
+  // line 1: #ifndef TEST
+  // line 2: #define TSET
+  //
+  // The diagnostic itself will be for line 1:
+  // warning: 'TEST' is used as a header guard here, followed by #define of a different macro
+  //
+  // And there will be a child diagnostic for line 2:
+  // note: 'TSET' is defined here; did you mean 'TEST'?
+  //
+  // There can also be multiple "notes". I.e. for something like:
+  //
+  // line 1: int foo = 15;
+  // line 2: if (foo = 15) {...}
+  //
+  // The diagnostic itself will be for line 2:
+  // warning: using the result of an assignment as a condition without parentheses
+  //
+  // And There will be two notes, _also_ for line 2:
+  // note: place parentheses around the assignment to silence this warning
+  // note: use '==' to turn this assignment into an equality comparison
+  //
+  // There can also be "hints" (fix-its) attached to "notes".
+  // For the above header guard example, the note will be accompanied
+  // by a fix-it "hint" that simply says "TEST" (without the quotation marks)
+  // since that's what can replace the text with.
+  //
+  // We'll extract the children as separate diagnostics because that's
+  // what we want for the first case. Then, we'll collapse the ones that needs
+  // it for the second case. But we'll drop "hints" for "notes" because
+  // they'll just look weird in the message.
+  //
+  // In addition, there seems to be no good way of combining multiple hints
+  // into a message. Combining notes with "or" seems to work well, but needs
+  // a bit more testing to see if there's cases it doesn't work for. But for
+  // hints, that turns out all wrong. Consider the exmaple above with the
+  // assignment that probably should have been a equality test. There will be
+  // three "hints" to that, with different ranges pointing to where they should
+  // go: "(", ")" and "==". Combining them togehter with "or" doesn't work since
+  // the two first should belong together in a text message, but we've discarded
+  // that information. So for now, just include "hints" if there's only one.
+  //
+
+  const unsigned diagnosticCount = clang_getNumDiagnostics(tu);
+  ParsedLocations_t parsedLocations;
+  parsedLocations.reserve(diagnosticCount);
+
+  for (unsigned d = 0; d < diagnosticCount; ++d) {
+    CXDiagnostic diagnostic = clang_getDiagnostic(tu, d);
+    ParsedLocations_t diagLocations = parseDiagnostic(tu, diagnostic);
+    parsedLocations.reserve(diagLocations.size());
+    parsedLocations.insert(parsedLocations.end(), diagLocations.begin(), diagLocations.end());
     clang_disposeDiagnostic(diagnostic);
   }
 
+  // Collapsing children / filtering.
+  static const std::string declaredHere("' declared here");
+  ParsedLocation_t* reference(nullptr);
+
+  for (auto& current : parsedLocations) {
+    if (current.severity == CXDiagnostic_Note && reference != nullptr) {
+      if (current.file == reference->file && current.line == reference->line) {
+        reference->notes.push_back(current.message);
+        reference->hints.insert(
+          reference->hints.end(), current.hints.begin(), current.hints.end());
+
+        // Make sure fine tuned columns from hints makes it over to the reference.
+        if (current.column < reference->column)
+          reference->column = current.column;
+        if (current.endColumn > reference->endColumn)
+          reference->endColumn = current.endColumn;
+
+        current.filtered = true;
+      }
+      else if (current.file != reference->file) {
+        // Note might refer to other file. E.g:
+        // std::tring ...
+        // error: no type named 'tring' in namespace 'std'; did you mean 'string'?
+        // <path>/iosfwd note: 'string' declared here
+        // Skip the reference to other files.
+        current.filtered = true;
+      }
+      else if (current.message.rfind(declaredHere) == current.message.length() - declaredHere.length()) {
+        // Notes might be on the form:
+        // note: '<identifier>' declared here
+        // Those might refer to other files (as above), or the current file.
+        // In the case of other files, Flycheck won't display them in the current buffer of course.
+        // But in the case of the same file, those notes are likely to refer to a line above the
+        // current error. Which looks strange, out of place and lacking context when Flycheck marks
+        // them as they have no reference to the actual line where they are used.
+        // Therefore, filter them out.
+        current.filtered = true;
+      }
+    }
+
+    if (!current.filtered)
+      reference = &current;
+  }
+
+  // Removing filtered locations.
+  // This is strictly speaking not necessary - they could have been skipped when dumping output.
+  parsedLocations.erase(
+    std::remove_if(parsedLocations.begin(), parsedLocations.end(),
+                   [] (const ParsedLocation_t& parsedLocation) { return parsedLocation.filtered; }),
+    parsedLocations.end());
+
+  // Dumping output.
+
+  std::cout << "(\n";
+
+  for (const auto& parsedLocation : parsedLocations) {
+    std::string message(parsedLocation.message);
+
+    // Combining "notes" and "hints" into the message.
+    //
+    // Skipping "hints" if there are "notes" since the "notes" will
+    // spell out what the "hints" show the syntax for.
+    //
+    // Same applies if the diagnostic itself is a "note".
+    //
+    // Also haven't figure out a good way to combine multiple "hints",
+    // so only include "hints" if there's only one.
+    //
+    // And finally, if the "hint" is a spelling correction, skip it.
+    // The message itself will alredy contain it.
+
+    if (!parsedLocation.notes.empty()) {
+      std::string note;
+      for (const auto& n : parsedLocation.notes)
+        note += (note.empty() ? "" : " or ") + n;
+      message += " (note: " + note + ")";
+    }
+    else if (parsedLocation.hints.size() == 1 && parsedLocation.severity != CXDiagnostic_Note) {
+      const std::string hint = parsedLocation.hints[0];
+      const std::string didYouMean(" did you mean '" + hint + "'?");
+      if (message.rfind(didYouMean) != message.length() - didYouMean.length())
+        message += " (hint: " + hint + ")";
+    }
+
+    std::cout << '(' << support::quoted(parsedLocation.file)
+              << ' ' << parsedLocation.line
+              << ' ' << parsedLocation.column
+              << ' ' << parsedLocation.endColumn
+              << ' ' << diagnosticSeverityStr(parsedLocation.severity)
+              << ' ' << support::quoted(message)
+              << ")\n";
+  }
+
   std::cout << ")\n";
+
+}
+
+} // anonymous namespace
+
+Irony::Irony() : activeTu_(nullptr), debug_(false) {
 }
 
 void Irony::parse(const std::string &file,

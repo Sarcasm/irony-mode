@@ -44,6 +44,9 @@
 (defun irony-diagnostics-column (diagnostic)
   (nth 2 diagnostic))
 
+(defun irony-diagnostics-column-end (diagnostic)
+  (nth 3 diagnostic))
+
 (defun irony-diagnostics-severity (diagnostic)
   (nth 4 diagnostic))
 
