@@ -665,10 +665,11 @@ If no such file exists on the filesystem the special file '-' is
     (setq irony--sync-id (1+ irony--sync-id))
     (with-local-quit
       (let ((process (irony--get-server-process-create)))
-        (apply 'irony--send-request request callback args)
-        (while (not (= id (car irony--sync-result)))
-          (accept-process-output process))
-        (cdr irony--sync-result)))))
+        (when process
+          (apply 'irony--send-request request callback args)
+          (while (not (= id (car irony--sync-result)))
+            (accept-process-output process))
+          (cdr irony--sync-result))))))
 
 (defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.
