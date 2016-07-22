@@ -208,11 +208,19 @@ int main(int ac, const char *av[]) {
       return 0;
 
     case Command::GetCompileOptions:
-      irony.getCompileOptions(c->dir, c->file);
+      irony.getCompileOptions(c->db, c->file);
+      break;
+
+    case Command::GuessCompileOptions:
+      irony.guessCompileOptions(c->db, c->file);
       break;
 
     case Command::GetType:
       irony.getType(c->line, c->column);
+      break;
+
+    case Command::HasCompilationDatabase:
+      irony.hasCompilationDatabase();
       break;
 
     case Command::Parse:

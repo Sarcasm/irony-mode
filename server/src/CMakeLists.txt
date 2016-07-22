@@ -2,6 +2,8 @@ include(CheckLibClangBuiltinHeadersDir)
 
 find_package(LibClang REQUIRED)
 
+find_package(Boost 1.54.0 COMPONENTS system filesystem)
+
 include_directories(${LIBCLANG_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -15,7 +17,7 @@ endif()
 # not to be taken as a module-definition file to link on Windows
 set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
 
-add_executable(irony-server
+set(IRONY_SOURCES
   support/arraysize.h
   support/CommandLineParser.cpp
   support/CommandLineParser.h
@@ -34,6 +36,14 @@ add_executable(irony-server
   TUManager.h
 
   main.cpp)
+
+if (Boost_FOUND)
+  message("-- Found boost_filesystem, enabling server compilation database!")
+  add_definitions(-DHAS_BOOST_FILESYSTEM)
+  set(IRONY_SOURCES ${IRONY_SOURCES} CompilationDatabase.cpp)
+endif()
+
+add_executable(irony-server ${IRONY_SOURCES})
 
 # retrieve the package version from irony.el
 function(irony_find_package_version OUTPUT_VAR)
@@ -66,5 +76,9 @@ set_source_files_properties(main.cpp
   COMPILE_DEFINITIONS IRONY_PACKAGE_VERSION=\"${IRONY_PACKAGE_VERSION}\")
 
 target_link_libraries(irony-server ${LIBCLANG_LIBRARIES})
+
+if (Boost_FOUND)
+  target_link_libraries(irony-server ${Boost_LIBRARIES})
+endif()
 
 install(TARGETS irony-server DESTINATION bin)

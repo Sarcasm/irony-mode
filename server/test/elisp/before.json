@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/user/directory",
+  "command": "g++ original",
+  "file": "/home/user/directory/SrcFile.cpp"
+}
+]

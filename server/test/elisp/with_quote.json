@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/user/dev/llvm-build/tools/llvm-config",
+  "command": "/usr/bin/c++   -DCMAKE_CFG_INTDIR=\\\".\\\" -DGTEST_HAS_RTTI=0 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -g -I/home/user/dev/llvm-build/tools/llvm-config -I/home/user/dev/llvm/tools/llvm-config -I/home/user/dev/llvm-build/include -I/home/user/dev/llvm/include    -fno-exceptions -fno-rtti -o CMakeFiles/llvm-config.dir/llvm-config.cpp.o -c /home/user/dev/llvm/tools/llvm-config/llvm-config.cpp",
+  "file": "/home/user/dev/llvm/tools/llvm-config/llvm-config.cpp"
+}
+]
