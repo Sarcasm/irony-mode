@@ -16,7 +16,6 @@ endif()
 set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
 
 add_executable(irony-server
-  support/arraysize.h
   support/CommandLineParser.cpp
   support/CommandLineParser.h
   support/iomanip_quoted.h

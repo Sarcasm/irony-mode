@@ -25,7 +25,7 @@ elseif (MSVC)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(IRONY_COMPILER_IS_GCC_COMPATIBLE ON)
 endif()
-	
+
 if(IRONY_COMPILER_IS_GCC_COMPATIBLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
 elseif(MSVC)
