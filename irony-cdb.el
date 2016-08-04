@@ -193,6 +193,13 @@ returns the full path to file if found, or nil otherwise."
                               (caar it)
                               (cdar it))))))))
 
+(defun irony-cdb--string-suffix-p (suffix string &optional ignore-case)
+  "Return non-nil if SUFFIX is a suffix of STRING."
+  (let ((start-pos (- (length string) (length suffix))))
+    (and (>= start-pos 0)
+         (eq t (compare-strings suffix nil nil
+                                string start-pos nil ignore-case)))))
+
 (defun irony-cdb--remove-compiler-from-flags (flags)
   "Remove the compiler from FLAGS read from a compilation database.
 
@@ -200,7 +207,7 @@ When using ccache, the compiler might be present in FLAGS since
 the compiler is `ccache compiler'."
   (let* ((first (car flags))
          (flags (cdr flags)))
-    (if (string-suffix-p "ccache" first) (cdr flags) flags)))
+    (if (irony-cdb--string-suffix-p "ccache" first) (cdr flags) flags)))
 
 (provide 'irony-cdb)
 
