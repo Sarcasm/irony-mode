@@ -1,35 +1,29 @@
 language: cpp
 
-env:
-  matrix:
-    - EMACS=emacs24
-    - EMACS=emacs-snapshot
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:ubuntu-elisp/ppa'
+    packages:
+      - libclang-dev
+      - emacs
+      - emacs-snapshot
 
 compiler:
   - gcc
   - clang
 
-install:
-  - if [ "$EMACS" = "emacs24" ]; then
-        sudo add-apt-repository -y ppa:cassou/emacs &&
-        sudo apt-get update -qq &&
-        sudo apt-get install -qq emacs24 emacs24-el;
-    fi
-  - if [ "$EMACS" = "emacs-snapshot" ]; then
-        sudo add-apt-repository -y ppa:ubuntu-elisp/ppa &&
-        sudo apt-get update -qq &&
-        sudo apt-get install -qq emacs-snapshot;
-    fi
-  - sudo apt-get install libclang-dev -qq
-
-before_script:
-  - mkdir build
-  - cd build
+env:
+  - EMACS=emacs
+  - EMACS=emacs-snapshot
 
 script:
-  - cmake -DEMACS_EXECUTABLE=$(which $EMACS) ../server
+  - mkdir build
+  - cd build
+  - $EMACS --version
+  - cmake -DEMACS_EXECUTABLE=$EMACS ../server
   - make -k
   - make check
-
-after_script:
-  - cd -
