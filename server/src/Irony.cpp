@@ -371,66 +371,22 @@ void Irony::complete(const std::string &file,
 
 }
 
-void Irony::getCompileOptions(const std::string &buildDir,
-                              const std::string &file) const {
-#if !(HAS_COMPILATION_DATABASE)
+static void printCompileCommand(const CompileCommand &cmd) {
+  std::cout << "( (";
 
-  (void)buildDir;
-  (void)file;
+  for (const std::string &cmdArg : cmd.cmd_)
+    std::cout << '"' << cmdArg << '"' << " ";
 
-  std::cout << "nil\n";
-  return;
+  std::cout << ") . " << '"' << cmd.dir_ << '"' << ")\n";
+}
 
-#else
-  CXCompilationDatabase_Error error;
-  CXCompilationDatabase db =
-      clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
-
-  switch (error) {
-  case CXCompilationDatabase_CanNotLoadDatabase:
-    std::clog << "I: could not load compilation database in '" << buildDir
-              << "'\n";
-    std::cout << "nil\n";
-    return;
-
-  case CXCompilationDatabase_NoError:
-    break;
-  }
-
-  CXCompileCommands compileCommands =
-      clang_CompilationDatabase_getCompileCommands(db, file.c_str());
+void Irony::getCompileOptions(const std::string &databaseFile,
+                              const std::string &file) {
+  database.readOrUpdateDatabase(databaseFile);
+  std::vector<const CompileCommand*> cmds = database.getCommands(file);
 
   std::cout << "(\n";
-
-  for (unsigned i = 0, numCompileCommands =
-                           clang_CompileCommands_getSize(compileCommands);
-       i < numCompileCommands; ++i) {
-    CXCompileCommand compileCommand =
-        clang_CompileCommands_getCommand(compileCommands, i);
-
-    std::cout << "("
-              << "(";
-    for (unsigned j = 0,
-                  numArgs = clang_CompileCommand_getNumArgs(compileCommand);
-         j < numArgs; ++j) {
-      CXString arg = clang_CompileCommand_getArg(compileCommand, j);
-      std::cout << support::quoted(clang_getCString(arg)) << " ";
-      clang_disposeString(arg);
-    }
-
-    std::cout << ")"
-              << " . ";
-
-    CXString directory = clang_CompileCommand_getDirectory(compileCommand);
-    std::cout << support::quoted(clang_getCString(directory));
-    clang_disposeString(directory);
-
-    std::cout << ")\n";
-  }
-
+  for (const CompileCommand *cmd : cmds)
+    printCompileCommand(*cmd);
   std::cout << ")\n";
-
-  clang_CompileCommands_dispose(compileCommands);
-  clang_CompilationDatabase_dispose(db);
-#endif
 }

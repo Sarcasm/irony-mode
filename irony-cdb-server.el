@@ -1,4 +1,4 @@
-;;; irony-cdb-libclang.el --- Compilation Database for irony using libclang
+;;; irony-cdb-server.el --- Compilation Database querying irony-server
 
 ;; Copyright (C) 2015  Karl Hylén
 
@@ -18,11 +18,6 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary:
-;;
-;; Compilation Database support for Irony using libclangs CXCompilationDatabase,
-;; http://clang.llvm.org/doxygen/group__COMPILATIONDB.html
-
 ;;; Code:
 
 (require 'irony-cdb)
@@ -31,24 +26,26 @@
 (require 'cl-lib)
 
 ;;;###autoload
-(defun irony-cdb-libclang (command &rest args)
+(defun irony-cdb-server (command &rest args)
   (cl-case command
-    (get-compile-options (irony-cdb-libclang--get-compile-options))))
+    (get-compile-options (irony-cdb-server--get-compile-options))))
 
-(defun irony-cdb-libclang--get-compile-options ()
+(defun irony-cdb-server--get-compile-options ()
   (irony--awhen (irony-cdb-json--locate-db)
-    (irony-cdb-libclang--server-exact-flags it)))
+    (irony-cdb-server--server-exact-flags buffer-file-name it)))
 
-(defun irony-cdb-libclang--server-exact-flags (db-file)
+(defun irony-cdb-server--server-exact-flags (src-file db-file)
   "Get compilation options from irony-server.
 
-The parameter DB-FILE is the database file."
-  (let ((build-dir (file-name-directory db-file))
-        (file buffer-file-name))
-    (irony-cdb-libclang--adjust-options-and-remove-compiler
-     file (irony--send-request-sync "get-compile-options" build-dir file))))
+The parameter SRC-FILE is the source file we seek the compile command of and
+DB-FILE is the database file."
+  (irony-cdb-server--adjust-options-and-remove-compiler
+   src-file
+   (irony--send-request-sync "get-compile-options"
+                             db-file
+                             src-file)))
 
-(defun irony-cdb-libclang--adjust-options-and-remove-compiler (file cmds)
+(defun irony-cdb-server--adjust-options-and-remove-compiler (file cmds)
   "Remove compiler, target file FILE and output file from CMDS.
 
 The parameter CMDS is a list of conses. In each cons, the car holds the options
@@ -61,10 +58,10 @@ and the cdr holds the working directory where the compile command was issued."
                wdir)))
           cmds))
 
-(provide 'irony-cdb-libclang)
+(provide 'irony-cdb-server)
 
 ;; Local Variables:
 ;; byte-compile-warnings: (not cl-functions)
 ;; End:
 
-;;; irony-cdb-libclang ends here
+;;; irony-cdb-server ends here

@@ -36,7 +36,7 @@
 
 (autoload 'irony-cdb-clang-complete "irony-cdb-clang-complete")
 (autoload 'irony-cdb-json "irony-cdb-json")
-(autoload 'irony-cdb-libclang "irony-cdb-libclang")
+(autoload 'irony-cdb-server "irony-cdb-server")
 
 
 ;;
@@ -48,7 +48,7 @@
   :group 'irony)
 
 (defcustom irony-cdb-compilation-databases '(irony-cdb-clang-complete
-                                             irony-cdb-libclang
+                                             irony-cdb-server
                                              irony-cdb-json)
   "List of active compilation databases.
 
