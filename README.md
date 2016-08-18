@@ -143,6 +143,9 @@ Right now `irony-cdb` supports the following compilation databases:
   generate the `.clang_complete` automatically, take a look at the
   [cc_args.py documentation][cc_args-py-doc-ref].
 
+More detailed information on compilation database is available here:
+
+* https://sarcasm.github.io/notes/dev/compilation-database.html
 
 ## FAQ
 
@@ -193,6 +196,6 @@ you can instruct `irony-server` to use this with something like:
 [irony-eldoc-ref]: https://github.com/ikirill/irony-eldoc "irony-eldoc -- irony-mode support for eldoc-mode"
 [json-el-ref]: http://edward.oconnor.cx/2006/03/json.el "Introducing json.el"
 [libclang-ref]: http://clang.llvm.org/doxygen/group__CINDEX.html "libclang: C Interface to Clang"
-[ninja-ref]: http://martine.github.io/ninja/ "Ninja"
+[ninja-ref]: https://ninja-build.org "Ninja"
 [rpath-ref]: http://en.wikipedia.org/wiki/Rpath "rpath Wikipedia article"
 [yas-ref]: https://github.com/capitaomorte/yasnippet "YASnippet"
