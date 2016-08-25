@@ -34,7 +34,8 @@ function(add_ert_test test_file)
   add_test(check-${name}-el
     ${EMACS_EXECUTABLE} -batch
     -l package
-    --eval "(package-initialize) (unless (require 'cl-lib nil t) (package-refresh-contents) (package-install 'cl-lib))"
+    --eval "(package-initialize)"
+    --eval "(unless (require 'cl-lib nil t) (package-refresh-contents) (package-install 'cl-lib))"
     -l ${CMAKE_CURRENT_SOURCE_DIR}/${test_file}
     -f ert-run-tests-batch-and-exit)
 endfunction()
