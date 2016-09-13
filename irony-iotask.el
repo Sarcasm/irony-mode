@@ -366,7 +366,7 @@ be needed."
       (process-put process :ectx-q (append (process-get process :ectx-q)
                                            (list ectx)))
       ;; run task if none were running
-      (when (= (length (process-get process :ectx-q)) 1)
+      (unless (cdr (process-get process :ectx-q))
         (irony-iotask--start-next process)))))
 
 (defun irony-iotask-run (process packaged-task)
