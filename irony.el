@@ -793,11 +793,11 @@ list (and undo information is not kept).")
   "`reset-unsaved' server command."
   :start (lambda (process buffer)
            (if (assq buffer (process-get process :unsaved-buffers))
-               ;; skip if already reset by an earlier command
-               (irony-iotask-set-result t)
-             (irony--server-send-command
-              "reset-unsaved"
-              (irony--get-buffer-path-for-server buffer))))
+               (irony--server-send-command "reset-unsaved"
+                                           (irony--get-buffer-path-for-server
+                                            buffer))
+             ;; exit early if already reset
+             (irony-iotask-set-result t)))
   :update irony--server-command-update
   :finish (lambda (process buffer)
             (process-put
