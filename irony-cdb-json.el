@@ -201,7 +201,7 @@ even helm by enabling `helm-mode' before calling the function."
            if (and (string-prefix-p dir buf-path)
                    (> (length dir) (length found)))
            do (setq found e)
-           finally return (list (cons (nth 1 e) (nth 2 e)))))
+           finally return (list (cons (nth 1 found) (nth 2 found)))))
 
 (defsubst irony-cdb-json--compile-command-directory (compile-command)
   (cdr (assq 'directory compile-command)))
