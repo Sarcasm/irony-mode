@@ -36,11 +36,6 @@ TUManager::TUManager()
   parseTUOptions_ |= CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
 #endif
 
-  // XXX: Completion results caching doesn't seem to work right, changes at the
-  // top of the file (i.e: new declarations) aren't detected and do not appear
-  // in completion results.
-  parseTUOptions_ &= ~CXTranslationUnit_CacheCompletionResults;
-
   // XXX: A bug in old version of Clang (at least '3.1-8') caused the completion
   // to fail on the standard library types when
   // CXTranslationUnit_PrecompiledPreamble is used. We disable this option for
