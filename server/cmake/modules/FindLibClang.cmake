@@ -32,6 +32,11 @@ set(libclang_llvm_lib_search_paths
   /usr/lib/llvm
   )
 
+if (NOT "$ENV{LLVM_ROOT}" STREQUAL "")
+  list(APPEND libclang_llvm_header_search_paths "$ENV{LLVM_ROOT}/include/")
+  list(APPEND libclang_llvm_lib_search_paths "$ENV{LLVM_ROOT}/lib/")
+endif()
+
 foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
   string(REPLACE "." "" undotted_version "${version}")
   list(APPEND libclang_llvm_header_search_paths
