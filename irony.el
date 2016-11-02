@@ -1,9 +1,9 @@
 ;;; irony.el --- C/C++ minor mode powered by libclang
 
-;; Copyright (C) 2011-2014  Guillaume Papin
+;; Copyright (C) 2011-2016  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
