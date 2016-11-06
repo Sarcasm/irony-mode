@@ -45,8 +45,9 @@
 The parameter DB-FILE is the database file."
   (let ((build-dir (file-name-directory db-file))
         (file buffer-file-name))
-    (irony-cdb-libclang--adjust-options-and-remove-compiler
-     file (irony--send-request-sync "get-compile-options" build-dir file))))
+    (when file
+      (irony-cdb-libclang--adjust-options-and-remove-compiler
+       file (irony--send-request-sync "get-compile-options" build-dir file)))))
 
 (defun irony-cdb-libclang--adjust-options-and-remove-compiler (file cmds)
   "Remove compiler, target file FILE and output file from CMDS.
