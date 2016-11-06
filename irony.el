@@ -205,6 +205,7 @@ buffer file.")
 ;; Utility functions & macros
 ;;
 
+;; TODO: remove and use `if-let' when supported version jumps to Emacs 25.1
 (defmacro irony--aif (test if-expr &rest else-body)
   (declare (indent 2))
   `(let ((it ,test))
@@ -212,6 +213,7 @@ buffer file.")
          ,if-expr
        (progn ,@else-body))))
 
+;; TODO: remove and use `when-let' when supported version jumps to Emacs 25.1
 (defmacro irony--awhen (test &rest body)
   (declare (indent 1))
   `(let ((it ,test))
