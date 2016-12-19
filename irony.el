@@ -221,9 +221,9 @@ buffer file.")
        (progn ,@body))))
 
 (defun irony--assoc-all (key list)
-  (delq nil (mapcar #'(lambda (c)
-                        (when (equal (car c) key)
-                          c))
+  (delq nil (mapcar (lambda (c)
+                      (when (equal (car c) key)
+                        c))
                     list)))
 
 (defmacro irony--without-narrowing (&rest body)
@@ -485,7 +485,7 @@ The installation requires CMake and the libclang developpement package."
                  (shell-quote-argument irony-cmake-executable))))
            (irony--install-server-read-command command))))
   (let ((build-dir (or irony-server-build-dir
-                       (concat 
+                       (concat
                         (file-name-as-directory temporary-file-directory)
                         (file-name-as-directory (format "build-irony-server-%s"
                                                         (irony-version)))))))
