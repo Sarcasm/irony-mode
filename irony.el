@@ -166,6 +166,15 @@ The irony-server executable is expected to be in
   :type 'directory
   :group 'irony)
 
+(defcustom irony-server-w32-pipe-buffer-size nil
+  "Windows-only setting,
+the buffer size to use for the irony-server process pipe on Windows.
+
+Larger values can improve performances on large buffers.
+
+If non-nil, `w32-pipe-buffer-size' will be let-bound to this value
+during the creation of the irony-server process.")
+
 
 ;;
 ;; Public/API variables
@@ -552,6 +561,9 @@ list (and undo information is not kept).")
                                            (irony--locate-server-executable)))
     (let ((process-connection-type nil)
           (process-adaptive-read-buffering nil)
+          (w32-pipe-buffer-size (when (boundp 'w32-pipe-buffer-size)
+                                  (or irony-server-w32-pipe-buffer-size
+                                      w32-pipe-buffer-size)))
           process)
       (setq process
             (start-process-shell-command

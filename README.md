@@ -87,12 +87,29 @@ of first.
 * **Emacs >= 24.4 is required.** A bug in previous versions makes irony
   unuseable (Emacs bug #18420).
 
-* `w32-pipe-read-delay` default value of `50` should be changed. This should not
-  cause any issue on today's version of Windows. The default value of `50` may
-  be lowered in mainline Emacs in future versions, until then please add the
-  following to your `irony-mode` configuration:
+* `w32-pipe-read-delay` default value of `50` should be changed.
+  This should not cause any issue on today's version of Windows.
+  The default value of `50` may be lowered in mainline Emacs in future versions,
+  until then, I suggest to set it to `0`.
 
-      (setq w32-pipe-read-delay 0)
+* `w32-pipe-buffer-size`, introduced by Emacs 25,
+  can be set to a larger value than the default to improve
+  `irony-server` communication performances
+  (c.f. https://github.com/Sarcasm/irony-mode/issues/321).
+  The variable to customize is `irony-server-w32-pipe-buffer-size`.
+
+
+Windows configuration tweaks to add to your Emacs configuration:
+
+```el
+;; Windows performance tweaks
+;;
+(when (boundp 'w32-pipe-read-delay)
+  (setq w32-pipe-read-delay 0))
+;; Set the buffer size to 64K on Windows (from the original 4K)
+(when (boundp 'w32-pipe-buffer-size)
+  (setq irony-server-w32-pipe-buffer-size (* 64 1024)))
+```
 
 
 ## Usage
