@@ -51,8 +51,15 @@ foreach (link_option ${CXX11_LINK_OPTIONS})
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${link_option}")
 endforeach()
 
+# Turn this on for local development or continuous integration
+option(IRONY_WARNINGS_AS_ERRORS "Whether or not to treat warnings as errors" OFF)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options_(-Wall -Wextra)
+
+  if (IRONY_WARNINGS_AS_ERRORS)
+    add_compile_options_(-Werror)
+  endif()
 endif()
 
 option(GENERATE_DOXYGEN "Whether or not to build the Doxygen documentation" OFF)
