@@ -26,7 +26,12 @@ script:
   - mkdir build
   - cd build
   - $EMACS --version
-  - cmake -DEMACS_EXECUTABLE=$(which $EMACS) -DIRONY_WARNINGS_AS_ERRORS=ON ../server
+  - |
+    cmake \
+    -DEMACS_EXECUTABLE=$(which $EMACS) \
+    -DIRONY_WARNINGS_AS_ERRORS=ON \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    ../server
   - make -k
   - make check
   - |
