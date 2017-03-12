@@ -6,11 +6,13 @@ dist: trusty
 addons:
   apt:
     sources:
+      - llvm-toolchain-trusty-4.0
       - sourceline: 'ppa:ubuntu-elisp/ppa'
     packages:
       - libclang-dev
       - emacs
       - emacs-snapshot
+      - clang-tidy-4.0
 
 compiler:
   - gcc
@@ -27,3 +29,10 @@ script:
   - cmake -DEMACS_EXECUTABLE=$(which $EMACS) -DIRONY_WARNINGS_AS_ERRORS=ON ../server
   - make -k
   - make check
+  - |
+    ../server/run-clang-tidy.py \
+    -clang-tidy-binary clang-tidy-4.0 \
+    -clang-apply-replacements-binary clang-apply-replacements-4.0 \
+    -p . \
+    -warnings-as-errors='*' \
+    -quiet

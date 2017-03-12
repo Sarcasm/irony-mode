@@ -16,46 +16,46 @@ namespace {
 /// unescapeCommandLine(...)).
 class CommandLineArgumentParser {
 public:
-  CommandLineArgumentParser(const std::string &CommandLine)
-    : Input(CommandLine), Position(Input.begin() - 1) {
+  CommandLineArgumentParser(const std::string &commandLine)
+    : input_(commandLine), position_(input_.begin() - 1) {
   }
 
   std::vector<std::string> parse() {
-    bool HasMoreInput = true;
-    while (HasMoreInput && nextNonWhitespace()) {
-      std::string Argument;
-      HasMoreInput = parseStringInto(Argument);
-      CommandLine.push_back(Argument);
+    bool hasMoreInput = true;
+    while (hasMoreInput && nextNonWhitespace()) {
+      std::string argument;
+      hasMoreInput = parseStringInto(argument);
+      commandLine_.push_back(argument);
     }
-    return CommandLine;
+    return commandLine_;
   }
 
 private:
   // All private methods return true if there is more input available.
 
-  bool parseStringInto(std::string &String) {
+  bool parseStringInto(std::string &string) {
     do {
-      if (*Position == '"') {
-        if (!parseDoubleQuotedStringInto(String))
+      if (*position_ == '"') {
+        if (!parseDoubleQuotedStringInto(string))
           return false;
-      } else if (*Position == '\'') {
-        if (!parseSingleQuotedStringInto(String))
+      } else if (*position_ == '\'') {
+        if (!parseSingleQuotedStringInto(string))
           return false;
       } else {
-        if (!parseFreeStringInto(String))
+        if (!parseFreeStringInto(string))
           return false;
       }
-    } while (*Position != ' ');
+    } while (*position_ != ' ');
     return true;
   }
 
-  bool parseDoubleQuotedStringInto(std::string &String) {
+  bool parseDoubleQuotedStringInto(std::string &string) {
     if (!next())
       return false;
-    while (*Position != '"') {
+    while (*position_ != '"') {
       if (!skipEscapeCharacter())
         return false;
-      String.push_back(*Position);
+      string.push_back(*position_);
       if (!next())
         return false;
     }
@@ -65,27 +65,27 @@ private:
   bool parseSingleQuotedStringInto(std::string &String) {
     if (!next())
       return false;
-    while (*Position != '\'') {
-      String.push_back(*Position);
+    while (*position_ != '\'') {
+      String.push_back(*position_);
       if (!next())
         return false;
     }
     return next();
   }
 
-  bool parseFreeStringInto(std::string &String) {
+  bool parseFreeStringInto(std::string &string) {
     do {
       if (!skipEscapeCharacter())
         return false;
-      String.push_back(*Position);
+      string.push_back(*position_);
       if (!next())
         return false;
-    } while (*Position != ' ' && *Position != '"' && *Position != '\'');
+    } while (*position_ != ' ' && *position_ != '"' && *position_ != '\'');
     return true;
   }
 
   bool skipEscapeCharacter() {
-    if (*Position == '\\') {
+    if (*position_ == '\\') {
       return next();
     }
     return true;
@@ -95,25 +95,25 @@ private:
     do {
       if (!next())
         return false;
-    } while (*Position == ' ');
+    } while (*position_ == ' ');
     return true;
   }
 
   bool next() {
-    ++Position;
-    return Position != Input.end();
+    ++position_;
+    return position_ != input_.end();
   }
 
 private:
-  const std::string Input;
-  std::string::const_iterator Position;
-  std::vector<std::string> CommandLine;
+  const std::string input_;
+  std::string::const_iterator position_;
+  std::vector<std::string> commandLine_;
 };
 
 } // unnamed namespace
 
 std::vector<std::string>
-unescapeCommandLine(const std::string &EscapedCommandLine) {
-  CommandLineArgumentParser parser(EscapedCommandLine);
+unescapeCommandLine(const std::string &escapedCommandLine) {
+  CommandLineArgumentParser parser(escapedCommandLine);
   return parser.parse();
 }
