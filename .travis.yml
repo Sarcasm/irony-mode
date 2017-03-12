@@ -39,5 +39,4 @@ script:
     -clang-tidy-binary clang-tidy-4.0 \
     -clang-apply-replacements-binary clang-apply-replacements-4.0 \
     -p . \
-    -warnings-as-errors='*' \
-    -quiet
+    -warnings-as-errors='*'
