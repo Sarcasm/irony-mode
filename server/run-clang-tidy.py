@@ -96,12 +96,14 @@ def apply_fixes(args, tmpdir):
   if args.format:
     invocation.append('-format')
   invocation.append(tmpdir)
-  subprocess.call(invocation)
+  ret = subprocess.call(invocation)
   shutil.rmtree(tmpdir)
+  return ret
 
 
-def run_tidy(args, tmpdir, build_path, queue):
+def run_tidy(args, tmpdir, build_path, queue, results, i):
   """Takes filenames out of queue and runs clang-tidy on them."""
+  results[i] = 0
   while True:
     name = queue.get()
     invocation = get_tidy_invocation(name, args.clang_tidy_binary, args.checks,
@@ -109,7 +111,8 @@ def run_tidy(args, tmpdir, build_path, queue):
                                      args.extra_arg, args.extra_arg_before,
                                      args.quiet, args.warnings_as_errors)
     sys.stdout.write(' '.join(invocation) + '\n')
-    subprocess.call(invocation)
+    if subprocess.call(invocation) != 0:
+      results[i] = 1
     queue.task_done()
 
 
@@ -195,10 +198,11 @@ def main():
 
   try:
     # Spin up a bunch of tidy-launching threads.
+    results = [None] * max_task
     queue = Queue.Queue(max_task)
-    for _ in range(max_task):
+    for i in range(max_task):
       t = threading.Thread(target=run_tidy,
-                           args=(args, tmpdir, build_path, queue))
+                           args=(args, tmpdir, build_path, queue, results, i))
       t.daemon = True
       t.start()
 
@@ -218,9 +222,15 @@ def main():
       shutil.rmtree(tmpdir)
     os.kill(0, 9)
 
+  for ret in results:
+    if ret != 0:
+      sys.exit(ret)
+
   if args.fix:
     print 'Applying fixes ...'
-    apply_fixes(args, tmpdir)
+    ret = apply_fixes(args, tmpdir)
+    if ret != 0:
+      sys.exit(ret)
 
 if __name__ == '__main__':
   main()
