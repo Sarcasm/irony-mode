@@ -62,11 +62,11 @@ private:
     return next();
   }
 
-  bool parseSingleQuotedStringInto(std::string &String) {
+  bool parseSingleQuotedStringInto(std::string &string) {
     if (!next())
       return false;
     while (*position_ != '\'') {
-      String.push_back(*position_);
+      string.push_back(*position_);
       if (!next())
         return false;
     }
