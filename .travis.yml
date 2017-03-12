@@ -22,6 +22,35 @@ env:
   - EMACS=emacs
   - EMACS=emacs-snapshot
 
+matrix:
+  include:
+    - addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - emacs
+            - clang-4.0
+            - libclang-4.0-dev
+            - clang-format-4.0
+            - clang-tidy-4.0
+      script:
+        - mkdir build
+        - cd build
+        - |
+          cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 \
+          -DIRONY_WARNINGS_AS_ERRORS=ON \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          ../server
+        - make -k
+        - make check
+        - |
+          ../server/run-clang-tidy.py \
+          -clang-tidy-binary clang-tidy-4.0 \
+          -clang-apply-replacements-binary clang-apply-replacements-4.0 \
+          -p . \
+          -warnings-as-errors='*'
+
 script:
   - mkdir build
   - cd build
@@ -34,9 +63,3 @@ script:
     ../server
   - make -k
   - make check
-  - |
-    ../server/run-clang-tidy.py \
-    -clang-tidy-binary clang-tidy-4.0 \
-    -clang-apply-replacements-binary clang-apply-replacements-4.0 \
-    -p . \
-    -warnings-as-errors='*'
