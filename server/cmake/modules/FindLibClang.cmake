@@ -16,7 +16,7 @@
 # most recent versions come first
 # http://llvm.org/apt/
 set(LIBCLANG_KNOWN_LLVM_VERSIONS 5.0.0 5.0
-  4.0.0 4.0
+  4.0.0 4.0 4
   3.9.1 3.9.0 3.9
   3.8.1 3.8.0 3.8
   3.7.1 3.7.0 3.7
@@ -46,6 +46,8 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     "/usr/local/lib/llvm-${version}/include"
     # FreeBSD ports versions
     "/usr/local/llvm${undotted_version}/include"
+    # Gentoo clang-4
+    "/usr/lib/llvm/${version}/include"
     )
 
   list(APPEND libclang_llvm_lib_search_paths
@@ -59,6 +61,9 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     "/usr/local/lib/llvm-${version}/lib"
     # FreeBSD ports versions
     "/usr/local/llvm${undotted_version}/lib"
+    # Gentoo clang-4
+    "/usr/lib/llvm/${version}/lib"
+    "/usr/lib/llvm/${version}/lib64"
     )
 endforeach()
 
