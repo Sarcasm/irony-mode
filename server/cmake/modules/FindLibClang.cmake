@@ -63,7 +63,6 @@ foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
     "/usr/local/llvm${undotted_version}/lib"
     # Gentoo clang-4
     "/usr/lib/llvm/${version}/lib"
-    "/usr/lib/llvm/${version}/lib64"
     )
 endforeach()
 
