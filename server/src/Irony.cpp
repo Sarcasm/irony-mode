@@ -258,8 +258,17 @@ void Irony::complete(const std::string &file,
       unsigned annotationStart = 0;
       bool typedTextSet = false;
 
-      if (availability == CXAvailability_NotAccessible ||
-          availability == CXAvailability_NotAvailable) {
+      // progress even if candidate is `CXAvailability_NotAccessible' due to the
+      // current Clang bug which evaluates a protected member to be inaccessible
+      // to a derived class which has valid access.
+      //
+      // The rationale vs previous behaviour (which would not show an
+      // inaccessible candidate) is that the user's compiler catches erroneous
+      // access anyway. Since this is a completion engine, showing more is
+      // better than less.
+      //
+      // https://github.com/Sarcasm/irony-mode/issues/367
+      if (availability == CXAvailability_NotAvailable) {
         continue;
       }
 
@@ -304,6 +313,7 @@ void Irony::complete(const std::string &file,
         case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
         case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
 
+
         case CXCompletionChunk_Optional:
           // ignored for now
           break;
@@ -346,8 +356,16 @@ void Irony::complete(const std::string &file,
         }
       }
 
+      // Raise a warning if the candidate may be susceptible to:
+      // https://github.com/Sarcasm/irony-mode/issues/367
+      if (availability == CXAvailability_NotAccessible) {
+        brief = "Irony: Warning: Candidate: `" +
+                prototype +
+                "' maybe be inaccessible due to protected or private access."
+                "\n";
+      }
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION
-      brief = cxStringToStd(
+      brief += cxStringToStd(
           clang_getCompletionBriefComment(candidate.CompletionString));
 #endif
 
