@@ -245,7 +245,8 @@ void Irony::complete(const std::string &file,
     std::cout << "(\n";
 
     // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar;
+    std::string typedtext, brief, resultType, prototype, postCompCar, inaccess;
+
     std::vector<unsigned> postCompCdr;
 
     for (unsigned i = 0; i < completions->NumResults; ++i) {
@@ -257,6 +258,14 @@ void Irony::complete(const std::string &file,
           clang_getCompletionPriority(candidate.CompletionString);
       unsigned annotationStart = 0;
       bool typedTextSet = false;
+
+      typedtext.clear();
+      brief.clear();
+      resultType.clear();
+      prototype.clear();
+      postCompCar.clear();
+      postCompCdr.clear();
+      inaccess.clear();
 
       // progress even if candidate is `CXAvailability_NotAccessible' due to the
       // current Clang bug which evaluates a protected member to be inaccessible
@@ -270,14 +279,10 @@ void Irony::complete(const std::string &file,
       // https://github.com/Sarcasm/irony-mode/issues/367
       if (availability == CXAvailability_NotAvailable) {
         continue;
+      } else if (availability == CXAvailability_NotAccessible) {
+        inaccess = "t";
       }
 
-      typedtext.clear();
-      brief.clear();
-      resultType.clear();
-      prototype.clear();
-      postCompCar.clear();
-      postCompCdr.clear();
 
       for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
            chunk.next()) {
@@ -312,7 +317,6 @@ void Irony::complete(const std::string &file,
         case CXCompletionChunk_Equal:           ch = '=';  break;
         case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
         case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
-
 
         case CXCompletionChunk_Optional:
           // ignored for now
@@ -356,16 +360,8 @@ void Irony::complete(const std::string &file,
         }
       }
 
-      // Raise a warning if the candidate may be susceptible to:
-      // https://github.com/Sarcasm/irony-mode/issues/367
-      if (availability == CXAvailability_NotAccessible) {
-        brief = "Irony: Warning: Candidate: `" +
-                prototype +
-                "' maybe be inaccessible due to protected or private access."
-                "\n";
-      }
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION
-      brief += cxStringToStd(
+      brief = cxStringToStd(
           clang_getCompletionBriefComment(candidate.CompletionString));
 #endif
 
@@ -376,6 +372,7 @@ void Irony::complete(const std::string &file,
                 << ' ' << support::quoted(brief)      //
                 << ' ' << support::quoted(prototype)  //
                 << ' ' << annotationStart             //
+                << ' ' << inaccess                    //
                 << " (" << support::quoted(postCompCar);
       for (unsigned index : postCompCdr)
         std::cout << ' ' << index;

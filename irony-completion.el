@@ -235,6 +235,9 @@ Return t if the context has been updated, nil otherwise."
 (defun irony-completion-post-comp-placeholders (candidate)
   (cdr (nth 6 candidate)))
 
+(defun irony-completion-inaccessible (candidate)
+  (nth 7 candidate))
+
 (defun irony-completion-candidates-available-p ()
   (and (eq (irony-completion--context-pos) irony-completion--context)
        (eq irony-completion--candidates-tick irony-completion--context-tick)))
@@ -259,7 +262,8 @@ A candidate is composed of the following elements:
  6. Post-completion data. The text to insert followed by 0 or
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
-    Example: (\"(int a, int b)\" 1 6 8 13)"
+    Example: (\"(int a, int b)\" 1 6 8 13)
+ 7. If non-nil, the candidate is considered inaccessible"
   (and (irony-completion-candidates-available-p)
        irony-completion--candidates))
 
