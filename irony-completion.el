@@ -57,6 +57,19 @@
   :type '(repeat function)
   :group 'irony-completion)
 
+(defcustom irony-completion-accessibility-filter '(available deprecated)
+ "For completion, only accept candidates whose accessibility is in the list.
+
+Maps to libclang's CXAvailabilityKind:
+* https://clang.llvm.org/doxygen/group__CINDEX.html#ggada331ea0195e952c8f181ecf15e83d71af6542f250a1d21e256cd543669a49435
+
+Due to a bug in
+Clang (https://bugs.llvm.org//show_bug.cgi?id=24329), candidates
+that can be validly accessed are deemed not-accessible."
+ :type '(repeat symbol)
+ :options '(available deprecated not-accessible)
+ :group 'irony-completion)
+
 
 ;;
 ;; Internal variables
@@ -226,17 +239,18 @@ Return t if the context has been updated, nil otherwise."
 (defun irony-completion-brief (candidate)
   (nth 3 candidate))
 
+(defun irony-completion-accessibility (candidate)
+  (nth 4 candidate))
+
 (defun irony-completion-annotation (candidate)
-  (substring (nth 4 candidate) (nth 5 candidate)))
+  (substring (nth 5 candidate) (nth 6 candidate)))
 
 (defun irony-completion-post-comp-str (candidate)
-  (car (nth 6 candidate)))
+  (car (nth 7 candidate)))
 
 (defun irony-completion-post-comp-placeholders (candidate)
-  (cdr (nth 6 candidate)))
+  (cdr (nth 7 candidate)))
 
-(defun irony-completion-inaccessible (candidate)
-  (nth 7 candidate))
 
 (defun irony-completion-candidates-available-p ()
   (and (eq (irony-completion--context-pos) irony-completion--context)
@@ -263,7 +277,7 @@ A candidate is composed of the following elements:
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
     Example: (\"(int a, int b)\" 1 6 8 13)
- 7. If non-nil, the candidate is considered inaccessible"
+ 7. The accessiblity of the candidate."
   (and (irony-completion-candidates-available-p)
        irony-completion--candidates))
 

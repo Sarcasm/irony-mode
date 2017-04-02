@@ -245,7 +245,7 @@ void Irony::complete(const std::string &file,
     std::cout << "(\n";
 
     // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar, inaccess;
+    std::string typedtext, brief, resultType, prototype, postCompCar, access;
 
     std::vector<unsigned> postCompCdr;
 
@@ -265,24 +265,22 @@ void Irony::complete(const std::string &file,
       prototype.clear();
       postCompCar.clear();
       postCompCdr.clear();
-      inaccess.clear();
+      access.clear();
 
-      // progress even if candidate is `CXAvailability_NotAccessible' due to the
-      // current Clang bug which evaluates a protected member to be inaccessible
-      // to a derived class which has valid access.
-      //
-      // The rationale vs previous behaviour (which would not show an
-      // inaccessible candidate) is that the user's compiler catches erroneous
-      // access anyway. Since this is a completion engine, showing more is
-      // better than less.
-      //
       // https://github.com/Sarcasm/irony-mode/issues/367
-      if (availability == CXAvailability_NotAvailable) {
+      switch (availability) {
+      case CXAvailability_Available:
+        access = "available";
+        break;
+      case CXAvailability_Deprecated:
+        access = "deprecated";
+        break;
+      case CXAvailability_NotAvailable:
         continue;
-      } else if (availability == CXAvailability_NotAccessible) {
-        inaccess = "t";
+      case CXAvailability_NotAccessible:
+        access = "not-accessible";
+        break;
       }
-
 
       for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
            chunk.next()) {
@@ -370,9 +368,9 @@ void Irony::complete(const std::string &file,
                 << ' ' << priority                    //
                 << ' ' << support::quoted(resultType) //
                 << ' ' << support::quoted(brief)      //
+                << ' ' << access                      //
                 << ' ' << support::quoted(prototype)  //
                 << ' ' << annotationStart             //
-                << ' ' << inaccess                    //
                 << " (" << support::quoted(postCompCar);
       for (unsigned index : postCompCdr)
         std::cout << ' ' << index;

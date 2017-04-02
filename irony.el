@@ -99,19 +99,6 @@ automatically buffer-local wherever it is set."
   "C/C++ minor mode powered by libclang."
   :group 'c)
 
-(defcustom irony-allow-inaccessibles nil
-  "Whether to display candidates that clang deem to be inaccessible.
-
-If set to non-nil and in c++-mode, Irony will suggest protected
-or private member/method candidates belonging to the target
-record's parents.
-
-Currently clang has a known issue meaning it does not display
-protected members/methods of a class even in the correct
-context."
-  :type 'boolean
-  :group 'irony)
-
 (defcustom irony-lighter " Irony"
   "Text to display in the mode line when irony mode is on."
   :type 'string
