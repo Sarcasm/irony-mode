@@ -251,7 +251,6 @@ Return t if the context has been updated, nil otherwise."
 (defun irony-completion-post-comp-placeholders (candidate)
   (cdr (nth 7 candidate)))
 
-
 (defun irony-completion-candidates-available-p ()
   (and (eq (irony-completion--context-pos) irony-completion--context)
        (eq irony-completion--candidates-tick irony-completion--context-tick)))
@@ -269,15 +268,15 @@ A candidate is composed of the following elements:
  2. The [result-]type of the candidate, if any.
  3. If non-nil, contains the Doxygen brief documentation of the
     candidate.
- 4. The signature of the candidate excluding the result-type
+ 4. The accessiblity of the candidate.
+ 5. The signature of the candidate excluding the result-type
     which is available separately.
     Example: \"foo(int a, int b) const\"
- 5. The annotation start, a 0-based index in the prototype string.
- 6. Post-completion data. The text to insert followed by 0 or
+ 6. The annotation start, a 0-based index in the prototype string.
+ 7. Post-completion data. The text to insert followed by 0 or
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
-    Example: (\"(int a, int b)\" 1 6 8 13)
- 7. The accessiblity of the candidate."
+    Example: (\"(int a, int b)\" 1 6 8 13)"
   (and (irony-completion-candidates-available-p)
        irony-completion--candidates))
 
