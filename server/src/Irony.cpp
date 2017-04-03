@@ -245,7 +245,7 @@ void Irony::complete(const std::string &file,
     std::cout << "(\n";
 
     // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar, access;
+    std::string typedtext, brief, resultType, prototype, postCompCar, available;
 
     std::vector<unsigned> postCompCdr;
 
@@ -265,20 +265,21 @@ void Irony::complete(const std::string &file,
       prototype.clear();
       postCompCar.clear();
       postCompCdr.clear();
-      access.clear();
+      available.clear();
 
-      // https://github.com/Sarcasm/irony-mode/issues/367
       switch (availability) {
       case CXAvailability_Available:
-        access = "available";
+        available = "available";
         break;
       case CXAvailability_Deprecated:
-        access = "deprecated";
+        available = "deprecated";
         break;
       case CXAvailability_NotAvailable:
         continue;
+
+      // https://github.com/Sarcasm/irony-mode/issues/367
       case CXAvailability_NotAccessible:
-        access = "not-accessible";
+        available = "not-accessible";
         break;
       }
 
@@ -364,17 +365,17 @@ void Irony::complete(const std::string &file,
 #endif
 
       // see irony-completion.el#irony-completion-candidates
-      std::cout << '(' << support::quoted(typedtext)  //
-                << ' ' << priority                    //
-                << ' ' << support::quoted(resultType) //
-                << ' ' << support::quoted(brief)      //
-                << ' ' << access                      //
-                << ' ' << support::quoted(prototype)  //
-                << ' ' << annotationStart             //
+      std::cout << '(' << support::quoted(typedtext)
+                << ' ' << priority
+                << ' ' << support::quoted(resultType)
+                << ' ' << support::quoted(brief)
+                << ' ' << support::quoted(prototype)
+                << ' ' << annotationStart
                 << " (" << support::quoted(postCompCar);
       for (unsigned index : postCompCdr)
         std::cout << ' ' << index;
       std::cout << ")"
+                << ' ' << available
                 << ")\n";
     }
 
