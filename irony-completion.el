@@ -279,10 +279,11 @@ A candidate is composed of the following elements:
     Example: (\"(int a, int b)\" 1 6 8 13)
  7. The availability of the candidate."
   (when (irony-completion-candidates-available-p)
-    (cl-loop for candidate in irony-completion--candidates
-             when (member (irony-completion-availability candidate)
-                          irony-completion-availability-filter)
-             collect candidate)))
+    (cl-remove-if-not
+     (lambda (candidate)
+       (memq (irony-completion-availability candidate)
+             irony-completion-availability-filter))
+     irony-completion--candidates)))
 
 (defun irony-completion-candidates-async (callback)
   "Call CALLBACK when asynchronous completion is available.

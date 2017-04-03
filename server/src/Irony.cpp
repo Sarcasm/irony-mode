@@ -268,16 +268,16 @@ void Irony::complete(const std::string &file,
       available.clear();
 
       switch (availability) {
+      case CXAvailability_NotAvailable:
+        // No benefits to expose this to elisp for now
+        continue;
+
       case CXAvailability_Available:
         available = "available";
         break;
       case CXAvailability_Deprecated:
         available = "deprecated";
         break;
-      case CXAvailability_NotAvailable:
-        continue;
-
-      // https://github.com/Sarcasm/irony-mode/issues/367
       case CXAvailability_NotAccessible:
         available = "not-accessible";
         break;
