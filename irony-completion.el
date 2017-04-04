@@ -57,6 +57,19 @@
   :type '(repeat function)
   :group 'irony-completion)
 
+(defcustom irony-completion-availability-filter '(available deprecated)
+ "For completion, only accept candidates whose availability is in the list.
+
+Maps to libclang's CXAvailabilityKind:
+- https://clang.llvm.org/doxygen/group__CINDEX.html#gada331ea0195e952c8f181ecf15e83d71
+
+Due to a bug in
+Clang (https://bugs.llvm.org//show_bug.cgi?id=24329), candidates
+that can be validly accessed are deemed not-accessible."
+ :type '(repeat symbol)
+ :options '(available deprecated not-accessible)
+ :group 'irony-completion)
+
 
 ;;
 ;; Internal variables
@@ -235,6 +248,10 @@ Return t if the context has been updated, nil otherwise."
 (defun irony-completion-post-comp-placeholders (candidate)
   (cdr (nth 6 candidate)))
 
+(defun irony-completion-availability (candidate)
+  "See `irony-completion-availability-filter'"
+  (nth 7 candidate))
+
 (defun irony-completion-candidates-available-p ()
   (and (eq (irony-completion--context-pos) irony-completion--context)
        (eq irony-completion--candidates-tick irony-completion--context-tick)))
@@ -259,9 +276,14 @@ A candidate is composed of the following elements:
  6. Post-completion data. The text to insert followed by 0 or
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
-    Example: (\"(int a, int b)\" 1 6 8 13)"
-  (and (irony-completion-candidates-available-p)
-       irony-completion--candidates))
+    Example: (\"(int a, int b)\" 1 6 8 13)
+ 7. The availability of the candidate."
+  (when (irony-completion-candidates-available-p)
+    (cl-remove-if-not
+     (lambda (candidate)
+       (memq (irony-completion-availability candidate)
+             irony-completion-availability-filter))
+     irony-completion--candidates)))
 
 (defun irony-completion-candidates-async (callback)
   "Call CALLBACK when asynchronous completion is available.

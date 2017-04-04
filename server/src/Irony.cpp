@@ -245,7 +245,8 @@ void Irony::complete(const std::string &file,
     std::cout << "(\n";
 
     // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar;
+    std::string typedtext, brief, resultType, prototype, postCompCar, available;
+
     std::vector<unsigned> postCompCdr;
 
     for (unsigned i = 0; i < completions->NumResults; ++i) {
@@ -258,17 +259,29 @@ void Irony::complete(const std::string &file,
       unsigned annotationStart = 0;
       bool typedTextSet = false;
 
-      if (availability == CXAvailability_NotAccessible ||
-          availability == CXAvailability_NotAvailable) {
-        continue;
-      }
-
       typedtext.clear();
       brief.clear();
       resultType.clear();
       prototype.clear();
       postCompCar.clear();
       postCompCdr.clear();
+      available.clear();
+
+      switch (availability) {
+      case CXAvailability_NotAvailable:
+        // No benefits to expose this to elisp for now
+        continue;
+
+      case CXAvailability_Available:
+        available = "available";
+        break;
+      case CXAvailability_Deprecated:
+        available = "deprecated";
+        break;
+      case CXAvailability_NotAccessible:
+        available = "not-accessible";
+        break;
+      }
 
       for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
            chunk.next()) {
@@ -352,16 +365,17 @@ void Irony::complete(const std::string &file,
 #endif
 
       // see irony-completion.el#irony-completion-candidates
-      std::cout << '(' << support::quoted(typedtext)  //
-                << ' ' << priority                    //
-                << ' ' << support::quoted(resultType) //
-                << ' ' << support::quoted(brief)      //
-                << ' ' << support::quoted(prototype)  //
-                << ' ' << annotationStart             //
+      std::cout << '(' << support::quoted(typedtext)
+                << ' ' << priority
+                << ' ' << support::quoted(resultType)
+                << ' ' << support::quoted(brief)
+                << ' ' << support::quoted(prototype)
+                << ' ' << annotationStart
                 << " (" << support::quoted(postCompCar);
       for (unsigned index : postCompCdr)
         std::cout << ' ' << index;
       std::cout << ")"
+                << ' ' << available
                 << ")\n";
     }
 
