@@ -227,6 +227,7 @@ Properties:
 
 (cl-defstruct (irony-iotask-ectx
                (:constructor irony-iotask-ectx--create))
+  started
   packaged-task
   callback
   schedule-buffer)
@@ -241,6 +242,7 @@ Properties:
 (defun irony-iotask--start-next (process)
   (let* ((ectx (car (process-get process :ectx-q)))
          (packaged-task (irony-iotask-ectx-packaged-task ectx)))
+    (setf (irony-iotask-ectx-started ectx) t)
     ;; erase the buffer before we call :start so the next :update starts anew
     (erase-buffer)
     ;; for `irony-iotask-send-string', `irony-iotask-send-region' and
@@ -252,8 +254,9 @@ Properties:
 
 (defun irony-iotask--start-next-safe (process)
   "Run the next task, if any."
-  (when (process-get process :ectx-q)
-    (irony-iotask--start-next process)))
+  (let ((ectx-q (process-get process :ectx-q)))
+    (when (and ectx-q (not (irony-iotask-ectx-started (car ectx-q))))
+      (irony-iotask--start-next process))))
 
 (defun irony-iotask--check-result (process)
   (let* ((ectx (car (process-get process :ectx-q)))

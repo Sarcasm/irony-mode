@@ -218,3 +218,24 @@ available on all OSes irony-iotask support."
      (ignore-errors
        (irony-iotask-run process task))
      (should (equal "error" irony-iotask/task-on-var)))))
+
+(ert-deftest irony-iotask-schedule/callback/recalls-schedule ()
+  (let ((task (irony-iotask-package-task irony-iotask/task-update-t "a")))
+    (irony-iotask/with-echo-process
+     (lexical-let ((run-process process)
+                   results)
+       (irony-iotask-schedule process task
+                              (lambda (result)
+                                (setq results (list result))
+                                (irony-iotask-schedule
+                                 run-process
+                                 (irony-iotask-package-task
+                                  irony-iotask/task-update-t "b")
+                                 (lambda (result)
+                                   (setq results (append results (list result)))))))
+       (should (with-local-quit
+                 (while (< (length results) 2)
+                   (accept-process-output process 0.05))
+                 t))
+       (should (string= "a ok" (irony-iotask-result-get (nth 0 results))))
+       (should (string= "b ok" (irony-iotask-result-get (nth 1 results))))))))
