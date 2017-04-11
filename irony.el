@@ -691,7 +691,7 @@ list (and undo information is not kept).")
 ;; XXX: this code can run in very tight very sensitive on big inputs,
 ;; every change should be measured
 (defun irony--server-command-update (&rest _args)
-  (when (and (> (buffer-size) (length irony--eot))
+  (when (and (>= (buffer-size) (length irony--eot))
              (string-equal (buffer-substring-no-properties
                             (- (point-max) (length irony--eot)) (point-max))
                            irony--eot))
@@ -710,7 +710,7 @@ list (and undo information is not kept).")
 ;; XXX: this code can run in very tight very sensitive on big inputs,
 ;; every change should be measured
 (defun irony--server-query-update (&rest _args)
-  (when (and (> (buffer-size) (length irony--eot))
+  (when (and (>= (buffer-size) (length irony--eot))
              (string-equal (buffer-substring-no-properties
                             (- (point-max) (length irony--eot)) (point-max))
                            irony--eot))
