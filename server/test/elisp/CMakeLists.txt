@@ -32,12 +32,14 @@ endif()
 function(add_ert_test test_file)
   get_filename_component(name ${test_file} NAME_WE)
   add_test(check-${name}-el
-    ${EMACS_EXECUTABLE} -batch
+    ${EMACS_EXECUTABLE} -Q --batch
     -l package
     --eval "(package-initialize)"
     --eval "(unless (require 'cl-lib nil t) (package-refresh-contents) (package-install 'cl-lib))"
     -l ${CMAKE_CURRENT_SOURCE_DIR}/${test_file}
     -f ert-run-tests-batch-and-exit)
+
+  set_tests_properties(check-${name}-el PROPERTIES TIMEOUT 15)
 endfunction()
 
 add_ert_test(irony.el)

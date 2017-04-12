@@ -19,8 +19,8 @@
       (insert output)
       (set-marker (process-mark process) (point))
       (when (>= (buffer-size) (length "exit\n"))
-        (should (equal (buffer-substring-no-properties (point-min) (point-max))
-                       "exit\n"))))))
+        (should (string= (buffer-string) "exit\n"))
+        (erase-buffer)))))
 
 ;; Note: these tests use process communication with the standard I/O streams.
 ;; The subprocess used for this communication is Emacs.
@@ -63,14 +63,20 @@ available on all OSes irony-iotask support."
          (progn
            (irony-iotask-setup-process process)
            ,@body)
-       ;; for the tests, we want to wait the end of the process
+       ;; the iotask process filter does not clean the process buffer
+       ;; at the end of a request, but at the begining of a new one
        (with-current-buffer (process-buffer process)
          (erase-buffer))
        (set-process-filter process #'irony-iotask-echo-process-exit-filter)
        (process-send-string process "exit\n")
+       ;; wait for the process to finish normally, or kill it if it doesn't
        (with-timeout (1 (kill-process process))
          (while (process-live-p process)
-           (sit-for 0.05))))))
+           (sit-for 0.05)))
+       ;; start with a clean buffer,
+       ;; Emacs 24.3 seems to keep some
+       (kill-buffer (process-buffer process))
+       (delete-process process))))
 
 ;; irony-iotask-result
 
@@ -91,7 +97,8 @@ available on all OSes irony-iotask support."
     (irony-iotask-result-set-value result 'blah)
     (should (eq (irony-iotask-result-get result) 'blah))))
 
-(define-error 'irony-iotask-result/test-error "Irony I/O task sample error")
+(irony--define-error 'irony-iotask-result/test-error
+                     "Irony I/O task sample error")
 
 (ert-deftest irony-iotask-result/set-error ()
   (let ((result (irony-iotask-result-create)))
