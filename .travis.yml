@@ -13,7 +13,6 @@ addons:
       - emacs
       - emacs-snapshot
       - clang-tidy-4.0
-      - realpath
 
 compiler:
   - gcc
@@ -35,6 +34,7 @@ matrix:
             - libclang-4.0-dev
             - clang-format-4.0
             - clang-tidy-4.0
+            - realpath
       script:
         - mkdir build
         - cd build
