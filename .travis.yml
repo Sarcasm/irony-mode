@@ -49,7 +49,7 @@ matrix:
           -clang-tidy-binary clang-tidy-4.0 \
           -clang-apply-replacements-binary clang-apply-replacements-4.0 \
           -p . \
-          -header-filter $(realpath ../server) \
+          -header-filter '.*' \
           -warnings-as-errors='*'
 
 script:
