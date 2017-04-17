@@ -363,13 +363,21 @@ Note that:
 ;;;###autoload
 (defun irony-completion-at-point ()
   (when (and irony-mode (irony-completion-candidates-available-p))
-    (let ((symbol-bounds (irony-completion-symbol-bounds)))
+    (let* ((symbol-bounds (irony-completion-symbol-bounds))
+           (prefix (buffer-substring-no-properties
+                    (car symbol-bounds)
+                    (cdr symbol-bounds))))
       (list
-       (car symbol-bounds)              ;start
-       (cdr symbol-bounds)              ;end
-       (mapcar #'(lambda (candidate)    ;completion table
+       ;; start
+       (car symbol-bounds)
+       ;; end
+       (cdr symbol-bounds)
+       ;; completion table
+       (mapcar #'(lambda (candidate)
                    (propertize (car candidate) 'irony-capf candidate))
-               (irony-completion-candidates))
+               (cl-remove-if-not
+                (lambda (x) (string-match prefix (car x)))
+                (irony-completion-candidates)))
        :annotation-function 'irony-completion--at-point-annotate))))
 
 ;;;###autoload
