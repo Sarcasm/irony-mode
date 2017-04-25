@@ -376,6 +376,10 @@ breaks with escaped quotes in compile_commands.json, such as in:
       (setq args (cons (apply 'string (nreverse cur-arg)) args)))
     (nreverse args)))
 
+(defun irony--combine-strings (strings)
+  "Join STRINGS with one space between every two elements."
+  (mapconcat 'identity strings " "))
+
 
 ;;
 ;; Mode
@@ -896,7 +900,7 @@ If no such file exists on the filesystem the special file '-' is
       (irony--without-narrowing
         (process-send-string process
                              (format "%s\n"
-                                     (combine-and-quote-strings argv)))))))
+                                     (irony--combine-strings argv)))))))
 
 (defun irony--send-parse-request (request callback &rest args)
   "Send a request that acts on the current buffer to irony-server.
@@ -926,8 +930,8 @@ care of."
         ;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Input-to-Processes.html).
         (process-send-string process
                              (format "%s\n%s\n%s\n%d\n%s\n"
-                                     (combine-and-quote-strings argv)
-                                     (combine-and-quote-strings compile-options)
+                                     (irony--combine-strings argv)
+                                     (irony--combine-strings compile-options)
                                      buffer-file-name
                                      (irony--buffer-size-in-bytes)
                                      (buffer-substring (point-min) (point-max))))))))
