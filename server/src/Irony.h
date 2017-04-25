@@ -23,13 +23,18 @@
 
 class Irony {
 public:
+  // use std::string over std::vector<char> because I have some doubts
+  // that libclang expect unsaved buffers to be a null terminated C strings
+  typedef std::string UnsavedBuffer;
+
+public:
   Irony();
 
   bool isDebugEnabled() const {
     return debug_;
   }
 
-  /// \name Modifiers
+  /// \name Command
   /// \{
 
   /// \brief Set or unset debugging of commands.
@@ -46,16 +51,31 @@ public:
   /// succeeded.
   ///
   /// \sa diagnostics(), getType()
-  void parse(const std::string &file,
-             const std::vector<std::string> &flags,
-             const std::vector<CXUnsavedFile> &unsavedFiles);
+  void parse(const std::string &file, const std::vector<std::string> &flags);
+
+  /// Parse the given file for code completion.
+  ///
+  /// Shares the same semantics and output as \c parse().
+  ///
+  /// \sa candidates(), completionDiagnostics()
+  void complete(const std::string &file,
+                unsigned line,
+                unsigned col,
+                const std::vector<std::string> &flags);
+
+  void setUnsaved(const std::string &file,
+                  const std::string &unsavedContentFile);
+
+  void resetUnsaved(const std::string &file);
 
   /// \}
 
-  /// \name Observers
+  /// \name Queries
   /// \{
 
   /// \brief Retrieve the last parse diagnostics for the given file.
+  ///
+  /// \pre parse() was called.
   void diagnostics() const;
 
   /// \brief Get types of symbol at a given location.
@@ -77,25 +97,15 @@ public:
   ///
   void getType(unsigned line, unsigned col) const;
 
-  /// \brief Perform code completion at a given location.
+  /// Get all the completion candidates.
   ///
-  /// Print the list of candidate if any. The empty list is printed on error.
+  /// \pre complete() was called.
+  void candidates() const;
+
+  /// Get the diagnostics produced by the last \c complete().
   ///
-  /// Example output:
-  ///
-  /// \code{.el}
-  ///    (
-  ///     ("foo")
-  ///     ("bar")
-  ///     ("baz")
-  ///    )
-  /// \endcode
-  ///
-  void complete(const std::string &file,
-                unsigned line,
-                unsigned col,
-                const std::vector<std::string> &flags,
-                const std::vector<CXUnsavedFile> &unsavedFiles);
+  /// \pre complete() was called.
+  void completionDiagnostics() const;
 
   /// \brief Get compile options from JSON database.
   ///
@@ -117,9 +127,16 @@ public:
   /// \}
 
 private:
+  void resetCache();
+  void computeCxUnsaved();
+
+private:
   TUManager tuManager_;
+  std::map<std::string, UnsavedBuffer> filenameToContent_;
   CXTranslationUnit activeTu_;
   std::string file_;
+  std::vector<CXUnsavedFile> cxUnsavedFiles_;
+  CXCodeCompleteResults *activeCompletionResults_;
   bool debug_;
 };
 

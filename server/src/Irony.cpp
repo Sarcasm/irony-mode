@@ -17,8 +17,11 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
-static std::string cxStringToStd(CXString cxString) {
+namespace {
+
+std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
 
   if (const char *cstr = clang_getCString(cxString)) {
@@ -29,10 +32,7 @@ static std::string cxStringToStd(CXString cxString) {
   return stdStr;
 }
 
-Irony::Irony() : activeTu_(nullptr), debug_(false) {
-}
-
-static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
+const char *diagnosticSeverity(const CXDiagnostic &diagnostic) {
   switch (clang_getDiagnosticSeverity(diagnostic)) {
   case CXDiagnostic_Ignored:
     return "ignored";
@@ -49,50 +49,109 @@ static const char *diagnosticSeverity(CXDiagnostic diagnostic) {
   return "unknown";
 }
 
-static void dumpDiagnostics(const CXTranslationUnit &tu) {
-  std::cout << "(\n";
-
+void dumpDiagnostic(const CXDiagnostic &diagnostic) {
   std::string file;
-
-  for (unsigned i = 0, diagnosticCount = clang_getNumDiagnostics(tu);
-       i < diagnosticCount;
-       ++i) {
-    CXDiagnostic diagnostic = clang_getDiagnostic(tu, i);
-
-    CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
-
-    unsigned line, column, offset;
-    if (clang_equalLocations(location, clang_getNullLocation())) {
-      file.clear();
-      line = 0;
-      column = 0;
-      offset = 0;
-    } else {
-      CXFile cxFile;
+  unsigned line = 0, column = 0, offset = 0;
+  CXSourceLocation location = clang_getDiagnosticLocation(diagnostic);
+  if (!clang_equalLocations(location, clang_getNullLocation())) {
+    CXFile cxFile;
 
 // clang_getInstantiationLocation() has been marked deprecated and
 // is aimed to be replaced by clang_getExpansionLocation().
 #if CINDEX_VERSION >= 6
-      clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
+    clang_getExpansionLocation(location, &cxFile, &line, &column, &offset);
 #else
-      clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
+    clang_getInstantiationLocation(location, &cxFile, &line, &column, &offset);
 #endif
 
-      file = cxStringToStd(clang_getFileName(cxFile));
-    }
+    file = cxStringToStd(clang_getFileName(cxFile));
+  }
 
-    const char *severity = diagnosticSeverity(diagnostic);
+  const char *severity = diagnosticSeverity(diagnostic);
 
-    std::string message =
-        cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
+  std::string message = cxStringToStd(clang_getDiagnosticSpelling(diagnostic));
 
-    std::cout << '(' << support::quoted(file)    //
-              << ' ' << line                     //
-              << ' ' << column                   //
-              << ' ' << offset                   //
-              << ' ' << severity                 //
-              << ' ' << support::quoted(message) //
-              << ")\n";
+  std::cout << '(' << support::quoted(file)    //
+            << ' ' << line                     //
+            << ' ' << column                   //
+            << ' ' << offset                   //
+            << ' ' << severity                 //
+            << ' ' << support::quoted(message) //
+            << ")\n";
+}
+
+bool readFileContent(const std::string &filename,
+                     Irony::UnsavedBuffer &outBuf) {
+  std::ifstream ifs(filename.c_str(),
+                    std::ios::in | std::ios::binary | std::ios::ate);
+
+  if (!ifs.is_open()) {
+    return false;
+  }
+
+  // FIXME: it's possible that this method of reading the file is 100% reliable,
+  // I can't confirm that tellg() is guaranteed to return a byte count.
+  // std::streamoff does not mention 'byte'.
+  // In practice it seems to work but this may be just luck.
+  // See also this discussion:
+  // - http://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486#22986486
+  auto nbytes = ifs.tellg();
+
+  if (nbytes == -1) {
+    return false;
+  }
+
+  outBuf.resize(nbytes);
+  ifs.seekg(0, std::ios::beg);
+
+  ifs.read(&outBuf[0], outBuf.size());
+
+  if (!ifs){
+    outBuf.clear();
+    return false;
+  }
+
+  return true;
+}
+
+} // unnamed namespace
+
+Irony::Irony()
+  : activeTu_(nullptr), activeCompletionResults_(nullptr), debug_(false) {
+}
+
+void Irony::parse(const std::string &file,
+                  const std::vector<std::string> &flags) {
+  resetCache();
+  activeTu_ = tuManager_.parse(file, flags, cxUnsavedFiles_);
+  file_ = file;
+
+  if (activeTu_ == nullptr) {
+    std::cout << "(error . ("
+              << "parse-error"
+              << " \"failed to parse file\""
+              << " " << support::quoted(file) << "))\n";
+    return;
+  }
+
+  std::cout << "(success . t)\n";
+}
+
+void Irony::diagnostics() const {
+  unsigned diagnosticCount;
+
+  if (activeTu_ == nullptr) {
+    diagnosticCount = 0;
+  } else {
+    diagnosticCount = clang_getNumDiagnostics(activeTu_);
+  }
+
+  std::cout << "(\n";
+
+  for (unsigned i = 0; i < diagnosticCount; ++i) {
+    CXDiagnostic diagnostic = clang_getDiagnostic(activeTu_, i);
+
+    dumpDiagnostic(diagnostic);
 
     clang_disposeDiagnostic(diagnostic);
   }
@@ -100,23 +159,13 @@ static void dumpDiagnostics(const CXTranslationUnit &tu) {
   std::cout << ")\n";
 }
 
-void Irony::parse(const std::string &file,
-                  const std::vector<std::string> &flags,
-                  const std::vector<CXUnsavedFile> &unsavedFiles) {
-  activeTu_ = tuManager_.parse(file, flags, unsavedFiles);
-  file_ = file;
-  std::cout << (activeTu_ ? "t" : "nil") << "\n";
-}
+void Irony::resetCache() {
+  activeTu_ = nullptr;
 
-void Irony::diagnostics() const {
-  if (activeTu_ == nullptr) {
-    std::clog << "W: diagnostics - parse wasn't called\n";
-
-    std::cout << "nil\n";
-    return;
+  if (activeCompletionResults_ != nullptr) {
+    clang_disposeCodeCompleteResults(activeCompletionResults_);
+    activeCompletionResults_ = nullptr;
   }
-
-  dumpDiagnostics(activeTu_);
 }
 
 void Irony::getType(unsigned line, unsigned col) const {
@@ -184,6 +233,7 @@ public:
     return clang_getCompletionChunkKind(completionString_, chunkIdx_);
   }
 
+  // TODO: operator>> so that one can re-use string allocated buffer
   std::string text() const {
     return cxStringToStd(
         clang_getCompletionChunkText(completionString_, chunkIdx_));
@@ -200,189 +250,261 @@ private:
 void Irony::complete(const std::string &file,
                      unsigned line,
                      unsigned col,
-                     const std::vector<std::string> &flags,
-                     const std::vector<CXUnsavedFile> &unsavedFiles) {
-  CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags, unsavedFiles);
+                     const std::vector<std::string> &flags) {
+  resetCache();
 
-  if (tu == nullptr) {
+  if (CXTranslationUnit tu =
+          tuManager_.getOrCreateTU(file, flags, cxUnsavedFiles_)) {
+    activeCompletionResults_ =
+        clang_codeCompleteAt(tu,
+                             file.c_str(),
+                             line,
+                             col,
+                             const_cast<CXUnsavedFile *>(cxUnsavedFiles_.data()),
+                             cxUnsavedFiles_.size(),
+                             (clang_defaultCodeCompleteOptions() &
+                              ~CXCodeComplete_IncludeCodePatterns)
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+                                 |
+                                 CXCodeComplete_IncludeBriefComments
+#endif
+                             );
+  }
+
+  if (activeCompletionResults_ == nullptr) {
+    std::cout << "(error . ("
+              << "complete-error"
+              << " \"failed to perform code completion\""
+              << " " << support::quoted(file) << " " << line << " " << col
+              << "))\n";
+    return;
+  }
+
+  clang_sortCodeCompletionResults(activeCompletionResults_->Results,
+                                  activeCompletionResults_->NumResults);
+
+  std::cout << "(success . t)\n";
+}
+
+void Irony::completionDiagnostics() const {
+  unsigned diagnosticCount;
+
+  if (activeCompletionResults_ == nullptr) {
+    diagnosticCount = 0;
+  } else {
+    diagnosticCount =
+        clang_codeCompleteGetNumDiagnostics(activeCompletionResults_);
+  }
+
+  std::cout << "(\n";
+
+  for (unsigned i = 0; i < diagnosticCount; ++i) {
+    CXDiagnostic diagnostic =
+        clang_codeCompleteGetDiagnostic(activeCompletionResults_, i);
+
+    dumpDiagnostic(diagnostic);
+    clang_disposeDiagnostic(diagnostic);
+  }
+
+  std::cout << ")\n";
+}
+
+void Irony::candidates() const {
+  if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
   }
 
-  if (CXCodeCompleteResults *completions =
-          clang_codeCompleteAt(tu,
-                               file.c_str(),
-                               line,
-                               col,
-                               const_cast<CXUnsavedFile *>(unsavedFiles.data()),
-                               unsavedFiles.size(),
-                               (clang_defaultCodeCompleteOptions() &
-                                ~CXCodeComplete_IncludeCodePatterns)
-#if HAS_BRIEF_COMMENTS_IN_COMPLETION
-                                   |
-                                   CXCodeComplete_IncludeBriefComments
-#endif
-                               )) {
+  CXCodeCompleteResults *completions = activeCompletionResults_;
 
-    if (debug_) {
-      unsigned numDiags = clang_codeCompleteGetNumDiagnostics(completions);
-      std::clog << "debug: complete: " << numDiags << " diagnostic(s)\n";
-      for (unsigned i = 0; i < numDiags; ++i) {
-        CXDiagnostic diagnostic =
-            clang_codeCompleteGetDiagnostic(completions, i);
-        CXString s = clang_formatDiagnostic(
-            diagnostic, clang_defaultDiagnosticDisplayOptions());
+  std::cout << "(\n";
 
-        std::clog << clang_getCString(s) << std::endl;
-        clang_disposeString(s);
-        clang_disposeDiagnostic(diagnostic);
-      }
+  // re-use the same buffers to avoid unnecessary allocations
+  std::string typedtext, brief, resultType, prototype, postCompCar, available;
+
+  std::vector<unsigned> postCompCdr;
+
+  for (unsigned i = 0; i < completions->NumResults; ++i) {
+    CXCompletionResult candidate = completions->Results[i];
+    CXAvailabilityKind availability =
+      clang_getCompletionAvailability(candidate.CompletionString);
+
+    unsigned priority =
+      clang_getCompletionPriority(candidate.CompletionString);
+    unsigned annotationStart = 0;
+    bool typedTextSet = false;
+
+    typedtext.clear();
+    brief.clear();
+    resultType.clear();
+    prototype.clear();
+    postCompCar.clear();
+    postCompCdr.clear();
+    available.clear();
+
+    switch (availability) {
+    case CXAvailability_NotAvailable:
+      // No benefits to expose this to elisp for now
+      continue;
+
+    case CXAvailability_Available:
+      available = "available";
+      break;
+    case CXAvailability_Deprecated:
+      available = "deprecated";
+      break;
+    case CXAvailability_NotAccessible:
+      available = "not-accessible";
+      break;
     }
 
-    clang_sortCodeCompletionResults(completions->Results,
-                                    completions->NumResults);
+    for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
+         chunk.next()) {
+      char ch = 0;
 
-    std::cout << "(\n";
+      auto chunkKind = chunk.kind();
 
-    // re-use the same buffers to avoid unnecessary allocations
-    std::string typedtext, brief, resultType, prototype, postCompCar, available;
-
-    std::vector<unsigned> postCompCdr;
-
-    for (unsigned i = 0; i < completions->NumResults; ++i) {
-      CXCompletionResult candidate = completions->Results[i];
-      CXAvailabilityKind availability =
-          clang_getCompletionAvailability(candidate.CompletionString);
-
-      unsigned priority =
-          clang_getCompletionPriority(candidate.CompletionString);
-      unsigned annotationStart = 0;
-      bool typedTextSet = false;
-
-      typedtext.clear();
-      brief.clear();
-      resultType.clear();
-      prototype.clear();
-      postCompCar.clear();
-      postCompCdr.clear();
-      available.clear();
-
-      switch (availability) {
-      case CXAvailability_NotAvailable:
-        // No benefits to expose this to elisp for now
-        continue;
-
-      case CXAvailability_Available:
-        available = "available";
+      switch (chunkKind) {
+      case CXCompletionChunk_ResultType:
+        resultType = chunk.text();
         break;
-      case CXAvailability_Deprecated:
-        available = "deprecated";
+
+      case CXCompletionChunk_TypedText:
+      case CXCompletionChunk_Text:
+      case CXCompletionChunk_Placeholder:
+      case CXCompletionChunk_Informative:
+      case CXCompletionChunk_CurrentParameter:
+        prototype += chunk.text();
         break;
-      case CXAvailability_NotAccessible:
-        available = "not-accessible";
+
+      case CXCompletionChunk_LeftParen:       ch = '(';  break;
+      case CXCompletionChunk_RightParen:      ch = ')';  break;
+      case CXCompletionChunk_LeftBracket:     ch = '[';  break;
+      case CXCompletionChunk_RightBracket:    ch = ']';  break;
+      case CXCompletionChunk_LeftBrace:       ch = '{';  break;
+      case CXCompletionChunk_RightBrace:      ch = '}';  break;
+      case CXCompletionChunk_LeftAngle:       ch = '<';  break;
+      case CXCompletionChunk_RightAngle:      ch = '>';  break;
+      case CXCompletionChunk_Comma:           ch = ',';  break;
+      case CXCompletionChunk_Colon:           ch = ':';  break;
+      case CXCompletionChunk_SemiColon:       ch = ';';  break;
+      case CXCompletionChunk_Equal:           ch = '=';  break;
+      case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
+      case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
+
+      case CXCompletionChunk_Optional:
+        // ignored for now
         break;
       }
 
-      for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
-           chunk.next()) {
-        char ch = 0;
-
-        auto chunkKind = chunk.kind();
-
-        switch (chunkKind) {
-        case CXCompletionChunk_ResultType:
-          resultType = chunk.text();
-          break;
-
-        case CXCompletionChunk_TypedText:
-        case CXCompletionChunk_Text:
-        case CXCompletionChunk_Placeholder:
-        case CXCompletionChunk_Informative:
-        case CXCompletionChunk_CurrentParameter:
-          prototype += chunk.text();
-          break;
-
-        case CXCompletionChunk_LeftParen:       ch = '(';  break;
-        case CXCompletionChunk_RightParen:      ch = ')';  break;
-        case CXCompletionChunk_LeftBracket:     ch = '[';  break;
-        case CXCompletionChunk_RightBracket:    ch = ']';  break;
-        case CXCompletionChunk_LeftBrace:       ch = '{';  break;
-        case CXCompletionChunk_RightBrace:      ch = '}';  break;
-        case CXCompletionChunk_LeftAngle:       ch = '<';  break;
-        case CXCompletionChunk_RightAngle:      ch = '>';  break;
-        case CXCompletionChunk_Comma:           ch = ',';  break;
-        case CXCompletionChunk_Colon:           ch = ':';  break;
-        case CXCompletionChunk_SemiColon:       ch = ';';  break;
-        case CXCompletionChunk_Equal:           ch = '=';  break;
-        case CXCompletionChunk_HorizontalSpace: ch = ' ';  break;
-        case CXCompletionChunk_VerticalSpace:   ch = '\n'; break;
-
-        case CXCompletionChunk_Optional:
-          // ignored for now
-          break;
+      if (ch != 0) {
+        prototype += ch;
+        // commas look better followed by a space
+        if (ch == ',') {
+          prototype += ' ';
         }
+      }
 
+      if (typedTextSet) {
         if (ch != 0) {
-          prototype += ch;
-          // commas look better followed by a space
+          postCompCar += ch;
           if (ch == ',') {
-            prototype += ' ';
+            postCompCar += ' ';
           }
-        }
-
-        if (typedTextSet) {
-          if (ch != 0) {
-            postCompCar += ch;
-            if (ch == ',') {
-              postCompCar += ' ';
-            }
-          } else if (chunkKind == CXCompletionChunk_Text ||
-                     chunkKind == CXCompletionChunk_TypedText) {
-            postCompCar += chunk.text();
-          } else if (chunkKind == CXCompletionChunk_Placeholder ||
-                     chunkKind == CXCompletionChunk_CurrentParameter) {
-            postCompCdr.push_back(postCompCar.size());
-            postCompCar += chunk.text();
-            postCompCdr.push_back(postCompCar.size());
-          }
-        }
-
-        // Consider only the first typed text. The CXCompletionChunk_TypedText
-        // doc suggests that exactly one typed text will be given but at least
-        // in Objective-C it seems that more than one can appear, see:
-        // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
-        if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
-          typedtext = chunk.text();
-          // annotation is what comes after the typedtext
-          annotationStart = prototype.size();
-          typedTextSet = true;
+        } else if (chunkKind == CXCompletionChunk_Text ||
+                   chunkKind == CXCompletionChunk_TypedText) {
+          postCompCar += chunk.text();
+        } else if (chunkKind == CXCompletionChunk_Placeholder ||
+                   chunkKind == CXCompletionChunk_CurrentParameter) {
+          postCompCdr.push_back(postCompCar.size());
+          postCompCar += chunk.text();
+          postCompCdr.push_back(postCompCar.size());
         }
       }
 
-#if HAS_BRIEF_COMMENTS_IN_COMPLETION
-      brief = cxStringToStd(
-          clang_getCompletionBriefComment(candidate.CompletionString));
-#endif
-
-      // see irony-completion.el#irony-completion-candidates
-      std::cout << '(' << support::quoted(typedtext)
-                << ' ' << priority
-                << ' ' << support::quoted(resultType)
-                << ' ' << support::quoted(brief)
-                << ' ' << support::quoted(prototype)
-                << ' ' << annotationStart
-                << " (" << support::quoted(postCompCar);
-      for (unsigned index : postCompCdr)
-        std::cout << ' ' << index;
-      std::cout << ")"
-                << ' ' << available
-                << ")\n";
+      // Consider only the first typed text. The CXCompletionChunk_TypedText
+      // doc suggests that exactly one typed text will be given but at least
+      // in Objective-C it seems that more than one can appear, see:
+      // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
+      if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
+        typedtext = chunk.text();
+        // annotation is what comes after the typedtext
+        annotationStart = prototype.size();
+        typedTextSet = true;
+      }
     }
 
-    clang_disposeCodeCompleteResults(completions);
-    std::cout << ")\n";
+#if HAS_BRIEF_COMMENTS_IN_COMPLETION
+    brief = cxStringToStd(
+        clang_getCompletionBriefComment(candidate.CompletionString));
+#endif
+
+    // see irony-completion.el#irony-completion-candidates
+    std::cout << '(' << support::quoted(typedtext)
+              << ' ' << priority
+              << ' ' << support::quoted(resultType)
+              << ' ' << support::quoted(brief)
+              << ' ' << support::quoted(prototype)
+              << ' ' << annotationStart
+              << " (" << support::quoted(postCompCar);
+    for (unsigned index : postCompCdr)
+      std::cout << ' ' << index;
+    std::cout << ")"
+              << ' ' << available
+              << ")\n";
   }
 
+  std::cout << ")\n";
+}
+
+void Irony::computeCxUnsaved() {
+  cxUnsavedFiles_.clear();
+
+  for (const auto &p : filenameToContent_) {
+    CXUnsavedFile cxUnsavedFile;
+
+    cxUnsavedFile.Filename = p.first.c_str();
+    cxUnsavedFile.Contents = p.second.data();
+    cxUnsavedFile.Length = p.second.size();
+    cxUnsavedFiles_.push_back(cxUnsavedFile);
+  }
+}
+
+void Irony::setUnsaved(const std::string &file,
+                       const std::string &unsavedContentFile) {
+  resetCache();
+
+  UnsavedBuffer content;
+  if (!readFileContent(unsavedContentFile, content)) {
+    filenameToContent_.erase(file);
+    std::cout << "(error . ("
+              << "file-read-error"
+              << " \"failed to read unsaved buffer\""
+              << " " << support::quoted(file) << " "
+              << support::quoted(unsavedContentFile) << ")\n";
+  } else {
+    filenameToContent_[file] = content;
+    std::cout << "(success . t)\n";
+  }
+
+  computeCxUnsaved();
+}
+
+void Irony::resetUnsaved(const std::string &file) {
+  resetCache();
+
+  const auto erasedCount = filenameToContent_.erase(file);
+
+  if (erasedCount == 0) {
+    std::cout << "(error . ("
+              << "no-such-entry"
+              << " \"failed reset unsaved buffer\""
+              << " " << support::quoted(file) << ")\n";
+  } else {
+    std::cout << "(success . t)\n";
+  }
+
+  computeCxUnsaved();
 }
 
 void Irony::getCompileOptions(const std::string &buildDir,
@@ -392,7 +514,16 @@ void Irony::getCompileOptions(const std::string &buildDir,
   (void)buildDir;
   (void)file;
 
-  std::cout << "nil\n";
+  CXString cxVersionString = clang_getClangVersion();
+
+  std::cout << "(error . ("
+            << "unsupported"
+            << " \"compilation database requires Clang >= 3.2\""
+            << " " << support::quoted(clang_getCString(cxVersionString))
+            << "))\n";
+
+  clang_disposeString(cxVersionString);
+
   return;
 
 #else
@@ -402,9 +533,10 @@ void Irony::getCompileOptions(const std::string &buildDir,
 
   switch (error) {
   case CXCompilationDatabase_CanNotLoadDatabase:
-    std::clog << "I: could not load compilation database in '" << buildDir
-              << "'\n";
-    std::cout << "nil\n";
+    std::cout << "(error . ("
+              << "cannot-load-database"
+              << " \"failed to load compilation database from directory\""
+              << " " << support::quoted(buildDir) << "))\n";
     return;
 
   case CXCompilationDatabase_NoError:
@@ -414,7 +546,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
   CXCompileCommands compileCommands =
       clang_CompilationDatabase_getCompileCommands(db, file.c_str());
 
-  std::cout << "(\n";
+  std::cout << "(success . (\n";
 
   for (unsigned i = 0, numCompileCommands =
                            clang_CompileCommands_getSize(compileCommands);
@@ -442,7 +574,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
     std::cout << ")\n";
   }
 
-  std::cout << ")\n";
+  std::cout << "))\n";
 
   clang_CompileCommands_dispose(compileCommands);
   clang_CompilationDatabase_dispose(db);

@@ -12,15 +12,24 @@
 #error Please define the 'X(id, command, description)' macro before inclusion!
 #endif
 
-X(Complete, "complete", "FILE LINE COL - perform code completion at a given location")
+X(Candidates, "candidates", "print completion candidates (require previous complete)")
+X(Complete, "complete",
+  "FILE LINE COL [-- [COMPILE_OPTIONS...]] - perform code completion at a given location")
+X(CompletionDiagnostics, "completion-diagnostics",
+  "print the diagnostics generated during complete")
 X(Diagnostics, "diagnostics", "print the diagnostics of the last parse")
 X(Exit, "exit", "exit interactive mode, print nothing")
 X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "
   "get compile options for FILE from JSON database in PROJECT_ROOT")
 X(GetType, "get-type", "LINE COL - get type of symbol at a given location")
 X(Help, "help", "show this message")
-X(Parse, "parse", "FILE - parse the given file")
+X(Parse, "parse", "FILE [-- [COMPILE_OPTIONS...]] - parse the given file")
+X(ResetUnsaved, "reset-unsaved", "FILE - reset FILE, its content is up to date")
 X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
+X(SetUnsaved,
+  "set-unsaved",
+  "FILE UNSAVED-CONTENT-FILE - tell irony-server that "
+  "UNSAVED-CONTENT-FILE contains the effective content of FILE")
 
 // sentinel value, should be the last one
 X(Unknown, "<unkown>",  "<unspecified>")

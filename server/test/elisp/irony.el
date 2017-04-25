@@ -15,6 +15,11 @@
     (insert "\t")
     (should (equal 1 (irony--buffer-size-in-bytes)))))
 
+(ert-deftest irony/find-server-executable/does-not-exists ()
+  (let ((irony-server-install-prefix "/does/not/exists"))
+    (should-error (irony--find-server-executable)
+                  :type 'irony-server-error)))
+
 (ert-deftest irony/split-command-line/just-spaces ()
   (let ((cmd-line "clang -Wall -Wextra"))
     (should (equal
@@ -67,11 +72,9 @@ https://github.com/Sarcasm/irony-mode/issues/101"
              (irony--split-command-line cmd-line)))))
 
 (ert-deftest irony/split-command-line/ill-end-quote ()
-  :expected-result :failed
   (let ((cmd-line "clang -Wall -Wextra\""))
-    (should (equal
-             '("clang" "-Wall" "-Wextra" "-I/tmp/dir with spaces")
-             (irony--split-command-line cmd-line)))))
+    (should-error (irony--split-command-line cmd-line)
+                  :type 'irony-parse-error)))
 
 (ert-deftest irony/split-command-line/backslash-1 ()
   (let ((cmd-line "clang\\ -Wall"))

@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'irony)
+(require 'irony-iotask)
 
 (eval-when-compile
   (require 'cl))                        ;for lexical-let macro
@@ -50,20 +51,9 @@
 (defun irony-diagnostics-message (diagnostic)
   (nth 5 diagnostic))
 
-(defun irony-diagnostics--request-handler (diagnostics callback buffer)
-  (with-current-buffer buffer
-    (cond
-     ((irony--buffer-parsed-p)
-      (funcall callback 'success diagnostics))
-     (t
-      ;; buffer has become out-of-date
-      (funcall callback 'cancelled "diagnostics obselete, buffer has changed")))))
-
-(defun irony-diagnostics-async (callback &optional force)
+(defun irony-diagnostics-async (callback)
   "Perform an asynchronous diagnostic request for the current
 buffer.
-
-Use FORCE to force the reparsing of the buffer.
 
 CALLBACK is called with at least one argument, a symbol
 representing the status of the request. Depending on the status
@@ -87,21 +77,13 @@ more argument are provided. Possible values are explained below:
   such the diagnostics are considered no longer relevant. A
   reason string is passed as a second argument."
   (lexical-let ((cb callback))
-    (irony--parse-buffer-async
-     #'(lambda (parse-status)
-         (cond
-          ((eq parse-status 'success)
-           (irony--send-request "diagnostics"
-                                (list 'irony-diagnostics--request-handler
-                                      cb
-                                      (current-buffer))))
-          ((eq parse-status 'cancelled)
-           (funcall cb 'cancelled "parsing was cancelled"))
-          ((eq parse-status 'failed)
-           (funcall cb 'error "parsing failed"))
-          (t
-           (funcall cb 'error "internal-error: unexpected parse status"))))
-     force)))
+    (irony--run-task-asynchronously
+     (irony--diagnostics-task)
+     (lambda (diagnostics-result)
+       (condition-case err
+           (funcall cb 'success (irony-iotask-result-get diagnostics-result))
+         (error
+          (funcall cb 'error (error-message-string err))))))))
 
 (provide 'irony-diagnostics)
 
