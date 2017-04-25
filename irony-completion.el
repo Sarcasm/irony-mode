@@ -224,6 +224,13 @@ that can be validly accessed are deemed not-accessible."
   "See `irony-completion-availability-filter'"
   (nth 7 candidate))
 
+(defun irony-completion--filter-candidates (candidates)
+  (cl-remove-if-not
+   (lambda (candidate)
+     (memq (irony-completion-availability candidate)
+           irony-completion-availability-filter))
+   candidates))
+
 (defun irony-completion-candidates ()
   "Return the list of candidates at point.
 
@@ -244,10 +251,7 @@ A candidate is composed of the following elements:
     Example: (\"(int a, int b)\" 1 6 8 13)
  7. The availability of the candidate."
   (irony--awhen (irony-completion-symbol-bounds)
-    (cl-remove-if-not
-     (lambda (candidate)
-       (memq (irony-completion-availability candidate)
-             irony-completion-availability-filter))
+    (irony-completion--filter-candidates
      (irony--run-task (irony--candidates-task nil (car it))))))
 
 (defun irony-completion-candidates-async (callback)
@@ -256,7 +260,8 @@ A candidate is composed of the following elements:
         (irony--run-task-asynchronously
          (irony--candidates-task nil (car it))
          (lambda (candidates-result)
-           (funcall cb (irony-iotask-result-get candidates-result)))))
+           (funcall cb (irony-completion--filter-candidates
+                        (irony-iotask-result-get candidates-result))))))
     (funcall callback nil)))
 
 (defun irony-completion-post-complete (candidate)
@@ -323,9 +328,10 @@ A candidate is composed of the following elements:
     (list
      (car it)                           ;start
      (cdr it)                           ;end
-     (mapcar #'(lambda (candidate)      ;completion table
-                 (propertize (car candidate) 'irony-capf candidate))
-             (irony--run-task (irony--candidates-task nil (car it))))
+     (mapcar (lambda (candidate)        ;completion table
+               (propertize (car candidate) 'irony-capf candidate))
+             (irony-completion--filter-candidates
+              (irony--run-task (irony--candidates-task nil (car it)))))
      :annotation-function 'irony-completion--capf-annotate)))
 
 (provide 'irony-completion)
