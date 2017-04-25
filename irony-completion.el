@@ -328,11 +328,6 @@ A candidate is composed of the following elements:
              (irony--run-task (irony--candidates-task nil (car it))))
      :annotation-function 'irony-completion--capf-annotate)))
 
-;;;###autoload
-(defun irony-completion-at-point-async ()
-  (interactive)
-  (irony-completion-candidates-async 'completion-at-point))
-
 (provide 'irony-completion)
 
 ;; Local Variables:
