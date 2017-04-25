@@ -16,14 +16,14 @@
 namespace support {
 namespace detail {
 
-struct quoted_string_proxy {
-  quoted_string_proxy(const std::string &s) : s(s) {
+struct QuotedStringProxy {
+  QuotedStringProxy(const std::string &s) : s(s) {
   }
 
   std::string s;
 };
 
-std::ostream &operator<<(std::ostream &os, const quoted_string_proxy &q) {
+std::ostream &operator<<(std::ostream &os, const QuotedStringProxy &q) {
   const std::string &s = q.s;
 
   os << '"';
@@ -43,8 +43,8 @@ std::ostream &operator<<(std::ostream &os, const quoted_string_proxy &q) {
 
 } // namespace detail
 
-detail::quoted_string_proxy quoted(const std::string &s) {
-  return detail::quoted_string_proxy(s);
+detail::QuotedStringProxy quoted(const std::string &s) {
+  return detail::QuotedStringProxy(s);
 }
 
 } // namespace support

@@ -16,6 +16,6 @@
 #include <vector>
 
 std::vector<std::string>
-unescapeCommandLine(const std::string &EscapedCommandLine);
+unescapeCommandLine(const std::string &escapedCommandLine);
 
 #endif // IRONY_MODE_SERVER_SUPPORT_COMMAND_LINE_PARSER_H_
