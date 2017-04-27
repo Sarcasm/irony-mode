@@ -905,10 +905,10 @@ old-state can be nil if the old state isn't known."
   "Get the type of symbol under cursor."
   (interactive)
   (let ((types (irony--run-task (irony--get-type-task))))
-    (if (cdr types)
-        (if (string= (car types) (cadr types))
-            (message "%s" (car types))
-          (message "%s (aka '%s')" (car types) (cadr types)))
+    (unless types
+      (user-error "Type not found"))
+    (if (and (cdr types) (not (string= (car types) (cadr types))))
+        (message "%s (aka '%s')" (car types) (cadr types))
       (message "%s" (car types)))))
 
 (provide 'irony)
