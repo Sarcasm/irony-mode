@@ -376,6 +376,16 @@ breaks with escaped quotes in compile_commands.json, such as in:
       (setq args (cons (apply 'string (nreverse cur-arg)) args)))
     (nreverse args)))
 
+(defun irony--get-buffer-path-for-server (&optional buffer)
+  "Get the path of the current buffer to send to irony-server.
+
+If no such file exists on the filesystem the special file '-' is
+  returned instead."
+  (let ((file (buffer-file-name buffer)))
+    (if (and file (file-exists-p file))
+        file
+      "-")))
+
 
 ;;
 ;; Mode
@@ -877,174 +887,29 @@ old-state can be nil if the old state isn't known."
    (irony--parse-task buffer)
    (irony-iotask-package-task irony--t-diagnostics)))
 
-(defun irony--get-buffer-path-for-server (&optional buffer)
-  "Get the path of the current buffer to send to irony-server.
+(irony-iotask-define-task irony--t-get-type
+  "`get-type' server command."
+  :start (lambda (line col)
+           (irony--server-send-command "get-type" line col))
+  :update irony--server-query-update)
 
-If no such file exists on the filesystem the special file '-' is
-  returned instead."
-  (let ((file (buffer-file-name buffer)))
-    (if (and file (file-exists-p file))
-        file
-      "-")))
+(defun irony--get-type-task (&optional buffer pos)
+  (let ((line-column (irony--completion-line-column pos)))
+    (irony-iotask-chain
+     (irony--parse-task buffer)
+     (irony-iotask-package-task irony--t-get-type
+                                (car line-column) (cdr line-column)))))
 
-(defun irony--send-request (request callback &rest args)
-  (let ((process (irony--get-server-process-create))
-        (argv (cons request args)))
-    (when (and process (process-live-p process))
-      (irony--server-process-push-callback process callback)
-      ;; skip narrowing to compute buffer size and content
-      (irony--without-narrowing
-        (process-send-string process
-                             (format "%s\n"
-                                     (combine-and-quote-strings argv)))))))
-
-(defun irony--send-parse-request (request callback &rest args)
-  "Send a request that acts on the current buffer to irony-server.
-
-This concerns mainly irony-server commands that do some work on a
-translation unit for libclang, the unsaved buffer data are taken
-care of."
-  (let ((process (irony--get-server-process-create))
-        (argv (append (list request
-                            "--num-unsaved=1"
-                            (irony--get-buffer-path-for-server))
-                      args))
-        (compile-options (irony--adjust-compile-options)))
-    (when (and process (process-live-p process))
-      (irony--server-process-push-callback process callback)
-      ;; skip narrowing to compute buffer size and content
-      (irony--without-narrowing
-        ;; always make sure to finish with a newline (required by irony-server
-        ;; to play nice with line buffering even when the file doesn't end with
-        ;; a newline)
-        ;;
-        ;; it is important to send the request atomically rather than using
-        ;; multiple process-send calls. On Windows at least, if the request is
-        ;; not atomic, content from subsequent requests can get intermixed with
-        ;; earlier requests. This may be because of how Emacs behaves when the
-        ;; buffers to communicate with processes are full (see
-        ;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Input-to-Processes.html).
-        (process-send-string process
-                             (format "%s\n%s\n%s\n%d\n%s\n"
-                                     (combine-and-quote-strings argv)
-                                     (combine-and-quote-strings compile-options)
-                                     buffer-file-name
-                                     (irony--buffer-size-in-bytes)
-                                     (buffer-substring (point-min) (point-max))))))))
-
-
-;;
-;; Buffer parsing
-;;
-
-(defvar-local irony--parse-buffer-state nil
-  "If non-nil, state is of the form (context . status) where:
-
-- context is `irony--parse-buffer-context'
-- status is one of the following symbol: requested, done")
-
-(defvar-local irony--parse-buffer-callbacks nil)
-(defvar-local irony--parse-buffer-last-results nil
-  "Holds the last parsing results.")
-
-(defun irony--parse-buffer-context ()
-  ;; FIXME: use the ticks of all irony's files that may influence this one?
-  ;; FIXME: compile options should be part of the context? or settings the
-  ;; compile options should flush the context alternatively.
-  (buffer-chars-modified-tick))
-
-(defun irony--buffer-parsed-p (&optional ctx)
-  (equal irony--parse-buffer-state
-         (cons (or ctx (irony--parse-buffer-context)) 'done)))
-
-(defun irony--buffer-parsing-in-progress-p (&optional ctx)
-  (equal irony--parse-buffer-state
-         (cons (or ctx (irony--parse-buffer-context)) 'requested)))
-
-(defun irony--parse-request-handler (result context buffer)
-  (with-current-buffer buffer
-    (let ((callbacks irony--parse-buffer-callbacks)
-          (status (cond
-                   ;; context out-of-date?
-                   ((not (equal context (irony--parse-buffer-context)))
-                    'cancelled)
-                   (result
-                    'success)
-                   (t
-                    'failed))))
-      (setq irony--parse-buffer-last-results (list status)
-            irony--parse-buffer-callbacks nil
-            irony--parse-buffer-state (cons context 'done))
-      (mapc #'(lambda (cb) (funcall cb status)) callbacks))))
-
-;; TODO: provide a synchronous/blocking counterpart, see how
-;; `url-retrieve-synchronously' does it
-(defun irony--parse-buffer-async (callback &optional force)
-  "Parse the current buffer and call CALLACK when done.
-
-Parsing is effectively done only if needed, if the buffer hasn't
-changed since the last parsing, CALLBACK is called immediately.
-
-Use FORCE to force a re-parse unconditionally.
-
-Callback is a function that is called with one argument, the
-status of the parsing request, the value is one of the following
-symbol:
-
-- success: parsing the file was a sucess, irony-server has
-  up-to-date information about the buffer
-
-- failed: parsing the file resulted in a failure (file access
-  rights wrong, whatever)
-
-- cancelled: if the request for this callback was superseded by
-  another request or if the callback is out-of-date (but not
-  necessarily superseded by another request)"
-  (when force
-    (setq irony--parse-buffer-state nil))
-  (let ((context (irony--parse-buffer-context)))
-    (cond
-     ((irony--buffer-parsed-p context)
-      ;; buffer already parsed, call callback immediately
-      (apply callback irony--parse-buffer-last-results))
-     ((irony--buffer-parsing-in-progress-p context)
-      ;; the request is already pending, add callback to the list
-      (push callback irony--parse-buffer-callbacks))
-     (t
-      ;; current request is either out-of-date or inexistant,
-      ;; cancel callbacks if any, and make new request
-      (let ((obselete-callbacks irony--parse-buffer-callbacks))
-        (setq irony--parse-buffer-callbacks (list callback)
-              irony--parse-buffer-state (cons context 'requested))
-        (irony--send-parse-request "parse"
-                                   (list 'irony--parse-request-handler context
-                                         (current-buffer)))
-        ;; it's safer to call this last, since the function may be called recursively
-        (mapc #'(lambda (cb) (funcall cb 'cancelled)) obselete-callbacks))))))
-
-(defun irony-get-type--request-handler (types)
-  (when types
+;;;###autoload
+(defun irony-get-type ()
+  "Get the type of symbol under cursor."
+  (interactive)
+  (let ((types (irony--run-task (irony--get-type-task))))
     (if (cdr types)
         (if (string= (car types) (cadr types))
             (message "%s" (car types))
           (message "%s (aka '%s')" (car types) (cadr types)))
       (message "%s" (car types)))))
-
-;;;###autoload
-(defun irony-get-type ()
-    "Get the type of symbol under cursor."
-  (interactive)
-  (let ((line (line-number-at-pos))
-        (column (1+ (- (position-bytes (point))
-                       (position-bytes (point-at-bol))))))
-    (irony--parse-buffer-async
-     (lambda (parse-status)
-       (when (eq parse-status 'success)
-         (irony--send-request
-          "get-type"
-          (list 'irony-get-type--request-handler)
-          (number-to-string line)
-          (number-to-string column)))))))
 
 (provide 'irony)
 
