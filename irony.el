@@ -620,6 +620,7 @@ list (and undo information is not kept).")
                     (format-time-string "irony.%Y-%m-%d_%Hh-%Mm-%Ss.log")
                     temporary-file-directory))))
     (set-process-query-on-exit-flag process nil)
+    (set-process-sentinel process 'irony--server-process-sentinel)
     (irony-iotask-setup-process process)
     process))
 
