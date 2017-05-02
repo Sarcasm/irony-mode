@@ -327,7 +327,8 @@ Properties:
   ;; events usually ends with a newline, we don't want it
   (setq event (replace-regexp-in-string "\n\\'" "" event))
   (unless (process-live-p process)
-    (irony-iotask--abort-all process "process stopped running" event)))
+    (irony-iotask--abort-all process "process stopped running" event)
+    (message "%s process stopped!" (process-name process))))
 
 (defun irony-iotask-check-process (process)
   (let ((pfilter (process-filter process))
