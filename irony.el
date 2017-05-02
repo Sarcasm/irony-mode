@@ -636,52 +636,6 @@ list (and undo information is not kept).")
     (setq irony--server-process (irony--start-server-process)))
   irony--server-process)
 
-(defun irony--server-process-sentinel (process event)
-  (unless (process-live-p process)
-    (setq irony--server-process nil)
-    (message "irony process stopped!")))
-
-(defun irony--process-server-response (process response)
-  (let ((sexp (read response))
-        (callback (irony--server-process-pop-callback process)))
-    (with-demoted-errors "Warning: %S"
-      (apply (car callback) sexp (cdr callback)))))
-
-(defun irony--server-process-filter (process output)
-  "Handle output that come from an irony-server process."
-  (let ((pbuf (process-buffer process))
-        responses)
-    ;; append output to process buffer
-    (when (buffer-live-p pbuf)
-      (with-current-buffer pbuf
-        (save-excursion
-          (goto-char (process-mark process))
-          (insert output)
-          (set-marker (process-mark process) (point))
-          ;; check if the message is complete based on `irony--eot'
-          (goto-char (point-min))
-          (while (search-forward irony--eot nil t)
-            (let ((response (buffer-substring-no-properties (point-min)
-                                                            (point))))
-              (delete-region (point-min) (point))
-              (setq responses (cons response responses))))
-          (goto-char (process-mark process)))))
-    ;; Handle all responses.
-    (mapc #'(lambda (r)
-              (irony--process-server-response process r))
-          (nreverse responses))))
-
-(defun irony--server-process-push-callback (p cb)
-  (let ((callbacks (process-get p 'irony-callback-stack)))
-    (if callbacks
-        (nconc callbacks (list cb))
-      (process-put p 'irony-callback-stack (list cb)))))
-
-(defun irony--server-process-pop-callback (p)
-  (let ((callbacks (process-get p 'irony-callback-stack)))
-    (process-put p 'irony-callback-stack (cdr callbacks))
-    (car callbacks)))
-
 (defun irony--run-task (task)
   (irony-iotask-run (irony--get-server-process-create) task))
 
