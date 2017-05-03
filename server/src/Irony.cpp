@@ -649,3 +649,97 @@ void Irony::getCompileOptions(const std::string &buildDir,
   clang_CompilationDatabase_dispose(db);
 #endif
 }
+
+void ppCursor(std::string label, CXCursor cursor) {
+  if (clang_Cursor_isNull(cursor)) {
+    // std::cout << "(" << label << ")\n";
+    return;
+  }
+  CXString name = clang_getCursorDisplayName(cursor);
+  CXSourceRange loc = clang_getCursorExtent(cursor);
+  CXSourceLocation start = clang_getRangeStart(loc),
+                   end = clang_getRangeEnd(loc);
+  CXFile file;
+  unsigned start_line, start_col, start_offset, end_offset;
+  clang_getSpellingLocation(start, &file, &start_line, &start_col,
+                            &start_offset);
+  clang_getSpellingLocation(end, nullptr, nullptr, nullptr, &end_offset);
+  CXString filename = clang_getFileName(file);
+  std::cout << "(" << label << " " << support::quoted(clang_getCString(name))
+            << " " << support::quoted(clang_getCString(filename)) << " "
+            << start_line << " " << start_col << " " << start_offset << " "
+            << end_offset << ")\n";
+  clang_disposeString(name);
+  clang_disposeString(filename);
+}
+
+void Irony::xref(unsigned line, unsigned col) const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: get-type - parse wasn't called\n";
+    std::cout << "nil\n";
+    return;
+  }
+
+  // std::cerr << "xref:" << line << ":" << col << std::endl;
+  std::cout << "(";
+
+  CXFile cxFile = clang_getFile(activeTu_, file_.c_str());
+  CXCursor c = clang_getCursor(activeTu_,
+                               clang_getLocation(activeTu_, cxFile, line, col));
+
+  // CXTranslationUnit tu = tuManager_.getOrCreateTU(file, flags,
+  // cxUnsavedFiles_);
+  // CXFile f = clang_getFile(tu, file.c_str());
+  // CXSourceLocation s = clang_getLocation(tu, f, line, col);
+  // CXCursor c = clang_getCursor(tu, s);
+
+  // std::cerr << "getCursorSpelling(c): "
+  //           << clang_getCString(clang_getCursorSpelling(c)) << std::endl;
+  // std::cerr << "getCursorDisplayName(c): "
+  //           << clang_getCString(clang_getCursorDisplayName(c)) << std::endl;
+  // std::cerr << "getCursorUSR(c): " << clang_getCString(clang_getCursorUSR(c))
+  //           << std::endl;
+
+  CXCursor def = clang_getCursorDefinition(c),
+           ref = clang_getCursorReferenced(c);
+  ppCursor("reference", ref);
+  if (!clang_Cursor_isNull(def) && !clang_equalCursors(def, ref)) {
+    ppCursor("definition", def);
+  }
+
+  std::cout << ")" << std::endl;
+}
+
+void Irony::grep(unsigned line, unsigned col) const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: get-type - parse wasn't called\n";
+    std::cout << "nil\n";
+    return;
+  }
+  CXFile cxFile = clang_getFile(activeTu_, file_.c_str());
+  CXCursor what = clang_getCursor(activeTu_, clang_getLocation(activeTu_, cxFile, line, col));
+  what = clang_getCanonicalCursor(clang_getCursorReferenced(what));
+
+  std::cout << "(";
+
+  for (auto file_tu : tuManager_.allAvailableTranslationUnits()) {
+
+    CXCursor tuCursor = clang_getTranslationUnitCursor(file_tu.second);
+    // std::cerr << "\n" << file_tu.first << ": " << clang_getCString(clang_getFileName(cxFile)) << std::endl;
+
+    typedef std::function<CXChildVisitResult(CXCursor, CXCursor)> visitor;
+    visitor visit = [&](CXCursor cursor, CXCursor) {
+      CXCursor ref = clang_getCursorReferenced(cursor);
+      if (clang_equalCursors(what, clang_getCanonicalCursor(ref)))
+        ppCursor("grep", cursor);
+      return CXChildVisit_Recurse;
+    };
+    clang_visitChildren(tuCursor,
+                        [](CXCursor c, CXCursor p, void *f) {
+                          return (*static_cast<visitor *>(f))(c, p);
+                        },
+                        &visit);
+  }
+
+  std::cout << ")" << std::endl;
+}

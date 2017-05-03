@@ -82,6 +82,11 @@ public:
    */
   void invalidateAllCachedTUs();
 
+  const std::map<const std::string, CXTranslationUnit>
+  allAvailableTranslationUnits() const {
+    return translationUnits_;
+  }
+
 private:
   /**
    * \brief Get a reference to the translation unit that matches \p filename
