@@ -627,12 +627,12 @@ list (and undo information is not kept).")
 (defun irony-server-kill ()
   "Kill the running irony-server process, if any."
   (interactive)
-  (when (and irony--server-process (process-live-p irony--server-process))
+  (when (process-live-p irony--server-process)
     (kill-process irony--server-process)
     (setq irony--server-process nil)))
 
 (defun irony--get-server-process-create ()
-  (unless irony--server-process
+  (unless (process-live-p irony--server-process)
     (setq irony--server-process (irony--start-server-process)))
   irony--server-process)
 
