@@ -188,12 +188,12 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   std::vector<std::function<bool(const std::string &)>> positionalArgs;
 
   switch (command_.action) {
-  case Command::Xref:
+  case Command::XrefDefinitions:
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     break;
 
-  case Command::Grep:
+  case Command::XrefReferences:
     positionalArgs.push_back(UnsignedIntConverter(&command_.line));
     positionalArgs.push_back(UnsignedIntConverter(&command_.column));
     break;

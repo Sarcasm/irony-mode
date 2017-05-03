@@ -176,12 +176,12 @@ int main(int ac, const char *av[]) {
     }
 
     switch (c->action) {
-    case Command::Xref:
-      irony.xref(c->line, c->column);
+    case Command::XrefDefinitions:
+      irony.xrefDefinitions(c->line, c->column);
       break;
 
-    case Command::Grep:
-      irony.grep(c->line, c->column);
+    case Command::XrefReferences:
+      irony.xrefReferences(c->line, c->column);
       break;
 
     case Command::Help:

@@ -2,6 +2,13 @@
 ;;
 ;;; Commentary:
 ;;
+;; To enable, run
+;;
+;;     (add-hook 'irony-mode-hook (lambda () (add-hook 'xref-backend-functions #'irony--xref-backend nil t)))
+;;
+;; Missing commands:
+;; - ‘xref-find-apropos’
+;;
 ;;; Code:
 
 (require 'irony)
@@ -15,17 +22,22 @@
 ;; IO tasks
 ;;
 
-(irony-iotask-define-task irony--t-find-definitions
-  "`xref' server command."
+(irony-iotask-define-task irony--t-xref-definitions
+  "`xref-definitions' server command."
   :start (lambda (line col)
-           (irony--server-send-command "xref" line col))
+           (irony--server-send-command "xref-definitions" line col))
   :update irony--server-query-update)
 
-(irony-iotask-define-task irony--t-find-references
-  "`grep' server command."
+(irony-iotask-define-task irony--t-xref-references
+  "`xref-references' server command."
   :start (lambda (line col)
-           (irony--server-send-command "grep" line col))
+           (irony--server-send-command "xref-references" line col))
   :update irony--server-query-update)
+
+;; (irony-iotask-define-task irony--t-find-apropos
+;;   "`xref-apropos' server command."
+;;   :start (lambda (what) (irony--server-send-command "xref-apropos" what))
+;;   :update irony--server-query-update)
 
 
 ;;
@@ -40,8 +52,8 @@
          (column (cdr line-column)))
     (irony--run-task
      (irony-iotask-chain
-      (irony--parse-task)
-      (irony-iotask-package-task irony--t-find-definitions line column)))))
+      (irony--parse-task)      ; FIXME Is parsing even necessary here?
+      (irony-iotask-package-task irony--t-xref-definitions line column)))))
 
 ;;;###autoload
 (defun irony-find-references (&optional pos)
@@ -49,8 +61,8 @@
   (let* ((line-column (irony--completion-line-column pos))
          (result (irony--run-task
                   (irony-iotask-chain
-                   (irony--parse-task)
-                   (irony-iotask-package-task irony--t-find-references
+                   (irony--parse-task) ; FIXME Is parsing necessary here?
+                   (irony-iotask-package-task irony--t-xref-references
                                               (car line-column) (cdr line-column))))))
     (cl-loop for item in result
              do (message "%S" item))))
@@ -63,7 +75,9 @@
 ;;;###autoload
 (defun irony--xref-backend () 'irony)
 
-;; (add-hook 'irony-mode (lambda () (add-hook 'xref-backend-functions #'irony--xref-backend nil t)))
+(cl-defmethod xref-backend-identifier-completion-table ((_backend (eql irony)))
+  "A dummy completion table."
+  nil)
 
 (cl-defmethod xref-backend-identifier-at-point ((_backend (eql irony)))
   ;; FIXME These propertized strings are not suitable for completion
@@ -77,6 +91,7 @@
          (line-column (irony--completion-line-column start))
          (thing (buffer-substring-no-properties start end)))
     (put-text-property 0 (length thing) 'irony-xref (list file buffer start end) thing)
+    ;; (message "xref-backend-identifier-at-point: %S" thing)
     thing))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql irony)) identifier)
@@ -85,17 +100,18 @@
        (buffer (nth 1 thing))
        (line-column (irony--completion-line-column (nth 2 thing)))
        (result
-        ;; Must be synchronous
+        ;; FIXME Must this be synchronous
         (irony--run-task
          (irony-iotask-chain
           (irony--parse-task buffer)
-          (irony-iotask-package-task irony--t-find-definitions
+          (irony-iotask-package-task irony--t-xref-definitions
                                      (car line-column) (cdr line-column))))))
     (cl-loop
      for (kind name filename line column start end) in result
      collect
-     (xref-make name (xref-make-file-location filename line column))
-     do (message "result: %S" (list kind name filename line column start end)))))
+     (xref-make (concat name "(" (symbol-name kind) ")") (xref-make-file-location filename line column))
+     ;; do (message "result: %S" (list kind name filename line column start end))
+     )))
 
 (cl-defmethod xref-backend-references ((_backend (eql irony)) identifier)
   (-when-let*
@@ -103,17 +119,29 @@
        (buffer (nth 1 thing))
        (line-column (irony--completion-line-column (nth 2 thing)))
        (result
-        ;; Must be synchronous
+        ;; FIXME Must this be synchronous
         (irony--run-task
          (irony-iotask-chain
           (irony--parse-task buffer)
-          (irony-iotask-package-task irony--t-find-references
+          (irony-iotask-package-task irony--t-xref-references
                                      (car line-column) (cdr line-column))))))
     (cl-loop
      for (kind name filename line column start end) in result
      collect
      (xref-make name (xref-make-file-location filename line column))
-     do (message "result: %S" (list kind name filename line column start end)))))
+     ;; do (message "result: %S" (list kind name filename line column start end))
+     )))
+
+;; (cl-defmethod xref-backend-apropos ((_backend (eql irony)) pattern)
+;;   (let ((result
+;;         ;; FIXME Must this be synchronous
+;;          (irony--run-task
+;;           (irony-iotask-package-task irony--t-find-apropos pattern))))
+;;     (dolist (item result) (message "xref-backend-apropos: %S" item))
+;;     (cl-loop
+;;      for (kind name filename line column start end) in result
+;;      collect
+;;      (xref-make name (xref-make-file-location filename line column)))))
 
 (provide 'irony-xref)
 ;;; irony-xref.el ends here
