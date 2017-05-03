@@ -123,7 +123,7 @@ void prettyPrintCursor(std::string label, CXCursor cursor) {
   CXString name = clang_getCursorDisplayName(cursor);
   CXSourceRange loc = clang_getCursorExtent(cursor);
   CXSourceLocation start = clang_getRangeStart(loc),
-    end = clang_getRangeEnd(loc);
+                   end = clang_getRangeEnd(loc);
   CXFile file;
   unsigned start_line, start_col, start_offset, end_offset;
   clang_getSpellingLocation(start, &file, &start_line, &start_col,
@@ -134,9 +134,9 @@ void prettyPrintCursor(std::string label, CXCursor cursor) {
   // FIXME But there doesn’t seem to be a clear way to do it without going
   // FIXME throught the whole AST.
   std::cout << "(" << label << " " << support::quoted(clang_getCString(name))
-           << " " << support::quoted(clang_getCString(filename)) << " "
-           << start_line << " " << start_col << " " << start_offset << " "
-           << end_offset << ")\n";
+            << " " << support::quoted(clang_getCString(filename)) << " "
+            << start_line << " " << start_col << " " << start_offset << " "
+            << end_offset << ")\n";
   clang_disposeString(name);
   clang_disposeString(filename);
 }
