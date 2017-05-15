@@ -70,7 +70,7 @@ Irony looks for cdb files in any of the supported format by checking
 each directory from the currently loaded file and recursively through
 parent directories until it hits the root directory or a cdb is
 found. At each level of the search irony looks at the subdirectories
-listed in `'irony-cdb-search-directory-list` for the files. Customize this
+listed in `irony-cdb-search-directory-list' for the files. Customize this
 list if your cdb is held in a custom directory within you project,
 such as a custom named build directory.
 "
