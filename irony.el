@@ -3,9 +3,9 @@
 ;; Copyright (C) 2011-2016  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 0.3.0-cvs
+;; Version: 1.0.0
 ;; URL: https://github.com/Sarcasm/irony-mode
-;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
+;; Compatibility: GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
 ;; Package-Requires: ((cl-lib "0.5") (json "1.2"))
 

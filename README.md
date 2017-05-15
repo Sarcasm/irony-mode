@@ -12,12 +12,11 @@ combination of an Emacs package and a C++ program (`irony-server`) that uses
 * Code completion:
   * With Emacs' built-in `completion-at-point-functions`
   * With [company-mode][company-ref]'s backend: [company-irony][company-irony-ref]
-  * With [auto-complete][ac-ref]' source: [ac-irony][ac-irony-ref]
 
-* Diagnostic reporting:
+* Syntax checking:
   * With [flycheck][flycheck-ref]'s checker: [flycheck-irony][flycheck-irony-ref]
 
-* Integration with eldoc-mode: [irony-eldoc][irony-eldoc-ref]
+* `eldoc` integration: [irony-eldoc][irony-eldoc-ref]
 
 ## Dependencies
 
@@ -51,10 +50,6 @@ package manager.
 * Using [MELPA](http://melpa.milkbox.net/)
 
         M-x package-install RET irony RET
-
-* Using [el-get](https://github.com/dimitri/el-get)
-
-        M-x el-get-install RET irony-mode RET
 
 
 ## Configuration
