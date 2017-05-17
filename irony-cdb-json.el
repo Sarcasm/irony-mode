@@ -48,8 +48,31 @@ source directory.")
     (get-compile-options (irony-cdb-json--get-compile-options))))
 
 ;;;###autoload
-(defun irony-cdb-json-add-compile-commands-path (project-root
-                                                 compile-commands-path)
+(defun irony-cdb-json--find-common-root-directory (compile-commands-path)
+  "Return the common root directory for all source files listed in a cdb.
+
+Reads compilation database at COMPILE-COMMANDS-PATH, extracts all source file paths
+and returns the deepest directory which contains them all.
+
+Example:
+If cdb contains entries for \"/foo/bar/baz\" \"/foo/bar/baaz\" and \"/foo/bozze\"
+will return \"/foo\""
+  (let* ((files (mapcar 'car (irony-cdb-json--load-db (expand-file-name  compile-commands-path))))
+         (dirs (delete-dups (mapcar (lambda (x) (file-name-directory (expand-file-name x))) files )))
+         (dir-components (mapcar (lambda (dir)
+                                   (cl-remove-if (lambda (v) (string= "" v)) (split-string dir "/")))
+                                    dirs))
+         (minlen (apply 'min (mapcar 'length dir-components)))
+         (common-count (cl-loop for i in (number-sequence 0 minlen)
+                                while (= 1 (length (delete-dups (mapcar (lambda (val) (nth i val)) dir-components))))
+                                finally return i
+                                )))
+    (mapconcat 'file-name-as-directory (cons "/" (-take common-count (car dir-components))) "")
+    ))
+
+;;;###autoload
+(defun irony-cdb-json-add-compile-commands-path (compile-commands-path
+                                                 project-root)
   "Add an out-of-source compilation database.
 
 Files below the PROJECT-ROOT directory will use the JSON
@@ -60,9 +83,12 @@ directory. This functions helps mapping out-of-source build
 directories to project directory."
   (interactive
    (progn
-     (let ((proot (read-directory-name "Project root:" nil nil t)))
-       (list proot (read-file-name "Compile commands:" proot nil t
-                                   "compile_commands.json")))))
+     (let* ((compile-commands-path (read-file-name "Locate \"compile_commands.json\": "
+                                     (file-name-directory (buffer-file-name)) nil t
+                                     ))
+            (proot (irony-cdb-json--find-common-root-directory compile-commands-path))
+            (proot (read-directory-name "Project root:" proot nil t)))
+       (list compile-commands-path proot ))))
   (add-to-list 'irony-cdb-json--project-alist
                (cons (expand-file-name project-root)
                      (expand-file-name compile-commands-path)))
