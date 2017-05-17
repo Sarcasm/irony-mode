@@ -1,4 +1,4 @@
-;;; irony-completion.el --- irony-mode completion interface
+;;; irony-completion.el --- irony-mode completion interface  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012-2014  Guillaume Papin
 
@@ -318,21 +318,87 @@ A candidate is composed of the following elements:
 ;; Irony CAPF
 ;;
 
+(defsubst irony-completion--capf-candidate (candidate)
+  (get-text-property 0 'irony-capf candidate))
+
 (defun irony-completion--capf-annotate (candidate)
   (irony-completion-annotation
-   (get-text-property 0 'irony-capf candidate)))
+   (irony-completion--capf-candidate candidate)))
+
+(defun irony-completion--capf-postcomp-commonprefix (candidates)
+  (let ((prefixes (mapcar
+                   (lambda (candidate)
+                     (let ((str (irony-completion-post-comp-str candidate))
+                           (phs (irony-completion-post-comp-placeholders
+                                 candidate)))
+                       (substring str 0 (car phs))))
+                   candidates)))
+    (cl-loop for i from 0 below (apply #'min (mapcar #'length prefixes))
+             while (apply #'= (mapcar (lambda (string) (aref string i))
+                                          prefixes))
+             finally (return (cl-subseq (first prefixes) 0 i)))))
+
+(defun irony-completion--capf-postcomp-all-equal-p (candidates)
+  (when (cdr candidates)
+    (let ((expected-str (irony-completion-post-comp-str (car candidates)))
+          (expected-phs (irony-completion-post-comp-placeholders
+                         (car candidates))))
+      (while (and (setq candidates (cdr candidates))
+                  (string= expected-str (irony-completion-post-comp-str (car candidates)))
+                  (equal expected-phs (irony-completion-post-comp-placeholders (car candidates))))))
+    (null candidates)))
+
+(defun irony-completion--capf-exit-function (candidates str status)
+  "Insert post completion string or snippet after STR has been completed."
+  ;; according to `pcomplete-completions-at-point',
+  ;; react on `finished' but not `sole',
+  ;; because it does not work properly when cycling completions
+  (when (eq status 'finished)
+    (let ((candidate (irony-completion--capf-candidate str))
+          matches)
+      ;; `completion-at-point' doesn't provides the propertized string created
+      ;; with the `irony-capf' text property
+      ;; but `company-capf' does, and maybe `completion-at-point' some day.
+      ;; So if the candidate data is found use it,
+      ;; otherwise try to find the candidate in the completion list
+      ;; at the risk of dealing with overloaded functions and not being able to
+      ;; make the right decision
+      (setq matches
+            (if candidate
+                (list candidate)
+              (cl-remove-if-not (lambda (candidate)
+                                  (string= (car candidate) str))
+                                candidates)))
+      ;; all equals can happen with when the difference in the annotation
+      ;; is the return type and constness attributes,
+      ;; for example `std::string' `at(n)' function is overloaded that way:
+      ;;     const char & at(size_type n) const;
+      ;;           char & at(size_type n);
+      (if (or (= (length matches) 1)
+              (irony-completion--capf-postcomp-all-equal-p matches))
+          ;; with a perfect match we are able to give complete post-completion
+          (irony-completion-post-complete (car matches))
+        ;; more than one candidates possible,
+        ;; provide the beginning of the post-completion data as a best effort.
+        ;; For overloaded functions this inserts the opening parenthesis.
+        (irony--awhen (irony-completion--capf-postcomp-commonprefix matches)
+                      (insert it))))))
 
 ;;;###autoload
 (defun irony-completion-at-point ()
   (irony--awhen (and irony-mode (irony-completion-symbol-bounds))
-    (list
-     (car it)                           ;start
-     (cdr it)                           ;end
-     (mapcar (lambda (candidate)        ;completion table
-               (propertize (car candidate) 'irony-capf candidate))
-             (irony-completion--filter-candidates
-              (irony--run-task (irony--candidates-task nil (car it)))))
-     :annotation-function 'irony-completion--capf-annotate)))
+    (let ((candidates (irony-completion--filter-candidates
+                       (irony--run-task (irony--candidates-task nil (car it))))))
+      (list
+       (car it)                           ;start
+       (cdr it)                           ;end
+       (mapcar (lambda (candidate)        ;completion table
+                 (propertize (car candidate) 'irony-capf candidate))
+               candidates)
+       :annotation-function #'irony-completion--capf-annotate
+       :exit-function
+       (lambda (str status)
+         (irony-completion--capf-exit-function candidates str status))))))
 
 (provide 'irony-completion)
 
