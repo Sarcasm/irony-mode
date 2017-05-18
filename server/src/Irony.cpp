@@ -97,7 +97,7 @@ bool readFileContent(const std::string &filename,
   // - http://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486#22986486
   auto nbytes = ifs.tellg();
 
-  if (nbytes == -1) {
+  if (nbytes == std::ifstream::pos_type(-1)) {
     return false;
   }
 
