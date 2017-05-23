@@ -557,7 +557,9 @@ The installation requires CMake and the libclang developpement package."
 
 Throw an `irony-server-error' if a proper executable cannot be
 found."
-  (let ((exe (expand-file-name "bin/irony-server" irony-server-install-prefix)))
+  (let* ((exec-path (cons (expand-file-name "bin" irony-server-install-prefix)
+                          exec-path))
+         (exe (executable-find "irony-server")))
     (condition-case err
         (let ((version (car (process-lines exe "--version"))))
           (if (and (string-match "^irony-server version " version)
@@ -575,7 +577,8 @@ found."
        (signal (car err) (cdr err)))
       (error
        (signal 'irony-server-error
-               (if (file-executable-p exe)
+               (if (and exe
+                        (file-executable-p exe))
                    ;; failed to execute due to a runtime problem, i.e:
                    ;; libclang.so isn't in the ld paths
                    (list (format "irony-server is broken! %s"
