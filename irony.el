@@ -419,10 +419,13 @@ If no such file exists on the filesystem the special file '-' is
       (display-warning 'irony "Performance will be bad because a\
  pipe delay is set for this platform (see variable\
  `w32-pipe-read-delay')."))))
-  (irony-completion--enter))
+  (irony-completion--enter)
+  (require 'irony-eldoc)
+  (irony-eldoc))
 
 (defun irony--mode-exit ()
-  (irony-completion--exit))
+  (irony-completion--exit)
+  (irony-eldoc -1))
 
 ;;;###autoload
 (defun irony-version (&optional show-version)
