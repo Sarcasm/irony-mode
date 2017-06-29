@@ -211,8 +211,11 @@ even helm by enabling `helm-mode' before calling the function."
 
 (defun irony-cdb-json--compile-command-options (compile-command)
   "Return the compile options of COMPILE-COMMAND as a list."
-  (irony-cdb--remove-compiler-from-flags
-   (irony--split-command-line (cdr (assq 'command compile-command)))))
+  (let ((command (assq 'command compile-command))
+        (arguments (assq 'arguments compile-command)))
+    (irony-cdb--remove-compiler-from-flags
+     (cond (command (irony--split-command-line (cdr command)))
+           (arguments (append (cdr arguments) nil))))))
 
 (defun irony-cdb-json--adjust-compile-options (compile-options file default-dir)
   "Adjust COMPILE-OPTIONS to only use options useful for parsing.
