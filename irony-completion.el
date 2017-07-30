@@ -185,14 +185,14 @@ that can be validly accessed are deemed not-accessible."
 
 (irony-iotask-define-task irony--t-candidates
   "`candidates' server command."
-  :start (lambda ()
-           (irony--server-send-command "candidates"))
+  :start (lambda (prefix)
+           (irony--server-send-command "candidates" prefix))
   :update irony--server-query-update)
 
-(defun irony--candidates-task (&optional buffer pos)
+(defun irony--candidates-task (&optional buffer pos prefix)
   (irony-iotask-chain
    (irony--complete-task buffer pos)
-   (irony-iotask-package-task irony--t-candidates)))
+   (irony-iotask-package-task irony--t-candidates prefix)))
 
 
 ;;
@@ -231,7 +231,12 @@ that can be validly accessed are deemed not-accessible."
            irony-completion-availability-filter))
    candidates))
 
-(defun irony-completion-candidates ()
+(defun irony-completion-make-prefix (prefix)
+  (if (and prefix (not (string= prefix "")))
+      prefix
+    "*"))
+
+(defun irony-completion-candidates (&optional prefix)
   "Return the list of candidates at point.
 
 A candidate is composed of the following elements:
@@ -252,13 +257,16 @@ A candidate is composed of the following elements:
  7. The availability of the candidate."
   (irony--awhen (irony-completion-symbol-bounds)
     (irony-completion--filter-candidates
-     (irony--run-task (irony--candidates-task nil (car it))))))
+     (irony--run-task
+      (irony--candidates-task nil (car it)
+                              (irony-completion-make-prefix))))))
 
-(defun irony-completion-candidates-async (callback)
+(defun irony-completion-candidates-async (callback &optional prefix)
   (irony--aif (irony-completion-symbol-bounds)
       (lexical-let ((cb callback))
         (irony--run-task-asynchronously
-         (irony--candidates-task nil (car it))
+         (irony--candidates-task nil (car it)
+                                 (irony-completion-make-prefix prefix))
          (lambda (candidates-result)
            (funcall cb (irony-completion--filter-candidates
                         (irony-iotask-result-get candidates-result))))))

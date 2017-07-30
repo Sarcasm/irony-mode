@@ -103,6 +103,7 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
      << "dir='" << command.dir << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
+     << "prefix=" << command.prefix << ", "
      << "flags=[";
   bool first = true;
   for (const std::string &flag : command.flags) {
@@ -178,6 +179,8 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     break;
 
   case Command::Candidates:
+    positionalArgs.push_back(StringConverter(&command_.prefix));
+    break;
   case Command::CompletionDiagnostics:
   case Command::Diagnostics:
   case Command::Help:
@@ -204,7 +207,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     command_.flags.assign(std::next(argsEnd), argv.end());
   }
 
-  if (argCount != static_cast<int>(positionalArgs.size())) {
+  if (argCount < static_cast<int>(positionalArgs.size())) {
     std::clog << "error: invalid number of arguments for '" << actionStr
               << "' (requires " << positionalArgs.size() << " got " << argCount
               << ")\n";

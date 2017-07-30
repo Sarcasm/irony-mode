@@ -100,7 +100,7 @@ public:
   /// Get all the completion candidates.
   ///
   /// \pre complete() was called.
-  void candidates() const;
+  void candidates(const std::string &prefix) const;
 
   /// Get the diagnostics produced by the last \c complete().
   ///
