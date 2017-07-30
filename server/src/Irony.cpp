@@ -309,7 +309,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates() const {
+void Irony::candidates(const std::string &prefix) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
@@ -431,6 +431,13 @@ void Irony::candidates() const {
         // annotation is what comes after the typedtext
         annotationStart = prototype.size();
         typedTextSet = true;
+      }
+    }
+    if (prefix != "" && prefix != "*") {
+      auto res = std::mismatch(prefix.begin(), prefix.end(), typedtext.begin());
+      if (res.first != prefix.end()) {
+        // typedText doesn't have prefix of 'prefix'
+        continue;
       }
     }
 
