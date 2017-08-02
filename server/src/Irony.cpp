@@ -286,6 +286,28 @@ void Irony::complete(const std::string &file,
   std::cout << "(success . t)\n";
 }
 
+static bool iequal(const char a, const char b)
+{
+  return std::tolower(a) == std::tolower(b);
+}
+
+static bool startsWith(const std::string& str, const std::string &prefix, bool ignore_case)
+{
+  if (str.length() < prefix.length()) {
+    return false;
+  }
+  std::pair<std::string::const_iterator, std::string::const_iterator> res;
+  if (!ignore_case) {
+    res = std::mismatch(prefix.begin(), prefix.end(), str.begin());
+  } else {
+    res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), iequal);
+  }
+  if (res.first != prefix.end()) {
+    return false;
+  }
+  return true;
+}
+
 void Irony::completionDiagnostics() const {
   unsigned diagnosticCount;
 
@@ -309,7 +331,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix) const {
+void Irony::candidates(const std::string &prefix, bool ignore_case) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
@@ -333,6 +355,7 @@ void Irony::candidates(const std::string &prefix) const {
       clang_getCompletionPriority(candidate.CompletionString);
     unsigned annotationStart = 0;
     bool typedTextSet = false;
+    bool hasPrefix = true;
 
     typedtext.clear();
     brief.clear();
@@ -428,17 +451,18 @@ void Irony::candidates(const std::string &prefix) const {
       // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
       if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
         typedtext = chunk.text();
+        if (!startsWith(typedtext, prefix, ignore_case)) {
+          hasPrefix = false;
+          break;
+        }
         // annotation is what comes after the typedtext
         annotationStart = prototype.size();
         typedTextSet = true;
       }
     }
-    if (prefix != "" && prefix != "*") {
-      auto res = std::mismatch(prefix.begin(), prefix.end(), typedtext.begin());
-      if (res.first != prefix.end()) {
-        // typedText doesn't have prefix of 'prefix'
-        continue;
-      }
+
+    if (!hasPrefix) {
+      continue;
     }
 
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION

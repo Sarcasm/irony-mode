@@ -645,8 +645,21 @@ list (and undo information is not kept).")
 (defun irony--run-task-asynchronously (task callback)
   (irony-iotask-schedule (irony--get-server-process-create) task callback))
 
+(defun irony--quote-strings (strings &optional separator)
+  (let* ((sep (or separator " "))
+         (re (concat "[\\\"]" "\\|" (regexp-quote sep))))
+    (mapconcat
+     (lambda (str)
+       (cond
+        ((or (not str) (string= str ""))
+         "\"\"")
+        ((string-match re str)
+         (concat "\"" (replace-regexp-in-string "[\\\"]" "\\\\\\&" str) "\""))
+        (t str)))
+     strings sep)))
+
 (defun irony--server-send-command (command &rest args)
-  (let ((command-line (concat (combine-and-quote-strings
+  (let ((command-line (concat (irony--quote-strings
                                (mapcar (lambda (arg)
                                          (if (numberp arg)
                                              (number-to-string arg)

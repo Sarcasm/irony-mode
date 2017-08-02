@@ -185,14 +185,15 @@ that can be validly accessed are deemed not-accessible."
 
 (irony-iotask-define-task irony--t-candidates
   "`candidates' server command."
-  :start (lambda (prefix)
-           (irony--server-send-command "candidates" prefix))
+  :start (lambda (prefix ignore-case)
+           (irony--server-send-command "candidates" prefix
+                                       (if ignore-case "on" "off")))
   :update irony--server-query-update)
 
-(defun irony--candidates-task (&optional buffer pos prefix)
+(defun irony--candidates-task (&optional buffer pos prefix ignore-case)
   (irony-iotask-chain
    (irony--complete-task buffer pos)
-   (irony-iotask-package-task irony--t-candidates prefix)))
+   (irony-iotask-package-task irony--t-candidates prefix ignore-case)))
 
 
 ;;
@@ -231,12 +232,7 @@ that can be validly accessed are deemed not-accessible."
            irony-completion-availability-filter))
    candidates))
 
-(defun irony-completion-make-prefix (prefix)
-  (if (and prefix (not (string= prefix "")))
-      prefix
-    "*"))
-
-(defun irony-completion-candidates (&optional prefix)
+(defun irony-completion-candidates (&optional prefix ignore-case)
   "Return the list of candidates at point.
 
 A candidate is composed of the following elements:
@@ -258,15 +254,13 @@ A candidate is composed of the following elements:
   (irony--awhen (irony-completion-symbol-bounds)
     (irony-completion--filter-candidates
      (irony--run-task
-      (irony--candidates-task nil (car it)
-                              (irony-completion-make-prefix))))))
+      (irony--candidates-task nil (car it) prefix ignore-case)))))
 
-(defun irony-completion-candidates-async (callback &optional prefix)
+(defun irony-completion-candidates-async (callback &optional prefix ignore-case)
   (irony--aif (irony-completion-symbol-bounds)
       (lexical-let ((cb callback))
         (irony--run-task-asynchronously
-         (irony--candidates-task nil (car it)
-                                 (irony-completion-make-prefix prefix))
+         (irony--candidates-task nil (car it) prefix ignore-case)
          (lambda (candidates-result)
            (funcall cb (irony-completion--filter-candidates
                         (irony-iotask-result-get candidates-result))))))
@@ -396,7 +390,13 @@ A candidate is composed of the following elements:
 (defun irony-completion-at-point ()
   (irony--awhen (and irony-mode (irony-completion-symbol-bounds))
     (let ((candidates (irony-completion--filter-candidates
-                       (irony--run-task (irony--candidates-task nil (car it))))))
+                       (irony--run-task
+                        (irony--candidates-task
+                         nil
+                         (car it)
+                         (buffer-substring-no-properties
+                          (car it) (cdr it))
+                         completion-ignore-case)))))
       (list
        (car it)                           ;start
        (cdr it)                           ;end

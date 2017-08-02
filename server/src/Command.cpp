@@ -180,6 +180,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   case Command::Candidates:
     positionalArgs.push_back(StringConverter(&command_.prefix));
+    positionalArgs.push_back(OptionConverter(&command_.opt));
     break;
   case Command::CompletionDiagnostics:
   case Command::Diagnostics:
@@ -207,7 +208,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     command_.flags.assign(std::next(argsEnd), argv.end());
   }
 
-  if (argCount < static_cast<int>(positionalArgs.size())) {
+  if (argCount != static_cast<int>(positionalArgs.size())) {
     std::clog << "error: invalid number of arguments for '" << actionStr
               << "' (requires " << positionalArgs.size() << " got " << argCount
               << ")\n";
