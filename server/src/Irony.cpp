@@ -291,13 +291,13 @@ static bool iequal(const char a, const char b)
   return std::tolower(a) == std::tolower(b);
 }
 
-static bool startsWith(const std::string& str, const std::string &prefix, bool ignore_case)
+static bool startsWith(const std::string& str, const std::string &prefix, bool ignoreCase)
 {
   if (str.length() < prefix.length()) {
     return false;
   }
   std::pair<std::string::const_iterator, std::string::const_iterator> res;
-  if (!ignore_case) {
+  if (!ignoreCase) {
     res = std::mismatch(prefix.begin(), prefix.end(), str.begin());
   } else {
     res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), iequal);
@@ -331,7 +331,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix, bool ignore_case) const {
+void Irony::candidates(const std::string &prefix, bool ignoreCase) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
@@ -451,7 +451,7 @@ void Irony::candidates(const std::string &prefix, bool ignore_case) const {
       // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
       if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
         typedtext = chunk.text();
-        if (!startsWith(typedtext, prefix, ignore_case)) {
+        if (!startsWith(typedtext, prefix, ignoreCase)) {
           hasPrefix = false;
           break;
         }
