@@ -33,6 +33,7 @@ struct Command {
     unsavedFile.clear();
     dir.clear();
     prefix.clear();
+    caseStyle.clear();
     line = 0;
     column = 0;
     opt = false;
