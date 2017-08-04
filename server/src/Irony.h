@@ -26,11 +26,6 @@ public:
   // use std::string over std::vector<char> because I have some doubts
   // that libclang expect unsaved buffers to be a null terminated C strings
   typedef std::string UnsavedBuffer;
-  enum CaseStyle {
-    CaseSensitive,
-    CaseInsensitive,
-    CaseSmart,
-  };
 
 public:
   Irony();
@@ -105,7 +100,7 @@ public:
   /// Get all the completion candidates.
   ///
   /// \pre complete() was called.
-  void candidates(const std::string &prefix, CaseStyle caseStyle) const;
+  void candidates(const std::string &prefix, const std::string caseStyle) const;
 
   /// Get the diagnostics produced by the last \c complete().
   ///

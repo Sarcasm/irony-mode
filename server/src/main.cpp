@@ -102,20 +102,6 @@ private:
   std::streambuf *rdbuf_;
 };
 
-static Irony::CaseStyle parseCaseStyle(const std::string& style)
-{
-  if (style == "nil" || style == "") {
-    return Irony::CaseSensitive;
-  }
-  if (style == "insensitive") {
-    return Irony::CaseInsensitive;
-  }
-  if (style == "smart") {
-    return Irony::CaseSmart;
-  }
-  std::clog << "Unknown case style: " << style << std::endl;
-  return Irony::CaseSensitive;
-}
 
 int main(int ac, const char *av[]) {
   std::vector<std::string> argv(&av[1], &av[ac]);
@@ -196,7 +182,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Candidates:
-      irony.candidates(c->prefix, parseCaseStyle(c->caseStyle));
+      irony.candidates(c->prefix, c->caseStyle);
       break;
 
     case Command::CompletionDiagnostics:

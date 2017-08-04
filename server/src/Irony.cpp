@@ -315,21 +315,17 @@ static bool startsWith(const std::string& str, const std::string &prefix, bool c
   return true;
 }
 
-static bool isCaseSensitive(const std::string &prefix, Irony::CaseStyle caseStyle)
+static bool isCaseSensitive(const std::string &prefix, std::string caseStyle)
 {
-  switch (caseStyle) {
-  case Irony::CaseSensitive:
+  if (caseStyle == "" || caseStyle == "nil") {
     return true;
-  case Irony::CaseInsensitive:
-    return false;
-  case Irony::CaseSmart:
-    // In smart style, any uppercase letter indicates case-sensitive
-    return hasUppercase(prefix);
-  default:
-    break;
   }
-  // Shouldn't go here. return case sensitive by default.
-  return true;
+  if (caseStyle == "smart") {
+    return hasUppercase(prefix);
+  }
+
+  // if style is non-nil, always do case-insensitive matching
+  return false;
 }
 
 } // unnamed namespace
@@ -357,7 +353,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix, CaseStyle caseStyle) const {
+void Irony::candidates(const std::string &prefix, std::string caseStyle) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
