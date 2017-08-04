@@ -646,6 +646,13 @@ list (and undo information is not kept).")
   (irony-iotask-schedule (irony--get-server-process-create) task callback))
 
 (defun irony--quote-strings (strings &optional separator)
+  "Like `combine-and-quote-strings', but when the string is \"\" or nil,
+`irony--quote-strings' will convert it to \"\" instead of <SPC>.
+That is:
+
+  (irony--quote-strings \'(\"a\" \"\" \"b\"))            => \"a \\\"\\\" b\"
+  (combine-and-quote-strings \'(\"a\" \"\" \"b\"))       => \"a  b\"
+"
   (let* ((sep (or separator " "))
          (re (concat "[\\\"]" "\\|" (regexp-quote sep))))
     (mapconcat

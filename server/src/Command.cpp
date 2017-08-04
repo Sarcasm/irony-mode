@@ -103,7 +103,8 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
      << "dir='" << command.dir << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
-     << "prefix=" << command.prefix << ", "
+     << "prefix='" << command.prefix << "', "
+     << "caseStyle='" << command.caseStyle << "', "
      << "flags=[";
   bool first = true;
   for (const std::string &flag : command.flags) {
@@ -180,7 +181,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
 
   case Command::Candidates:
     positionalArgs.push_back(StringConverter(&command_.prefix));
-    positionalArgs.push_back(OptionConverter(&command_.opt));
+    positionalArgs.push_back(StringConverter(&command_.caseStyle));
     break;
   case Command::CompletionDiagnostics:
   case Command::Diagnostics:

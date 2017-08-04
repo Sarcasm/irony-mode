@@ -48,6 +48,7 @@ struct Command {
   std::string unsavedFile;
   std::string dir;
   std::string prefix;
+  std::string caseStyle;
   unsigned line;
   unsigned column;
   bool opt;

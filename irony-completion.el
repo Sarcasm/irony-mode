@@ -186,8 +186,12 @@ that can be validly accessed are deemed not-accessible."
 (irony-iotask-define-task irony--t-candidates
   "`candidates' server command."
   :start (lambda (prefix ignore-case)
-           (irony--server-send-command "candidates" prefix
-                                       (if ignore-case "on" "off")))
+           (irony--server-send-command
+            "candidates" prefix
+            (cond
+             ((not ignore-case) "")
+             ((eq ignore-case 'smart) "smart")
+             (t "insensitive"))))
   :update irony--server-query-update)
 
 (defun irony--candidates-task (&optional buffer pos prefix ignore-case)

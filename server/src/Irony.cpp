@@ -286,27 +286,53 @@ void Irony::complete(const std::string &file,
   std::cout << "(success . t)\n";
 }
 
-static bool iequal(const char a, const char b)
+namespace {
+
+static bool hasUppercase(const std::string &prefix)
 {
-  return std::tolower(a) == std::tolower(b);
+  for (auto it = prefix.begin(); it != prefix.end(); ++it) {
+    if (std::isupper(*it)) {
+      return true;
+    }
+  }
+  return false;
 }
 
-static bool startsWith(const std::string& str, const std::string &prefix, bool ignoreCase)
+static bool startsWith(const std::string& str, const std::string &prefix, bool caseSensitive)
 {
   if (str.length() < prefix.length()) {
     return false;
   }
-  std::pair<std::string::const_iterator, std::string::const_iterator> res;
-  if (!ignoreCase) {
-    res = std::mismatch(prefix.begin(), prefix.end(), str.begin());
-  } else {
-    res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), iequal);
-  }
+
+  auto charCmp = caseSensitive
+    ? [] (char a, char b) { return a == b; }
+    : [] (char a, char b) { return std::tolower(a) == std::tolower(b); };
+
+  auto res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), charCmp);
   if (res.first != prefix.end()) {
     return false;
   }
   return true;
 }
+
+static bool isCaseSensitive(const std::string &prefix, Irony::CaseStyle caseStyle)
+{
+  switch (caseStyle) {
+  case Irony::CaseSensitive:
+    return true;
+  case Irony::CaseInsensitive:
+    return false;
+  case Irony::CaseSmart:
+    // In smart style, any uppercase letter indicates case-sensitive
+    return hasUppercase(prefix);
+  default:
+    break;
+  }
+  // Shouldn't go here. return case sensitive by default.
+  return true;
+}
+
+} // unnamed namespace
 
 void Irony::completionDiagnostics() const {
   unsigned diagnosticCount;
@@ -331,11 +357,13 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix, bool ignoreCase) const {
+void Irony::candidates(const std::string &prefix, CaseStyle caseStyle) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
   }
+
+  bool caseSensitive = isCaseSensitive(prefix, caseStyle);
 
   CXCodeCompleteResults *completions = activeCompletionResults_;
 
@@ -451,7 +479,7 @@ void Irony::candidates(const std::string &prefix, bool ignoreCase) const {
       // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
       if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
         typedtext = chunk.text();
-        if (!startsWith(typedtext, prefix, ignoreCase)) {
+        if (!startsWith(typedtext, prefix, caseSensitive)) {
           hasPrefix = false;
           break;
         }
