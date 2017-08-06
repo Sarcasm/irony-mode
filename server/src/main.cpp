@@ -102,7 +102,6 @@ private:
   std::streambuf *rdbuf_;
 };
 
-
 int main(int ac, const char *av[]) {
   std::vector<std::string> argv(&av[1], &av[ac]);
 
@@ -182,7 +181,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Candidates:
-      irony.candidates(c->prefix, c->caseStyle);
+      irony.candidates(c->prefix, c->style);
       break;
 
     case Command::CompletionDiagnostics:

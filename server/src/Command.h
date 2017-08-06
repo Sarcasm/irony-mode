@@ -13,6 +13,7 @@
 
 #include "support/CIndex.h"
 #include "support/TemporaryFile.h"
+#include "Style.h"
 
 #include <iosfwd>
 #include <string>
@@ -33,7 +34,7 @@ struct Command {
     unsavedFile.clear();
     dir.clear();
     prefix.clear();
-    caseStyle.clear();
+    style = PrefixMatchStyle::Exact;
     line = 0;
     column = 0;
     opt = false;
@@ -49,7 +50,7 @@ struct Command {
   std::string unsavedFile;
   std::string dir;
   std::string prefix;
-  std::string caseStyle;
+  PrefixMatchStyle style;
   unsigned line;
   unsigned column;
   bool opt;
