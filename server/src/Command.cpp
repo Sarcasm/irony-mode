@@ -83,7 +83,7 @@ private:
   bool *dest_;
 };
 
-const std::map<std::string, PrefixMatchStyle> prefixMatchStyleMap = {
+const std::map<std::string, PrefixMatchStyle> PREFIX_MATCH_STYLE_MAP = {
   { "exact", PrefixMatchStyle::Exact },
   { "case-insensitive", PrefixMatchStyle::CaseInsensitive },
   { "smart-case", PrefixMatchStyle::SmartCase},
@@ -95,9 +95,9 @@ struct PrefixMatchStyleConverter {
   }
 
   bool operator()(const std::string &str) {
-    auto res = prefixMatchStyleMap.find(str);
+    auto res = PREFIX_MATCH_STYLE_MAP.find(str);
 
-    if (res == prefixMatchStyleMap.cend()) {
+    if (res == PREFIX_MATCH_STYLE_MAP.cend()) {
       return false;
     }
     *dest_ = res->second;
@@ -109,7 +109,7 @@ private:
 };
 
 std::ostream &operator<<(std::ostream &os, PrefixMatchStyle style) {
-  for (auto it : prefixMatchStyleMap) {
+  for (auto it : PREFIX_MATCH_STYLE_MAP) {
     if (it.second == style) {
       os << it.first;
       return os;
