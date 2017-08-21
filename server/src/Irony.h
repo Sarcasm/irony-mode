@@ -18,6 +18,8 @@
 
 #include "TUManager.h"
 
+#include "Style.h"
+
 #include <string>
 #include <vector>
 
@@ -100,7 +102,7 @@ public:
   /// Get all the completion candidates.
   ///
   /// \pre complete() was called.
-  void candidates() const;
+  void candidates(const std::string &prefix, PrefixMatchStyle style) const;
 
   /// Get the diagnostics produced by the last \c complete().
   ///

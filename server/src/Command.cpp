@@ -16,6 +16,8 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <map>
+
 
 namespace {
 
@@ -81,6 +83,43 @@ private:
   bool *dest_;
 };
 
+const std::map<std::string, PrefixMatchStyle> PREFIX_MATCH_STYLE_MAP = {
+  { "exact", PrefixMatchStyle::Exact },
+  { "case-insensitive", PrefixMatchStyle::CaseInsensitive },
+  { "smart-case", PrefixMatchStyle::SmartCase},
+};
+
+/// Convert style to a PrefixMatchStyle
+struct PrefixMatchStyleConverter {
+  PrefixMatchStyleConverter(PrefixMatchStyle *dest) : dest_(dest) {
+  }
+
+  bool operator()(const std::string &str) {
+    auto res = PREFIX_MATCH_STYLE_MAP.find(str);
+
+    if (res == PREFIX_MATCH_STYLE_MAP.cend()) {
+      return false;
+    }
+    *dest_ = res->second;
+    return true;
+  }
+
+private:
+  PrefixMatchStyle *dest_;
+};
+
+std::ostream &operator<<(std::ostream &os, PrefixMatchStyle style) {
+  for (auto it : PREFIX_MATCH_STYLE_MAP) {
+    if (it.second == style) {
+      os << it.first;
+      return os;
+    }
+  }
+  os << "UnknownStyle";
+  return os;
+}
+
+
 } // unnamed namespace
 
 std::ostream &operator<<(std::ostream &os, const Command::Action &action) {
@@ -103,6 +142,8 @@ std::ostream &operator<<(std::ostream &os, const Command &command) {
      << "dir='" << command.dir << "', "
      << "line=" << command.line << ", "
      << "column=" << command.column << ", "
+     << "prefix='" << command.prefix << "', "
+     << "caseStyle='" << command.style << "', "
      << "flags=[";
   bool first = true;
   for (const std::string &flag : command.flags) {
@@ -178,6 +219,9 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
     break;
 
   case Command::Candidates:
+    positionalArgs.push_back(StringConverter(&command_.prefix));
+    positionalArgs.push_back(PrefixMatchStyleConverter(&command_.style));
+    break;
   case Command::CompletionDiagnostics:
   case Command::Diagnostics:
   case Command::Help:

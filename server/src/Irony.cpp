@@ -286,6 +286,46 @@ void Irony::complete(const std::string &file,
   std::cout << "(success . t)\n";
 }
 
+namespace {
+
+bool hasUppercase(const std::string &prefix)
+{
+  for (char c : prefix) {
+    if (std::isupper(c)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool startsWith(const std::string& str, const std::string &prefix, bool caseInsensitive)
+{
+  if (str.length() < prefix.length()) {
+    return false;
+  }
+
+  auto charCmp = caseInsensitive
+    ? [] (char a, char b) { return std::tolower(a) == std::tolower(b); }
+    : [] (char a, char b) { return a == b; };
+
+  auto res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), charCmp);
+  return res.first == prefix.end();
+}
+
+bool isStyleCaseInsensitive(const std::string &prefix, PrefixMatchStyle style)
+{
+  if (style == PrefixMatchStyle::SmartCase) {
+    // For SmartCase style, do case insensitive matching only there isn't upper
+    // case letter.
+    if (!hasUppercase(prefix)) {
+      style = PrefixMatchStyle::CaseInsensitive;
+    }
+  }
+  return style == PrefixMatchStyle::CaseInsensitive;
+}
+
+} // unnamed namespace
+
 void Irony::completionDiagnostics() const {
   unsigned diagnosticCount;
 
@@ -309,11 +349,13 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates() const {
+void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
   }
+
+  bool caseInsensitive = isStyleCaseInsensitive(prefix, style);
 
   CXCodeCompleteResults *completions = activeCompletionResults_;
 
@@ -333,6 +375,7 @@ void Irony::candidates() const {
       clang_getCompletionPriority(candidate.CompletionString);
     unsigned annotationStart = 0;
     bool typedTextSet = false;
+    bool hasPrefix = true;
 
     typedtext.clear();
     brief.clear();
@@ -428,10 +471,26 @@ void Irony::candidates() const {
       // https://github.com/Sarcasm/irony-mode/pull/78#issuecomment-37115538
       if (chunkKind == CXCompletionChunk_TypedText && !typedTextSet) {
         typedtext = chunk.text();
+        if (!startsWith(typedtext, prefix, caseInsensitive)) {
+          hasPrefix = false;
+          break;
+        }
         // annotation is what comes after the typedtext
         annotationStart = prototype.size();
         typedTextSet = true;
       }
+    }
+
+    if (!hasPrefix) {
+      continue;
+    }
+    if (!typedTextSet) {
+      // clang may generate candidates without any typedText, and we may
+      // generate some output like:
+      //    ("" 1 "bool" "" "hasUppercase(const std::string &prefix)"
+      //     0 ("") available)
+      // That will cause infinite completion in irony.el
+      continue;
     }
 
 #if HAS_BRIEF_COMMENTS_IN_COMPLETION
