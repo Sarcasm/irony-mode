@@ -290,8 +290,8 @@ namespace {
 
 bool hasUppercase(const std::string &prefix)
 {
-  for (auto it = prefix.begin(); it != prefix.end(); ++it) {
-    if (std::isupper(*it)) {
+  for (char c : prefix) {
+    if (std::isupper(c)) {
       return true;
     }
   }
