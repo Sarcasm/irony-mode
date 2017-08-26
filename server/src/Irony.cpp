@@ -299,15 +299,24 @@ bool hasUppercase(const std::string &prefix)
   return false;
 }
 
+bool isEqual(const bool insensitive, const char a, const char b)
+{
+  if (insensitive) {
+    return std::tolower(a) == std::tolower(b);
+  } else {
+    return a == b;
+  }
+}
+
 bool startsWith(const std::string& str, const std::string &prefix, bool caseInsensitive)
 {
   if (str.length() < prefix.length()) {
     return false;
   }
 
-  auto charCmp = caseInsensitive
-    ? [] (char a, char b) { return std::tolower(a) == std::tolower(b); }
-    : [] (char a, char b) { return a == b; };
+  const auto charCmp = [&](const char a, const char b) {
+    return isEqual(caseInsensitive, a, b);
+  };
 
   auto res = std::mismatch(prefix.begin(), prefix.end(), str.begin(), charCmp);
   return res.first == prefix.end();
