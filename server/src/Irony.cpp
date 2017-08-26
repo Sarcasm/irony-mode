@@ -18,6 +18,7 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
+#include <cctype>
 
 namespace {
 
