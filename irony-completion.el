@@ -188,10 +188,10 @@ that can be validly accessed are deemed not-accessible."
   :start (lambda (prefix style)
            (irony--server-send-command
             "candidates" prefix
-            (pcase style
-              ('case-insensitive "case-insensitive")
-              ('smart-case "smart-case")
-              (other "exact"))))
+            (cl-case style
+              (case-insensitive "case-insensitive")
+              (smart-case "smart-case")
+              (t "exact"))))
   :update irony--server-query-update)
 
 (defun irony--candidates-task (&optional buffer pos prefix style)
