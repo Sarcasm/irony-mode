@@ -4,7 +4,7 @@
 
 `irony-mode` is an Emacs minor-mode that aims at improving the editing
 experience for the C, C++ and Objective-C languages. It works by using a
-combination of an Emacs package and a C++ program (`irony-server`) that uses
+combination of an Emacs package and a C++ program (`irony-server`) exposing
 [libclang][libclang-ref].
 
 **Features:**
@@ -17,6 +17,8 @@ combination of an Emacs package and a C++ program (`irony-server`) that uses
   * With [flycheck][flycheck-ref]'s checker: [flycheck-irony][flycheck-irony-ref]
 
 * `eldoc` integration: [irony-eldoc][irony-eldoc-ref]
+
+* [counsel][counsel-ref] integration: https://oremacs.com/2017/03/28/emacs-cpp-ide/
 
 ## Dependencies
 
@@ -193,6 +195,7 @@ you can instruct `irony-server` to use this with something like:
 [clang_complete-doc-ref]: https://github.com/Rip-Rip/clang_complete/blob/c8673142759b87316265eb0edd1f620196ec1fba/doc/clang_complete.txt#L55 ".clang_complete"
 [clang_complete-vim-ref]: https://github.com/Rip-Rip/clang_complete "clang_complete Vim plugin"
 [cmake-ref]: http://www.cmake.org "CMake"
+[counsel-ref]: https://github.com/abo-abo/swiper#counsel "Counsel on Github"
 [company-irony-ref]: https://github.com/Sarcasm/company-irony "Company Irony"
 [company-ref]: https://github.com/company-mode/company-mode "Company-Mode"
 [flycheck-irony-ref]: https://github.com/Sarcasm/flycheck-irony "Flycheck Irony"
