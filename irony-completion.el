@@ -262,12 +262,11 @@ A candidate is composed of the following elements:
 
 (defun irony-completion-candidates-async (callback &optional prefix style)
   (irony--aif (irony-completion-symbol-bounds)
-      (lexical-let ((cb callback))
-        (irony--run-task-asynchronously
-         (irony--candidates-task nil (car it) prefix style)
-         (lambda (candidates-result)
-           (funcall cb (irony-completion--filter-candidates
-                        (irony-iotask-result-get candidates-result))))))
+      (irony--run-task-asynchronously
+       (irony--candidates-task nil (car it) prefix style)
+       (lambda (candidates-result)
+         (funcall callback (irony-completion--filter-candidates
+                            (irony-iotask-result-get candidates-result)))))
     (funcall callback nil)))
 
 (defun irony-completion-post-complete (candidate)
