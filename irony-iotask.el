@@ -233,9 +233,11 @@ Properties:
   schedule-buffer)
 
 (defun irony-iotask-ectx-call-callback (ectx result)
-  (with-demoted-errors "Irony I/O task: error in callback: %S"
-    (with-current-buffer (irony-iotask-ectx-schedule-buffer ectx)
-      (funcall (irony-iotask-ectx-callback ectx) result))))
+  (let ((cb-buffer (irony-iotask-ectx-schedule-buffer ectx)))
+    (when (buffer-live-p cb-buffer)     ;[GH-427]
+      (with-demoted-errors "Irony I/O task: error in callback: %S"
+        (with-current-buffer cb-buffer
+          (funcall (irony-iotask-ectx-callback ectx) result))))))
 
 (defvar irony-iotask--process)
 
