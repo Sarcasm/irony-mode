@@ -86,7 +86,7 @@ TUManager::parse(const std::string &filename,
   if (tu == nullptr) {
     std::vector<const char *> argv;
 
-#ifdef CLANG_BUILTIN_HEADERS_DIR
+#ifdef CLANG_RESOURCE_DIR
     // Make sure libclang find its builtin headers, this is a known issue with
     // libclang, see:
     // - http://lists.cs.uiuc.edu/pipermail/cfe-dev/2012-July/022893.html
@@ -97,8 +97,8 @@ TUManager::parse(const std::string &filename,
     // > Usually clang finds this directory relative to the executable with
     // > CompilerInvocation::GetResourcesPath(Argv0, MainAddr), but using just
     // > the libraries, it can't automatically find it.
-    argv.push_back("-isystem");
-    argv.push_back(CLANG_BUILTIN_HEADERS_DIR);
+    argv.push_back("-resource-dir");
+    argv.push_back(CLANG_RESOURCE_DIR);
 #endif
 
     for (auto &flag : flags) {

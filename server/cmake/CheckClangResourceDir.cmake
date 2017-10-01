@@ -1,18 +1,18 @@
 #
-# Get the directory where the libclang headers reside.
+# Get the Clang resource directory.
 #
 # If found the following variable will be set:
-# - LIBCLANG_BUILTIN_HEADERS_DIR
+# - CLANG_RESOURCE_DIR
 #
-set(CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_CHECKER_CODE_IN
+set(CHECK_CLANG_RESOURCE_DIR_CHECKER_CODE_IN
   ${CMAKE_CURRENT_LIST_DIR}/LibClangDiagnosticsChecker.cpp)
 
-function(check_libclang_builtin_headers_dir)
-  if (LIBCLANG_BUILTIN_HEADERS_DIR)
+function(check_clang_resource_dir)
+  if (CLANG_RESOURCE_DIR)
     return()                    # already in cache
   endif()
 
-  message(STATUS "Detecting libclang builtin headers directory")
+  message(STATUS "Detecting Clang resource directory")
   find_package (LibClang REQUIRED)
   
   set(checker_code
@@ -20,16 +20,12 @@ function(check_libclang_builtin_headers_dir)
   set(checked_file
     "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/check-libclang-stddef.cpp")
 
-  configure_file(${CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_CHECKER_CODE_IN}
+  configure_file(${CHECK_CLANG_RESOURCE_DIR_CHECKER_CODE_IN}
     ${checker_code} COPYONLY)
   file(WRITE "${checked_file}" "#include <stddef.h>\n")
 
-  foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS} .)
-    list(APPEND builtin_include_dir_suffixes "${version}/include")
-  endforeach()
-
   # Paths stolen from Rip-Rip/clang_complete#getBuiltinHeaderPath()
-  find_path(CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR stddef.h
+  find_path(CHECK_CLANG_RESOURCE_DIR include/stddef.h
     NO_DEFAULT_PATH
     # the default path, favor this one over the other, in case a specific
     # libclang has been chosen.
@@ -41,20 +37,19 @@ function(check_libclang_builtin_headers_dir)
     "${LIBCLANG_LIBRARY_DIR}/"         # Google
     "/usr/lib64/clang"                 # x86_64 (openSUSE, Fedora)
     "/usr/lib/clang"
-    PATH_SUFFIXES ${builtin_include_dir_suffixes}
-    )
+    PATH_SUFFIXES ${LIBCLANG_KNOWN_LLVM_VERSIONS})
 
-  if (CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR)
+  if (CHECK_CLANG_RESOURCE_DIR)
     # On Windows the paths weren't escaped correctly, similar to:
     # http://public.kitware.com/pipermail/cmake/2006-February/008473.html
-    list(APPEND run_args -isystem \"${CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR}\")
+    list(APPEND run_args -resource-dir \"${CHECK_CLANG_RESOURCE_DIR}\")
   endif()
 
   list(APPEND run_args ${checked_file})
 
   try_run(
-    CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_NUM_DIAGNOSTICS
-    CHECK_LIBCLANG_BUILTIN_HEADERS_COMPILE_RESULT
+    CHECK_CLANG_RESOURCE_DIR_NUM_DIAGNOSTICS
+    CHECK_CLANG_RESOURCE_DIR_COMPILE_RESULT
     ${CMAKE_BINARY_DIR}
     ${checker_code}
     CMAKE_FLAGS
@@ -65,26 +60,26 @@ function(check_libclang_builtin_headers_dir)
     ARGS ${run_args}
     )
 
-  if (NOT CHECK_LIBCLANG_BUILTIN_HEADERS_COMPILE_RESULT)
-    set(CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_NUM_DIAGNOSTICS 1)
+  if (NOT CHECK_CLANG_RESOURCE_DIR_COMPILE_RESULT)
+    set(CHECK_CLANG_RESOURCE_DIR_NUM_DIAGNOSTICS 1)
   endif()
 
-  if (CHECK_LIBCLANG_BUILTIN_HEADERS_DIR_NUM_DIAGNOSTICS EQUAL 0)
+  if (CHECK_CLANG_RESOURCE_DIR_NUM_DIAGNOSTICS EQUAL 0)
     message(STATUS "Detecting libclang builtin headers directory -- success")
-    if (CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR)
-      set(LIBCLANG_BUILTIN_HEADERS_DIR "${CHECK_LIBCLANG_BUILTIN_HEADERS_STDDEF_DIR}"
-        CACHE INTERNAL "libclang builtin headers directory.")
+    if (CHECK_CLANG_RESOURCE_DIR)
+      set(CLANG_RESOURCE_DIR "${CHECK_CLANG_RESOURCE_DIR}"
+        CACHE INTERNAL "Clang resource directory.")
     endif()
   else()
-    message(STATUS "Detecting libclang builtin headers directory -- fail")
+    message(STATUS "Detecting Clang resource directory -- fail")
 
-    if (NOT CHECK_LIBCLANG_BUILTIN_HEADERS_COMPILE_RESULT)
-      message(WARNING "CheckLibClangBuiltinHeadersDir: failed to compile checker, please report.
+    if (NOT CHECK_CLANG_RESOURCE_DIR_COMPILE_RESULT)
+      message(WARNING "CheckClangResourceDir: failed to compile checker, please report.
   Compile output:
     ${compile_output}
 ")
     else()
-      message(WARNING "CheckLibClangBuiltinHeadersDir: unsupported configuration, please report.
+      message(WARNING "CheckClangResourceDir: unsupported configuration, please report.
 
   Check with args: ${run_args}
   Check output:
