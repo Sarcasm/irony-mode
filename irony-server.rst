@@ -8,7 +8,7 @@ The back-end server for Emacs irony-mode
 
 :Author: Nicholas D Steeves <nsteeves@gmail.com>
 :Date: 2017-10-01
-:Version: 1.1.0
+:Version: 1.2.0
 :Manual section: 1
 
 
