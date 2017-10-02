@@ -22,12 +22,12 @@ X(CompletionDiagnostics, "completion-diagnostics",
 X(Diagnostics, "diagnostics", "print the diagnostics of the last parse")
 X(Exit, "exit", "exit interactive mode, print nothing")
 X(GetCompileOptions, "get-compile-options", "BUILD_DIR FILE - "
-  "get compile options for FILE from JSON database in PROJECT_ROOT")
+  "get compile options for FILE from JSON database in BUILD_DIR")
 X(GetType, "get-type", "LINE COL - get type of symbol at a given location")
 X(Help, "help", "show this message")
 X(Parse, "parse", "FILE [-- [COMPILE_OPTIONS...]] - parse the given file")
 X(ResetUnsaved, "reset-unsaved", "FILE - reset FILE, its content is up to date")
-X(SetDebug, "set-debug", "[on|off] - enable or disable verbose logging")
+X(SetDebug, "set-debug", "ON|OFF - enable or disable verbose logging")
 X(SetUnsaved,
   "set-unsaved",
   "FILE UNSAVED-CONTENT-FILE - tell irony-server that "
