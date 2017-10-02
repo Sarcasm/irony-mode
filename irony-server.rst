@@ -23,7 +23,7 @@ Description
 ``irony-server`` provides the libclang interface to irony-mode. It uses a
 simple protocol based on S-expression. This server is written in C++ and
 requires the following packages to be installed on your system: CMake >=
-2.8.3, and libclang
+2.8.3, and libclang.
 
 Options
 =======
@@ -38,22 +38,29 @@ Options
 
 -i, --interactive
 
+ Run an interactive command loop. It accepts only the ``Commands``
+ listed below. This is primarily for machine use and not user
+ interaction.
+
 -d, --debug
 
+ Write debug info to log file.
+
 --log-file PATH
+
+ Write logs to path instead of standard error.
 
 Commands
 ========
 
-**candidates**
+**candidates** PREFIX STYLE
 
- PREFIX STYLE - print completion candidates (require previous
- complete). STYLE is "exact", "case-insensitive" or "smart-case".
+ Print completion candidates (require previous complete). STYLE is
+ "exact", "case-insensitive" or "smart-case".
         
-**complete**
+**complete** FILE LINE COL [-- [COMPILE_OPTIONS...]]
 
- FILE LINE COL [-- [COMPILE_OPTIONS...]] - perform code completion at a given
- location.
+ Perform code completion at a given location.
         
 **completion-diagnostics**
 
@@ -67,32 +74,31 @@ Commands
 
  Exit interactive mode, print nothing.
         
-**get-compile-options**
+**get-compile-options** BUILD_DIR FILE
 
- BUILD_DIR FILE - get compile options for FILE from JSON database in
- PROJECT_ROOT.
+ Get compile options for FILE from JSON database in PROJECT_ROOT.
         
-**get-type**
+**get-type** LINE COL
 
- LINE COL - get type of symbol at a given location.
+ Get type of symbol at a given location.
         
 **help**
 
  Show this message.
         
-**parse**
+**parse** FILE [-- [COMPILE_OPTIONS...]]
 
- FILE [-- [COMPILE_OPTIONS...]] - parse the given file.
+ Parse the given file.
         
-**reset-unsaved**
+**reset-unsaved** FILE
 
- FILE - reset FILE, its content is up to date.
+ Reset FILE, its content is up to date.
         
-**set-debug**
+**set-debug** [on|off]
 
- [on|off] - enable or disable verbose logging.
+ Enable or disable verbose logging.
         
-**set-unsaved**
+**set-unsaved** FILE UNSAVED-CONTENT-FILE
 
- FILE UNSAVED-CONTENT-FILE - tell irony-server that UNSAVED-CONTENT-FILE
- contains the effective content of FILE.
+ Tell irony-server that UNSAVED-CONTENT-FILE contains the effective
+ content of FILE.
