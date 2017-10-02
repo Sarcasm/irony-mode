@@ -39,8 +39,8 @@ Options
 -i, --interactive
 
  Run an interactive command loop. It accepts only the ``Commands``
- listed below. This is primarily for machine use and not user
- interaction.
+ listed below. This is primarily a machine interface that the user
+ interacts with via irony.el.
 
 -d, --debug
 
