@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011-2016  Guillaume Papin
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
-;; Version: 1.1.0
+;; Version: 1.2.0
 ;; URL: https://github.com/Sarcasm/irony-mode
 ;; Compatibility: GNU Emacs 24.x
 ;; Keywords: c, convenience, tools
@@ -139,14 +139,16 @@ database."
   :type 'string
   :group 'irony)
 
-(defcustom irony-server-source-dir
-  (expand-file-name "server" (file-name-directory (find-library-name "irony")))
+(defcustom irony-server-source-dir nil
   "Points to the irony-server source directory.
 
 This should point to the directory that contains the top-most
-CMakeLists.txt used to build the server."
+CMakeLists.txt used to build the server.
+
+By default it will find the directory based on the irony.el directory."
   :type 'directory
-  :group 'irony)
+  :group 'irony
+  :package-version '(irony . "1.2.0"))
 
 (defcustom irony-server-build-dir nil
   "Build directory for irony-server.
@@ -528,7 +530,11 @@ The installation requires CMake and the libclang developpement package."
                  (shell-quote-argument (concat "-DCMAKE_INSTALL_PREFIX="
                                                (expand-file-name
                                                 irony-server-install-prefix)))
-                 (shell-quote-argument irony-server-source-dir)
+                 (shell-quote-argument
+                  (or irony-server-source-dir
+                      (expand-file-name "server"
+                                        (file-name-directory
+                                         (find-library-name "irony")))))
                  (shell-quote-argument irony-cmake-executable))))
            (irony--install-server-read-command command))))
   (let ((build-dir (or irony-server-build-dir
