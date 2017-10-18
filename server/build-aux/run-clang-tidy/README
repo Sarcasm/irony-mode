@@ -1,0 +1,12 @@
+Origin:
+- http://llvm.org/svn/llvm-project/clang-tools-extra/trunk/clang-tidy/tool/run-clang-tidy.py?p=294607
+- https://github.com/llvm-mirror/clang-tools-extra/blob/c2e903ec98385b82e35bdb303e411854a2e8c032/clang-tidy/tool/run-clang-tidy.py
+
+Modifications:
+- the python version has been frozen to python2,
+  as the script is not python3-compatible
+- added -warnings-as-errors option
+- the run-clang-tidy.py script has been modified
+  to return a sensible exit code when running on Travis CI,
+  i.e. it honors exit code of the underlying processes
+  causing build failures on pull requests
