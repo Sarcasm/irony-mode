@@ -162,7 +162,8 @@ available on all OSes irony-iotask support."
   :start (lambda ()
            (irony-iotask-send-string "ping\n"))
   :update (lambda ()
-            (throw 'invalid-msg t)))
+            (when (string= (buffer-string) "ping\n")
+              (throw 'invalid-msg t))))
 
 (ert-deftest irony-iotask-schedule/task-update/invalid-msg ()
   (let ((task (irony-iotask-package-task irony-iotask/task-invalid-msg-t)))
