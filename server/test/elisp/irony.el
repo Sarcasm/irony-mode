@@ -16,7 +16,8 @@
     (should (equal 1 (irony--buffer-size-in-bytes)))))
 
 (ert-deftest irony/find-server-executable/does-not-exists ()
-  (let ((irony-server-install-prefix "/does/not/exists"))
+  (let ((irony-server-install-prefix "/does/not/exists")
+        (exec-path nil))
     (should-error (irony--find-server-executable)
                   :type 'irony-server-error)))
 
