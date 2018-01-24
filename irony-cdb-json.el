@@ -181,10 +181,24 @@ even helm by enabling `helm-mode' before calling the function."
                    irony-cdb-search-directory-list)
       (expand-file-name it))))
 
+(defvar irony-cdb-json--cache-key nil
+  "The name of the last loaded JSON file and its modification time.")
+(defvar irony-cdb-json--cache-cdb nil
+  "The last loaded compilation database.")
+
+(defun irony-cdb-json--make-cache-key (file)
+  (irony--aif (file-attributes file)
+      (cons file (nth 5 it))))
+
 (defun irony-cdb-json--load-db (json-file)
-  (delq nil (mapcar #'irony-cdb-json--transform-compile-command
-                    ;; JSON read may throw
-                    (json-read-file json-file))))
+  (let ((cache-key (irony-cdb-json--make-cache-key json-file)))
+    (unless (and cache-key (equal irony-cdb-json--cache-key cache-key))
+      (setq irony-cdb-json--cache-cdb
+            (delq nil (mapcar #'irony-cdb-json--transform-compile-command
+                              ;; JSON read may throw
+                              (json-read-file json-file))))
+      (setq irony-cdb-json--cache-key cache-key)))
+  irony-cdb-json--cache-cdb)
 
 (defun irony-cdb-json--exact-flags (file-cdb)
   (when buffer-file-name

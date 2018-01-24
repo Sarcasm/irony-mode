@@ -27,6 +27,8 @@ add_executable(irony-server
   Command.cpp
   Commands.def
   Command.h
+  CompDBCache.h
+  CompDBCache.cpp
   Irony.cpp
   Irony.h
   TUManager.cpp
