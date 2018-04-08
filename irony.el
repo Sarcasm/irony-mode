@@ -97,6 +97,11 @@ automatically buffer-local wherever it is set."
   :type 'string
   :group 'irony)
 
+(defcustom irony-extra-cmake-args nil
+  "Extra arguments to CMake when compiling the server."
+  :type '(repeat string)
+  :group 'irony)
+
 (defcustom irony-user-dir (locate-user-emacs-file "irony/")
   "Directory containing the Irony generated files.
 
@@ -524,12 +529,13 @@ The installation requires CMake and the libclang developpement package."
   (interactive
    (list (let ((command
                 (format
-                 (concat "%s %s %s && %s --build . "
+                 (concat "%s %s %s %s && %s --build . "
                          "--use-stderr --config Release --target install")
                  (shell-quote-argument irony-cmake-executable)
                  (shell-quote-argument (concat "-DCMAKE_INSTALL_PREFIX="
                                                (expand-file-name
                                                 irony-server-install-prefix)))
+                 (mapconcat 'shell-quote-argument irony-extra-cmake-args " ")
                  (shell-quote-argument
                   (or irony-server-source-dir
                       (expand-file-name "server"
