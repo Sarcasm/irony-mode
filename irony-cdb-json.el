@@ -199,7 +199,7 @@ even helm by enabling `helm-mode' before calling the function."
            for dir = (car e)
            ;; keep the closest directory
            if (and (string-prefix-p dir buf-path)
-                   (> (length dir) (length found)))
+                   (> (length dir) (length (car found))))
            do (setq found e)
            finally return (list (cons (nth 1 found) (nth 2 found)))))
 
