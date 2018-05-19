@@ -751,7 +751,9 @@ That is:
     (cond
      ((irony--buffer-state-modified new) 'set-unsaved)
      ((null old) nil)                   ;noop
-     ((irony--buffer-state-modified old) 'reset-unsaved))))
+     ((and
+       (irony--buffer-state-modified old)
+       (irony--buffer-state-exists old)) 'reset-unsaved))))
 
 (irony-iotask-define-task irony--t-set-unsaved
   "`set-unsaved' server command."
