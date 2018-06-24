@@ -903,7 +903,7 @@ old-state can be nil if the old state isn't known."
       (message "%s" (car types)))))
 
 (defun irony-parse-buffer-async (callback)
-  "Parse the current buffer sending the results to CALLBACK"
+  "Parse the current buffer sending the results to CALLBACK."
   (interactive)
   (irony--run-task-asynchronously (irony--parse-task)
                                   callback))
