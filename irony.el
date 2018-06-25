@@ -902,6 +902,12 @@ old-state can be nil if the old state isn't known."
         (message "%s (aka '%s')" (car types) (cadr types))
       (message "%s" (car types)))))
 
+(defun irony-parse-buffer-async (&optional callback)
+  "Parse the current buffer sending results to an optional
+  CALLBACK function."
+  (irony--run-task-asynchronously (irony--parse-task)
+                                  (or callback #'ignore)))
+
 (provide 'irony)
 
 ;; Local Variables:
