@@ -230,11 +230,17 @@ that can be validly accessed are deemed not-accessible."
   (nth 7 candidate))
 
 (defun irony-completion--filter-candidates (candidates)
-  (cl-remove-if-not
-   (lambda (candidate)
-     (memq (irony-completion-availability candidate)
-           irony-completion-availability-filter))
-   candidates))
+  (let (unique-candidates)
+    (cl-remove-if-not
+     (lambda (candidate)
+       (when (memq (irony-completion-availability candidate)
+		   irony-completion-availability-filter)
+	 (let ((unique-key (cons (irony-completion-typed-text candidate)
+                                 (cons (irony-completion-annotation candidate)
+                                       (cons (irony-completion-type candidate) nil)))))
+	   (when (not (member unique-key unique-candidates))
+	     (push unique-key unique-candidates)))))
+     candidates)))
 
 (defun irony-completion-candidates (&optional prefix style)
   "Return the list of candidates at point.
