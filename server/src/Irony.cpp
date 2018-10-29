@@ -125,18 +125,18 @@ void prettyPrintCursor(std::string label, CXCursor cursor) {
   CXSourceLocation start = clang_getRangeStart(loc),
                    end = clang_getRangeEnd(loc);
   CXFile file;
-  unsigned start_line, start_col, start_offset, end_offset;
-  clang_getSpellingLocation(start, &file, &start_line, &start_col,
-                            &start_offset);
-  clang_getSpellingLocation(end, nullptr, nullptr, nullptr, &end_offset);
+  unsigned startLine, startCol, startOffset, endOffset;
+  clang_getSpellingLocation(start, &file, &startLine, &startCol,
+                            &startOffset);
+  clang_getSpellingLocation(end, nullptr, nullptr, nullptr, &endOffset);
   CXString filename = clang_getFileName(file);
   // FIXME It would be nice to print cursor’s enclosing statement, or similar
   // FIXME But there doesn’t seem to be a clear way to do it without going
   // FIXME throught the whole AST.
   std::cout << "(" << label << " " << support::quoted(clang_getCString(name))
             << " " << support::quoted(clang_getCString(filename)) << " "
-            << start_line << " " << start_col << " " << start_offset << " "
-            << end_offset << ")\n";
+            << startLine << " " << startCol << " " << startOffset << " "
+            << endOffset << ")\n";
   clang_disposeString(name);
   clang_disposeString(filename);
 }
@@ -715,11 +715,11 @@ void Irony::xrefReferences(unsigned line, unsigned col) const {
 
   std::cout << "(";
 
-  for (auto file_tu : tuManager_.allAvailableTranslationUnits()) {
-    CXCursor tuCursor = clang_getTranslationUnitCursor(file_tu.second);
+  for (auto fileTu : tuManager_.allAvailableTranslationUnits()) {
+    CXCursor tuCursor = clang_getTranslationUnitCursor(fileTu.second);
 
-    typedef std::function<CXChildVisitResult(CXCursor, CXCursor)> visitor;
-    visitor visit = [&](CXCursor cursor, CXCursor) {
+    typedef std::function<CXChildVisitResult(CXCursor, CXCursor)> Visitor;
+    Visitor visit = [&](CXCursor cursor, CXCursor) {
       // Skip all system headers, because they are generally unreadable.
       if (clang_Location_isInSystemHeader(clang_getCursorLocation(cursor)))
         return CXChildVisit_Continue;
