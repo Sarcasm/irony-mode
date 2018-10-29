@@ -22,6 +22,11 @@
 ;;
 ;; This file defines a compilation database for .clang_complete file.
 ;;
+;; Another type of compilation database, compile_flags.txt
+;; (https://clang.llvm.org/docs/JSONCompilationDatabase.html#build-system-integration)
+;; appears to share a very similar format, so is processed the same
+;; way as a .clang_complete file.
+;;
 
 ;;; Code:
 
