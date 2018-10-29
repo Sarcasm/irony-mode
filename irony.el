@@ -47,6 +47,7 @@
 ;;; Code:
 
 (require 'irony-iotask)
+(require 'irony-xref)
 
 (autoload 'irony-completion--enter "irony-completion")
 (autoload 'irony-completion--exit "irony-completion")
@@ -426,6 +427,7 @@ If no such file exists on the filesystem the special file '-' is
       (display-warning 'irony "Performance will be bad because a\
  pipe delay is set for this platform (see variable\
  `w32-pipe-read-delay')."))))
+  (irony-xref--enter)
   (irony-completion--enter))
 
 (defun irony--mode-exit ()

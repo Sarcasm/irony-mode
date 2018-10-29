@@ -143,5 +143,14 @@
 ;;      collect
 ;;      (xref-make name (xref-make-file-location filename line column)))))
 
+
+;; Setting up xref
+
+(defun irony-xref--enter ()
+  (add-hook 'xref-backend-functions #'irony--xref-backend nil t))
+
+(defun irony-xref--exit ()
+  (remove-hook 'xref-backend-functions #'irony--xref-backend t))
+
 (provide 'irony-xref)
 ;;; irony-xref.el ends here
