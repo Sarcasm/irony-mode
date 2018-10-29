@@ -678,7 +678,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
 
 void Irony::xrefDefinitions(unsigned line, unsigned col) const {
   if (activeTu_ == nullptr) {
-    std::clog << "W: get-type - parse wasn't called\n";
+    std::clog << "W: xref-definitions - parse wasn't called\n";
     std::cout << "nil" << std::endl;
     return;
   }
@@ -702,7 +702,7 @@ void Irony::xrefDefinitions(unsigned line, unsigned col) const {
 
 void Irony::xrefReferences(unsigned line, unsigned col) const {
   if (activeTu_ == nullptr) {
-    std::clog << "W: get-type - parse wasn't called\n";
+    std::clog << "W: xref-references - parse wasn't called\n";
     std::cout << "nil\n";
     return;
   }
