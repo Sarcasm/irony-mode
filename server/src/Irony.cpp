@@ -732,7 +732,7 @@ void Irony::xrefReferences(unsigned line, unsigned col) const {
     };
     clang_visitChildren(tuCursor,
                         [](CXCursor c, CXCursor p, void *f) {
-                          return (*static_cast<visitor *>(f))(c, p);
+                          return (*static_cast<Visitor *>(f))(c, p);
                         },
                         &visit);
   }
