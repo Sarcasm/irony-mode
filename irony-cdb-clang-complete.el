@@ -40,8 +40,15 @@
 
 (defun irony-cdb-clang-complete--locate-db ()
   (when buffer-file-name
-    (irony--awhen (locate-dominating-file buffer-file-name ".clang_complete")
-      (concat (file-name-as-directory it) ".clang_complete"))))
+    (let ((clang-complete
+           (locate-dominating-file buffer-file-name ".clang_complete"))
+          (compile-flags
+           (locate-dominating-file buffer-file-name "compile_flags.txt")))
+      (or
+       (when clang-complete
+         (concat (file-name-as-directory clang-complete) ".clang_complete"))
+       (when compile-flags
+         (concat (file-name-as-directory compile-flags) "compile_flags.txt"))))))
 
 (defun irony-cdb-clang-complete--load-db (cc-file)
   (with-temp-buffer
