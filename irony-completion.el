@@ -70,6 +70,15 @@ that can be validly accessed are deemed not-accessible."
  :options '(available deprecated not-accessible)
  :group 'irony-completion)
 
+(defcustom irony-duplicate-candidates-filter nil
+  "Remove duplicate candidates.
+
+If non-nil, the completion candidate list will not contain
+duplicate entries. As an example, duplicate candidates are
+displayed when a derived class overrides virtual methods."
+  :type 'boolean
+  :group 'irony-completion)
+
 
 ;;
 ;; Utility functions
@@ -242,11 +251,12 @@ duplicate entries being displayed in the list of completions."
      (lambda (candidate)
        (and (memq (irony-completion-availability candidate)
 		   irony-completion-availability-filter)
-            (let ((unique-key (list (irony-completion-typed-text candidate)
-                                    (irony-completion-annotation candidate)
-                                    (irony-completion-type candidate))))
-              (and (not (member unique-key unique-candidates))
-                   (push unique-key unique-candidates)))))
+            (or (not irony-duplicate-candidates-filter)
+                (let ((unique-key (list (irony-completion-typed-text candidate)
+                                        (irony-completion-annotation candidate)
+                                        (irony-completion-type candidate))))
+                  (and (not (member unique-key unique-candidates))
+                       (push unique-key unique-candidates))))))
      candidates)))
 
 (defun irony-completion-candidates (&optional prefix style)
