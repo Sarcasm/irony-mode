@@ -6,6 +6,11 @@
 ;;
 ;;     (add-hook 'irony-mode-hook (lambda () (add-hook 'xref-backend-functions #'irony--xref-backend nil t)))
 ;;
+;; Features:
+;; - will jump into system headers
+;; - with overloaded functions, will jump to the right function definition
+;;   (it's not just string matching on the function name)
+;;
 ;; Missing commands:
 ;; - ‘xref-find-apropos’
 ;;
