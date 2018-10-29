@@ -47,10 +47,11 @@
 ;;; Code:
 
 (require 'irony-iotask)
-(require 'irony-xref)
 
 (autoload 'irony-completion--enter "irony-completion")
 (autoload 'irony-completion--exit "irony-completion")
+(autoload 'irony-xref--enter "irony-xref")
+(autoload 'irony-xref--exit "irony-xref")
 
 (require 'cl-lib)
 
