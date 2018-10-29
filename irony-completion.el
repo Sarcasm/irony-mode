@@ -230,16 +230,23 @@ that can be validly accessed are deemed not-accessible."
   (nth 7 candidate))
 
 (defun irony-completion--filter-candidates (candidates)
+  "Filter candidates based on availability (CXAvailabilityKind)
+first then remove any duplicates. Duplicate candidates are those
+that have the same `irony-completion-typed-text',
+`irony-completion-annotation' and `irony-completion-type'. An
+example of when this is useful is when there are many derived
+classes that override a virtual method resulting in redundant
+duplicate entries being displayed in the list of completions."
   (let (unique-candidates)
     (cl-remove-if-not
      (lambda (candidate)
        (when (memq (irony-completion-availability candidate)
 		   irony-completion-availability-filter)
-	 (let ((unique-key (cons (irony-completion-typed-text candidate)
-                                 (cons (irony-completion-annotation candidate)
-                                       (cons (irony-completion-type candidate) nil)))))
-	   (when (not (member unique-key unique-candidates))
-	     (push unique-key unique-candidates)))))
+	 (let ((unique-key (list (irony-completion-typed-text candidate)
+                                 (irony-completion-annotation candidate)
+                                 (irony-completion-type candidate))))
+	   (and (not (member unique-key unique-candidates))
+                (push unique-key unique-candidates)))))
      candidates)))
 
 (defun irony-completion-candidates (&optional prefix style)
@@ -260,7 +267,7 @@ A candidate is composed of the following elements:
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
     Example: (\"(int a, int b)\" 1 6 8 13)
- 7. The availability of the candidate."
+ 7. The availability (CXAvailabilityKind) of the candidate." 
   (irony--awhen (irony-completion-symbol-bounds)
     (irony-completion--filter-candidates
      (irony--run-task
