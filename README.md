@@ -53,6 +53,9 @@ package manager.
 
         M-x package-install RET irony RET
 
+* Using `apt` on Debian ≥10 and derivatives
+
+        sudo apt install elpa-irony
 
 ## Configuration
 
