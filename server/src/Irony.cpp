@@ -598,7 +598,7 @@ void Irony::getCompileOptions(const std::string &buildDir,
 #else
   CXCompilationDatabase_Error error;
   CXCompilationDatabase db =
-      clang_CompilationDatabase_fromDirectory(buildDir.c_str(), &error);
+      compDBCache_.fromDirectory(buildDir.c_str(), &error);
 
   switch (error) {
   case CXCompilationDatabase_CanNotLoadDatabase:
@@ -646,6 +646,5 @@ void Irony::getCompileOptions(const std::string &buildDir,
   std::cout << "))\n";
 
   clang_CompileCommands_dispose(compileCommands);
-  clang_CompilationDatabase_dispose(db);
 #endif
 }

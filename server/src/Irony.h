@@ -18,6 +18,7 @@
 
 #include "TUManager.h"
 
+#include "CompDBCache.h"
 #include "Style.h"
 
 #include <string>
@@ -133,6 +134,7 @@ private:
   void computeCxUnsaved();
 
 private:
+  mutable CompDBCache compDBCache_;
   TUManager tuManager_;
   std::map<std::string, UnsavedBuffer> filenameToContent_;
   CXTranslationUnit activeTu_;
