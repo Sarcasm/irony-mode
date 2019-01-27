@@ -20,6 +20,7 @@
 #include <fstream>
 #include <cctype>
 #include <sstream>
+#include <vector>
 
 namespace {
 
@@ -372,7 +373,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const {
+void Irony::candidates(const std::string &prefix, PrefixMatchStyle style, const std::string &sorting) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
@@ -541,9 +542,12 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
     // Add candidate to candidate list
     candidates.push_back(CompletionCandidate(priority, candidateSS.str()));
   }
-  // Sort candidates list
-  // ASC - Smaller values indicate higher-priority (more likely) completions.
-  std::sort(candidates.begin(), candidates.end());
+
+  if (sorting == "alphabetical-clang") {
+    // Sort candidates list
+    // ASC - Smaller values indicate higher-priority (more likely) completions.
+    std::sort(candidates.begin(), candidates.end());
+  }
 
   // Output sorted list
   for (auto &candidate : candidates) {

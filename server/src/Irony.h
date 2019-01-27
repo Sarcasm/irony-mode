@@ -102,7 +102,7 @@ public:
   /// Get all the completion candidates.
   ///
   /// \pre complete() was called.
-  void candidates(const std::string &prefix, PrefixMatchStyle style) const;
+  void candidates(const std::string &prefix, PrefixMatchStyle style, const std::string &sorting) const;
 
   /// Get the diagnostics produced by the last \c complete().
   ///

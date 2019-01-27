@@ -200,7 +200,10 @@ displayed when a derived class overrides virtual methods."
             (cl-case style
               (case-insensitive "case-insensitive")
               (smart-case "smart-case")
-              (t "exact"))))
+              (t "exact"))
+            (cl-case irony-candidates-clang-sorting
+              (alphabetical "alphabetical")
+              (t "alphabetical-clang"))))
   :update irony--server-query-update)
 
 (defun irony--candidates-task (&optional buffer pos prefix style)

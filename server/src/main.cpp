@@ -181,7 +181,7 @@ int main(int ac, const char *av[]) {
       break;
 
     case Command::Candidates:
-      irony.candidates(c->prefix, c->style);
+      irony.candidates(c->prefix, c->style, c->sorting);
       break;
 
     case Command::CompletionDiagnostics:
