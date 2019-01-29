@@ -110,6 +110,16 @@ public:
   /// \pre complete() was called.
   void completionDiagnostics() const;
 
+  /// Lookup definition/declaration of the given symbol.
+  ///
+  /// \pre parse() was called.
+  void xrefDefinitions(unsigned line, unsigned col) const;
+
+  /// Get all references to the given symbol.
+  ///
+  /// \pre parse() was called
+  void xrefReferences(unsigned line, unsigned col) const;
+
   /// \brief Get compile options from JSON database.
   ///
   /// \param buildDir Directory containing compile_commands.json

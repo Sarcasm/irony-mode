@@ -14,6 +14,8 @@ include(CTest)
 check_for_in_source_build()
 release_as_default_build_type()
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -fsanitize=address -fsanitize=undefined -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-missing-prototypes -Wno-shadow-field-in-constructor")
+
 # Disable exception, we aren't using them and right now clang-cl needs them
 # disabled to parse Windows headers.
 #

@@ -176,6 +176,14 @@ int main(int ac, const char *av[]) {
     }
 
     switch (c->action) {
+    case Command::XrefDefinitions:
+      irony.xrefDefinitions(c->line, c->column);
+      break;
+
+    case Command::XrefReferences:
+      irony.xrefReferences(c->line, c->column);
+      break;
+
     case Command::Help:
       printHelp();
       break;

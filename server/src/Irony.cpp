@@ -115,6 +115,32 @@ bool readFileContent(const std::string &filename,
   return true;
 }
 
+void prettyPrintCursor(std::string label, CXCursor cursor) {
+  if (clang_Cursor_isNull(cursor)) {
+    // std::cout << "(" << label << ")\n";
+    return;
+  }
+  CXString name = clang_getCursorDisplayName(cursor);
+  CXSourceRange loc = clang_getCursorExtent(cursor);
+  CXSourceLocation start = clang_getRangeStart(loc),
+                   end = clang_getRangeEnd(loc);
+  CXFile file;
+  unsigned startLine, startCol, startOffset, endOffset;
+  clang_getSpellingLocation(start, &file, &startLine, &startCol,
+                            &startOffset);
+  clang_getSpellingLocation(end, nullptr, nullptr, nullptr, &endOffset);
+  CXString filename = clang_getFileName(file);
+  // FIXME It would be nice to print cursor’s enclosing statement, or similar
+  // FIXME But there doesn’t seem to be a clear way to do it without going
+  // FIXME throught the whole AST.
+  std::cout << "(" << label << " " << support::quoted(clang_getCString(name))
+            << " " << support::quoted(clang_getCString(filename)) << " "
+            << startLine << " " << startCol << " " << startOffset << " "
+            << endOffset << ")\n";
+  clang_disposeString(name);
+  clang_disposeString(filename);
+}
+
 } // unnamed namespace
 
 Irony::Irony()
@@ -647,4 +673,68 @@ void Irony::getCompileOptions(const std::string &buildDir,
 
   clang_CompileCommands_dispose(compileCommands);
 #endif
+}
+
+void Irony::xrefDefinitions(unsigned line, unsigned col) const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: xref-definitions - parse wasn't called\n";
+    std::cout << "nil" << std::endl;
+    return;
+  }
+  CXFile cxFile = clang_getFile(activeTu_, file_.c_str());
+  CXCursor c = clang_getCursor(activeTu_,
+                               clang_getLocation(activeTu_, cxFile, line, col));
+
+  CXCursor def = clang_getCursorDefinition(c),
+           ref = clang_getCursorReferenced(c);
+  // FIXME If the cursors are in system headers, should we print nil?
+  // if (clang_Location_isInSystemHeader(clang_getCursorLocation(ref))) {
+  //   std::cout << "nil" << std::endl;
+  //   return;
+  // }
+  std::cout << "(";
+  prettyPrintCursor("reference", ref);
+  if (!clang_Cursor_isNull(def) && !clang_equalCursors(def, ref))
+    prettyPrintCursor("definition", def);
+  std::cout << ")" << std::endl;
+}
+
+void Irony::xrefReferences(unsigned line, unsigned col) const {
+  if (activeTu_ == nullptr) {
+    std::clog << "W: xref-references - parse wasn't called\n";
+    std::cout << "nil\n";
+    return;
+  }
+  CXFile cxFile = clang_getFile(activeTu_, file_.c_str());
+  CXCursor what = clang_getCursor(
+      activeTu_, clang_getLocation(activeTu_, cxFile, line, col));
+  if (!clang_Cursor_isNull(clang_getCursorReferenced(what)))
+    what = clang_getCursorReferenced(what);
+  what = clang_getCanonicalCursor(what);
+
+  std::cout << "(";
+
+  for (auto fileTu : tuManager_.allAvailableTranslationUnits()) {
+    CXCursor tuCursor = clang_getTranslationUnitCursor(fileTu.second);
+
+    typedef std::function<CXChildVisitResult(CXCursor, CXCursor)> Visitor;
+    Visitor visit = [&](CXCursor cursor, CXCursor) {
+      // Skip all system headers, because they are generally unreadable.
+      if (clang_Location_isInSystemHeader(clang_getCursorLocation(cursor)))
+        return CXChildVisit_Continue;
+      CXCursor ref = clang_getCursorReferenced(cursor);
+      if (clang_equalCursors(what, clang_getCanonicalCursor(ref))) {
+        prettyPrintCursor("xref", cursor);
+        return CXChildVisit_Continue;
+      }
+      return CXChildVisit_Recurse;
+    };
+    clang_visitChildren(tuCursor,
+                        [](CXCursor c, CXCursor p, void *f) {
+                          return (*static_cast<Visitor *>(f))(c, p);
+                        },
+                        &visit);
+  }
+
+  std::cout << ")" << std::endl;
 }
