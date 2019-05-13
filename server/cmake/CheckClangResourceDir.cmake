@@ -37,7 +37,8 @@ function(check_clang_resource_dir)
     "${LIBCLANG_LIBRARY_DIR}/"         # Google
     "/usr/lib64/clang"                 # x86_64 (openSUSE, Fedora)
     "/usr/lib/clang"
-    PATH_SUFFIXES ${LIBCLANG_KNOWN_LLVM_VERSIONS})
+    "/usr/lib64/clang/*"
+    "/usr/lib/clang/*")
 
   if (CHECK_CLANG_RESOURCE_DIR)
     # On Windows the paths weren't escaped correctly, similar to:
