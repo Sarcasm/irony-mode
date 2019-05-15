@@ -4,11 +4,6 @@ find_package(LibClang REQUIRED)
 
 check_clang_resource_dir()
 
-if (CLANG_RESOURCE_DIR)
-  # look for CLANG_BUILTIN_HEADERS_DIR usage in the code for an explanation
-  add_definitions(-DCLANG_RESOURCE_DIR=\"${CLANG_RESOURCE_DIR}\")
-endif()
-
 # not to be taken as a module-definition file to link on Windows
 set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
 
@@ -64,6 +59,13 @@ message(STATUS "Irony package version is '${IRONY_PACKAGE_VERSION}'")
 set_source_files_properties(main.cpp
   PROPERTIES
   COMPILE_DEFINITIONS IRONY_PACKAGE_VERSION=\"${IRONY_PACKAGE_VERSION}\")
+
+if (CLANG_RESOURCE_DIR)
+  # look for CLANG_RESOURCE_DIR_DIR usage in the code for an explanation
+  set_source_files_properties(TUManager.cpp
+    PROPERTIES
+    COMPILE_DEFINITIONS CLANG_RESOURCE_DIR=\"${CLANG_RESOURCE_DIR}\")
+endif()
 
 target_link_libraries(irony-server libclang)
 
