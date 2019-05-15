@@ -58,6 +58,8 @@ add_executable(irony-server
 
   main.cpp)
 
+irony_target_set_cxx_standard(irony-server)
+
 target_include_directories(irony-server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # retrieve the package version from irony.el
