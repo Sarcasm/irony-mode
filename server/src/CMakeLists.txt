@@ -101,4 +101,7 @@ endif()
 
 target_link_libraries(irony-server libclang)
 
-install(TARGETS irony-server DESTINATION bin)
+set_target_properties(irony-server
+  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+
+install(TARGETS irony-server DESTINATION ${CMAKE_INSTALL_BINDIR})

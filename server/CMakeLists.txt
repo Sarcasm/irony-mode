@@ -8,6 +8,7 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH})
 
 include(CTest)
+include(GNUInstallDirs)
 
 # Starting from CMake >= 3.1, if a specific standard is required,
 # it can be set from the command line with:
@@ -24,10 +25,6 @@ function(irony_target_set_cxx_standard target)
     target_compile_features(${target} PUBLIC cxx_std_${cxx_standard})
   endif()
 endfunction()
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(src)
 
