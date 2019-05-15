@@ -1,8 +1,29 @@
-include(CheckClangResourceDir)
+# XXX: if there are issues
+# due to https://reviews.llvm.org/D30911 / SVN Revision 298424
+# then use the fallback when LLVM_VERSION VERSION_LESS 5.0.1
+#
+# XXX: at least since Clang 8.0.0
+# it's looks like the 'libclang' IMPORTED target
+# does not specify the following target property:
+#     INTERFACE_INCLUDE_DIRECTORIES ${CLANG_INCLUDE_DIRS}
+# if it is an issue when Clang is installed in a non-standard location,
+# this may need a workaround and an upstream patch
+find_package(Clang)
 
-find_package(LibClang REQUIRED)
-
-check_clang_resource_dir()
+if (Clang_FOUND)
+  get_property(IRONY_CLANG_EXECUTABLE TARGET clang PROPERTY LOCATION)
+  execute_process(
+    COMMAND "${IRONY_CLANG_EXECUTABLE}" -print-resource-dir
+    OUTPUT_VARIABLE CLANG_RESOURCE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+else()
+  # fallback to historically FindLibClang.cmake
+  # and -resource-dir guess mecanism
+  include(CheckClangResourceDir)
+  find_package(LibClang REQUIRED)
+  check_clang_resource_dir()
+endif()
 
 # not to be taken as a module-definition file to link on Windows
 set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
