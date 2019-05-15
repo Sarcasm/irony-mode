@@ -36,38 +36,35 @@ set(libclang_llvm_lib_search_paths
   /usr/lib/llvm
   )
 
-foreach (version ${LIBCLANG_KNOWN_LLVM_VERSIONS})
-  string(REPLACE "." "" undotted_version "${version}")
-  list(APPEND libclang_llvm_header_search_paths
-    # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
-    "/usr/lib/llvm-${version}/include/"
-    # LLVM MacPorts
-    "/opt/local/libexec/llvm-${version}/include"
-    # LLVM Homebrew
-    "/usr/local/Cellar/llvm/${version}/include"
-    # LLVM Homebrew/versions
-    "/usr/local/lib/llvm-${version}/include"
-    # FreeBSD ports versions
-    "/usr/local/llvm${undotted_version}/include"
-    # Gentoo clang-4
-    "/usr/lib/llvm/${version}/include"
-    )
+list(APPEND libclang_llvm_header_search_paths
+  # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
+  "/usr/lib/llvm-*/include/"
+  # LLVM MacPorts
+  "/opt/local/libexec/llvm-*/include"
+  # LLVM Homebrew
+  "/usr/local/Cellar/llvm/*/include"
+  # LLVM Homebrew/versions
+  "/usr/local/lib/llvm-*/include"
+  # FreeBSD ports versions
+  "/usr/local/llvm*/include"
+  # Gentoo clang-4
+  "/usr/lib/llvm/*/include"
+  )
 
-  list(APPEND libclang_llvm_lib_search_paths
-    # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
-    "/usr/lib/llvm-${version}/lib/"
-    # LLVM MacPorts
-    "/opt/local/libexec/llvm-${version}/lib"
-    # LLVM Homebrew
-    "/usr/local/Cellar/llvm/${version}/lib"
-    # LLVM Homebrew/versions
-    "/usr/local/lib/llvm-${version}/lib"
-    # FreeBSD ports versions
-    "/usr/local/llvm${undotted_version}/lib"
-    # Gentoo clang-4
-    "/usr/lib/llvm/${version}/lib"
-    )
-endforeach()
+list(APPEND libclang_llvm_lib_search_paths
+  # LLVM Debian/Ubuntu nightly packages: http://llvm.org/apt/
+  "/usr/lib/llvm-*/lib/"
+  # LLVM MacPorts
+  "/opt/local/libexec/llvm-*/lib"
+  # LLVM Homebrew
+  "/usr/local/Cellar/llvm/*/lib"
+  # LLVM Homebrew/versions
+  "/usr/local/lib/llvm-*/lib"
+  # FreeBSD ports versions
+  "/usr/local/llvm*/lib"
+  # Gentoo clang-4
+  "/usr/lib/llvm/*/lib"
+  )
 
 find_path(LIBCLANG_INCLUDE_DIR clang-c/Index.h
   PATHS ${libclang_llvm_header_search_paths}
