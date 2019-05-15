@@ -28,6 +28,15 @@ endif()
 # not to be taken as a module-definition file to link on Windows
 set_source_files_properties(Commands.def PROPERTIES HEADER_FILE_ONLY TRUE)
 
+if(MSVC)
+  # irony-server uses some code that breaks when iterator debugging is enabled
+  #
+  # The culprit is CommandLineArgumentParser who initialize its member
+  # 'Position', of type 'std::string::const_iterator', to 'Input.begin() - 1'.
+  # With checked iterator the begin() - 1 breaks in debug build.
+  add_definitions(/D_ITERATOR_DEBUG_LEVEL=0)
+endif()
+
 add_executable(irony-server
   support/CommandLineParser.cpp
   support/CommandLineParser.h

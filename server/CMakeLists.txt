@@ -11,30 +11,6 @@ include(utils)
 
 include(CTest)
 
-# Disable exception, we aren't using them and right now clang-cl needs them
-# disabled to parse Windows headers.
-#
-# Logic stolen from LLVM
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set(IRONY_COMPILER_IS_GCC_COMPATIBLE ON)
-elseif (MSVC)
-  set(IRONY_COMPILER_IS_GCC_COMPATIBLE OFF)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(IRONY_COMPILER_IS_GCC_COMPATIBLE ON)
-endif()
-
-if(IRONY_COMPILER_IS_GCC_COMPATIBLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
-elseif(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /D_HAS_EXCEPTIONS=0")
-  # irony-server uses some code that breaks when iterator debugging is enabled
-  #
-  # The culprit is CommandLineArgumentParser who initialize its member
-  # 'Position', of type 'std::string::const_iterator', to 'Input.begin() - 1'.
-  # With checked iterator the begin() - 1 breaks in debug build.
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_ITERATOR_DEBUG_LEVEL=0")
-endif()
-
 check_cxx11_options()
 
 if (CXX11_COMPILE_OPTIONS)
