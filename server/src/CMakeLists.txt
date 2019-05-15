@@ -2,9 +2,6 @@ include(CheckClangResourceDir)
 
 find_package(LibClang REQUIRED)
 
-include_directories(${LIBCLANG_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 check_clang_resource_dir()
 
 if (CLANG_RESOURCE_DIR)
@@ -36,6 +33,8 @@ add_executable(irony-server
 
   main.cpp)
 
+target_include_directories(irony-server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 # retrieve the package version from irony.el
 function(irony_find_package_version OUTPUT_VAR)
   # this is a hack that force CMake to reconfigure, it is necessary to see if
@@ -66,6 +65,6 @@ set_source_files_properties(main.cpp
   PROPERTIES
   COMPILE_DEFINITIONS IRONY_PACKAGE_VERSION=\"${IRONY_PACKAGE_VERSION}\")
 
-target_link_libraries(irony-server ${LIBCLANG_LIBRARIES})
+target_link_libraries(irony-server libclang)
 
 install(TARGETS irony-server DESTINATION bin)

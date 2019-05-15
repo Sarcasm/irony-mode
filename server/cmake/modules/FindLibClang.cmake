@@ -1,17 +1,14 @@
+# Find libclang.
 #
-# Try to find libclang
+# This module defines the following variables:
+# LIBCLANG_FOUND - true if libclang has been found and can be used
+# LIBCLANG_KNOWN_LLVM_VERSIONS - known LLVM release numbers
+# LIBCLANG_INCLUDE_DIRS - the libclang include directories
+# LIBCLANG_LIBRARIES - the libraries needed to use libclang
+# LIBCLANG_LIBRARY_DIR - the path to the directory containing libclang
 #
-# Once done this will define:
-# - LIBCLANG_FOUND
-#               System has libclang.
-# - LIBCLANG_INCLUDE_DIRS
-#               The libclang include directories.
-# - LIBCLANG_LIBRARIES
-#               The libraries needed to use libclang.
-# - LIBCLANG_LIBRARY_DIR
-#               The path to the directory containing libclang.
-# - LIBCLANG_KNOWN_LLVM_VERSIONS
-#               Known LLVM release numbers.
+# This module defines the following IMPORTED target:
+# - libclang
 
 # most recent versions come first
 # http://llvm.org/apt/
@@ -74,15 +71,13 @@ find_path(LIBCLANG_INCLUDE_DIR clang-c/Index.h
   PATH_SUFFIXES LLVM/include #Windows package from http://llvm.org/releases/
   DOC "The path to the directory that contains clang-c/Index.h")
 
-# On Windows with MSVC, the import library uses the ".imp" file extension
-# instead of the comon ".lib"
-if (MSVC)
-  find_file(LIBCLANG_LIBRARY libclang.imp
-    PATH_SUFFIXES LLVM/lib
-    DOC "The file that corresponds to the libclang library.")
-endif()
-
-find_library(LIBCLANG_LIBRARY NAMES libclang.imp libclang clang
+find_library(LIBCLANG_LIBRARY
+  NAMES
+    # On Windows with MSVC, the import library uses the ".imp" file extension
+    # instead of the comon ".lib"
+    libclang.imp
+    libclang
+    clang
   PATHS ${libclang_llvm_lib_search_paths}
   PATH_SUFFIXES LLVM/lib #Windows package from http://llvm.org/releases/
   DOC "The file that corresponds to the libclang library.")
@@ -99,3 +94,12 @@ find_package_handle_standard_args(LibClang DEFAULT_MSG
   LIBCLANG_LIBRARY LIBCLANG_INCLUDE_DIR)
 
 mark_as_advanced(LIBCLANG_INCLUDE_DIR LIBCLANG_LIBRARY)
+
+if (LIBCLANG_FOUND AND NOT TARGET libclang)
+  add_library(libclang UNKNOWN IMPORTED)
+  set_target_properties(libclang PROPERTIES
+    IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+    IMPORTED_LOCATION "${LIBCLANG_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIBCLANG_INCLUDE_DIR}"
+  )
+endif()

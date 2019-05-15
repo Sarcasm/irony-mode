@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3) # CMAKE_CURRENT_LIST_DIR
+cmake_minimum_required(VERSION 2.8.12) # IMPORTED targets
 
 project(IronyMode)
 
