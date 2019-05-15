@@ -40,7 +40,8 @@ matrix:
         - cd build
         - |
           cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 \
-          -DIRONY_WARNINGS_AS_ERRORS=ON \
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror" \
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           ../server
         - make -k
@@ -60,7 +61,8 @@ script:
   - |
     cmake \
     -DEMACS_EXECUTABLE=$(which $EMACS) \
-    -DIRONY_WARNINGS_AS_ERRORS=ON \
+    -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror" \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     ../server
   - make -k

@@ -11,9 +11,6 @@ include(utils)
 
 include(CTest)
 
-check_for_in_source_build()
-release_as_default_build_type()
-
 # Disable exception, we aren't using them and right now clang-cl needs them
 # disabled to parse Windows headers.
 #
@@ -38,11 +35,10 @@ elseif(MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_ITERATOR_DEBUG_LEVEL=0")
 endif()
 
-enable_colored_diagnotics()
 check_cxx11_options()
 
 if (CXX11_COMPILE_OPTIONS)
-  add_compile_options_(${CXX11_COMPILE_OPTIONS})
+  add_compile_options(${CXX11_COMPILE_OPTIONS})
 endif()
 
 foreach (link_option ${CXX11_LINK_OPTIONS})
@@ -51,25 +47,11 @@ foreach (link_option ${CXX11_LINK_OPTIONS})
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${link_option}")
 endforeach()
 
-# Turn this on for local development or continuous integration
-option(IRONY_WARNINGS_AS_ERRORS "Whether or not to treat warnings as errors" OFF)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  add_compile_options_(-Wall -Wextra)
-
-  if (IRONY_WARNINGS_AS_ERRORS)
-    add_compile_options_(-Werror)
-  endif()
-endif()
-
-option(GENERATE_DOXYGEN "Whether or not to build the Doxygen documentation" OFF)
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(src)
-add_subdirectory(docs)
 
 if (BUILD_TESTING)
   add_subdirectory(test)
