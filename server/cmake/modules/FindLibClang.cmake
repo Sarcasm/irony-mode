@@ -8,7 +8,7 @@
 # LIBCLANG_LIBRARY_DIR - the path to the directory containing libclang
 #
 # This module defines the following IMPORTED target:
-# - libclang
+# - irony_libclang
 
 # most recent versions come first
 # http://llvm.org/apt/
@@ -96,9 +96,9 @@ find_package_handle_standard_args(LibClang DEFAULT_MSG
 
 mark_as_advanced(LIBCLANG_INCLUDE_DIR LIBCLANG_LIBRARY)
 
-if (LIBCLANG_FOUND AND NOT TARGET libclang)
-  add_library(libclang UNKNOWN IMPORTED)
-  set_target_properties(libclang PROPERTIES
+if (LIBCLANG_FOUND AND NOT TARGET irony_libclang)
+  add_library(irony_libclang UNKNOWN IMPORTED)
+  set_target_properties(irony_libclang PROPERTIES
     IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
     IMPORTED_LOCATION "${LIBCLANG_LIBRARY}"
     INTERFACE_INCLUDE_DIRECTORIES "${LIBCLANG_INCLUDE_DIR}"
