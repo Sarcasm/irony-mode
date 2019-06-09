@@ -570,7 +570,10 @@ The installation requires CMake and the libclang developpement package."
 Throw an `irony-server-error' if a proper executable cannot be
 found."
   (let* ((exec-path (cons (expand-file-name "bin" irony-server-install-prefix)
-                          exec-path))
+                          (cons (expand-file-name "server/bin"
+                                                  (file-name-directory (or load-file-name
+                                                                           buffer-file-name)))
+                                exec-path)))
          (exe (executable-find "irony-server")))
     (condition-case err
         (let ((version (car (process-lines exe "--version"))))
