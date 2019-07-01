@@ -259,7 +259,7 @@ Relative paths are relative to DEFAULT-DIR."
             (setcdr it (nthcdr 3 it))
           (setcdr it (nthcdr 2 it))))
        ;; skip input file
-       ((string= file (expand-file-name opt default-dir))
+       ((string= (file-truename file) (file-truename (expand-file-name opt default-dir)))
         (setcdr it (nthcdr 2 it)))
        (t
         ;; if head of cdr hasn't been skipped, iterate, otherwise check if the
