@@ -240,8 +240,8 @@ should be used since elements can change at the head.
 Removes the input file, the output file, ...
 
 Relative paths are relative to DEFAULT-DIR."
-  ;; compute the absolute path for FILE only once
-  (setq file (expand-file-name file default-dir))
+  ;; compute the truename of the absolute path for FILE only once
+  (setq file (file-truename (expand-file-name file default-dir)))
   (let* ((head (cons 'nah compile-options))
          (it head)
          opt)
@@ -258,8 +258,8 @@ Relative paths are relative to DEFAULT-DIR."
         (if (string= opt "-o")
             (setcdr it (nthcdr 3 it))
           (setcdr it (nthcdr 2 it))))
-       ;; skip input file
-       ((string= (file-truename file) (file-truename (expand-file-name opt default-dir)))
+       ;; skip input file; avoid invoking file commands if an option argument
+       ((and (not (string-prefix-p "-" opt)) (string= file (file-truename (expand-file-name opt default-dir))))
         (setcdr it (nthcdr 2 it)))
        (t
         ;; if head of cdr hasn't been skipped, iterate, otherwise check if the
