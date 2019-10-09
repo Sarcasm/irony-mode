@@ -167,6 +167,36 @@ disabled in the parsing of a translation unit. This result in a slower parsing.
 This only affect old versions of Clang (< 3.2), it is suggested to update your
 libclang installation if you want to take advantage of the optimizations.
 
+__ClangConfig.cmake not fount__
+
+If Compiling `irony-server` fails and you see the following warning:
+
+```
+CMake Warning at src/CMakeLists.txt:4 (find_package):
+  By not providing "FindClang.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Clang", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Clang" with any of
+  the following names:
+
+    ClangConfig.cmake
+    clang-config.cmake
+
+  Add the installation prefix of "Clang" to CMAKE_PREFIX_PATH or set
+  "Clang_DIR" to a directory containing one of the above files.  If "Clang"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+```
+
+Add the following line to your emacs configuration and try again:
+
+```
+(setq irony-extra-cmake-args
+      (list (format "-DCMAKE_PREFIX_PATH=%s" (concat (or (getenv "HOMEBREW_PREFIX")
+                                                         "/usr/local") "/opt/llvm"))))
+```
+
 __libclang.so: cannot open shared object file...__
 
 Compiling `irony-server` succeed but you have the following message when you try
