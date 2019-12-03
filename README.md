@@ -56,6 +56,20 @@ package manager.
 * Using `apt` on Debian ≥10 and derivatives
 
         sudo apt install elpa-irony
+#### Accessing a newer Clang and LLVM Toolchain on Debian and derivatives
+The [backports](https://backports.debian.org/) mechanism is the
+recommended and officially supported method of accessing newer
+versions than `Debian stable` provides.
+
+        sudo apt install -t $release_name-backports elpa-irony
+
+If the llvm-toolchain backport is not new enough please use the
+following repository: [LLVM Debian/Ubuntu nightly
+packages.](https://apt.llvm.org) This repository is maintained by
+Sylvestre Ledru, who is responsible for the official Debian package.
+His repository also supports Ubuntu and derivatives.  When using
+this unofficial repository the MELPA package of irony-mode should be
+used in preference to the `elpa-irony` package.
 
 ## Configuration
 
