@@ -20,7 +20,8 @@
 
 ;;; Commentary:
 ;;
-;; This file defines a compilation database for .clang_complete file.
+;; This file defines a compilation database for .clang_complete and
+;; compile_flags.txt, both of which have the same format.
 ;;
 
 ;;; Code:
@@ -40,8 +41,11 @@
 
 (defun irony-cdb-clang-complete--locate-db ()
   (when buffer-file-name
-    (irony--awhen (locate-dominating-file buffer-file-name ".clang_complete")
-      (concat (file-name-as-directory it) ".clang_complete"))))
+    (or
+     (irony--awhen (locate-dominating-file buffer-file-name ".clang_complete")
+                   (concat (file-name-as-directory it) ".clang_complete"))
+     (irony--awhen (locate-dominating-file buffer-file-name "compile_flags.txt")
+                   (concat (file-name-as-directory it) "compile_flags.txt")))))
 
 (defun irony-cdb-clang-complete--load-db (cc-file)
   (with-temp-buffer
