@@ -41,11 +41,23 @@
 
 (defun irony-cdb-clang-complete--locate-db ()
   (when buffer-file-name
-    (or
-     (irony--awhen (locate-dominating-file buffer-file-name ".clang_complete")
-                   (concat (file-name-as-directory it) ".clang_complete"))
-     (irony--awhen (locate-dominating-file buffer-file-name "compile_flags.txt")
-                   (concat (file-name-as-directory it) "compile_flags.txt")))))
+    ;; fname will hold the kind of clang db file (.clang_complete / compile_flags.txt)
+    (let ((fname ""))
+      (irony--awhen (locate-dominating-file
+                     buffer-file-name
+                     ;; locate-dominating-file will invoke the lambda on suitable
+                     ;; directories, and if we have either of our files there, we
+                     ;; note down which type of file we have and return success.
+                     (lambda (d)
+                       (let ((ccname (concat (file-name-as-directory d) ".clang_complete"))
+                             (cfname (concat (file-name-as-directory d) "compile_flags.txt")))
+                         (if (file-exists-p ccname)
+                             (progn (setq fname ".clang_complete") 'dir-ok)
+                           (if (file-exists-p cfname)
+                               (progn (setq fname "compile_flags.txt") 'dir-ok)
+                             nil)))))
+                    ;; we found a clang db file, prepare it's full path and return.
+                    (concat (file-name-as-directory it) fname)))))
 
 (defun irony-cdb-clang-complete--load-db (cc-file)
   (with-temp-buffer
