@@ -50,6 +50,7 @@ struct Command {
   std::string unsavedFile;
   std::string dir;
   std::string prefix;
+  std::string sorting;
   PrefixMatchStyle style;
   unsigned line;
   unsigned column;

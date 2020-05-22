@@ -19,8 +19,22 @@
 #include <iostream>
 #include <fstream>
 #include <cctype>
+#include <sstream>
+#include <vector>
 
 namespace {
+
+struct CompletionCandidate
+{
+  unsigned int priority;
+  std::string str;
+
+  CompletionCandidate(unsigned int priority, const std::string& str) : priority(priority), str(str) {}
+
+  bool operator < (const CompletionCandidate& candidate) const {
+    return (priority < candidate.priority);
+  }
+};
 
 std::string cxStringToStd(CXString cxString) {
   std::string stdStr;
@@ -359,7 +373,7 @@ void Irony::completionDiagnostics() const {
   std::cout << ")\n";
 }
 
-void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const {
+void Irony::candidates(const std::string &prefix, PrefixMatchStyle style, const std::string &sorting) const {
   if (activeCompletionResults_ == nullptr) {
     std::cout << "nil\n";
     return;
@@ -375,6 +389,7 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
   std::string typedtext, brief, resultType, prototype, postCompCar, available;
 
   std::vector<unsigned> postCompCdr;
+  std::vector<CompletionCandidate> candidates;
 
   for (unsigned i = 0; i < completions->NumResults; ++i) {
     CXCompletionResult candidate = completions->Results[i];
@@ -508,19 +523,35 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
         clang_getCompletionBriefComment(candidate.CompletionString));
 #endif
 
+    std::stringstream candidateSS;
+
     // see irony-completion.el#irony-completion-candidates
-    std::cout << '(' << support::quoted(typedtext)
-              << ' ' << priority
-              << ' ' << support::quoted(resultType)
-              << ' ' << support::quoted(brief)
-              << ' ' << support::quoted(prototype)
-              << ' ' << annotationStart
-              << " (" << support::quoted(postCompCar);
+    candidateSS << '(' << support::quoted(typedtext)
+                << ' ' << priority
+                << ' ' << support::quoted(resultType)
+                << ' ' << support::quoted(brief)
+                << ' ' << support::quoted(prototype)
+                << ' ' << annotationStart
+                << " (" << support::quoted(postCompCar);
     for (unsigned index : postCompCdr)
-      std::cout << ' ' << index;
-    std::cout << ")"
-              << ' ' << available
-              << ")\n";
+      candidateSS << ' ' << index;
+    candidateSS << ")"
+                << ' ' << available
+                << ")\n";
+
+    // Add candidate to candidate list
+    candidates.push_back(CompletionCandidate(priority, candidateSS.str()));
+  }
+
+  if (sorting == "alphabetical-clang") {
+    // Sort candidates list
+    // ASC - Smaller values indicate higher-priority (more likely) completions.
+    std::sort(candidates.begin(), candidates.end());
+  }
+
+  // Output sorted list
+  for (auto &candidate : candidates) {
+    std::cout << candidate.str;
   }
 
   std::cout << ")\n";

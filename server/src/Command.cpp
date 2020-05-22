@@ -221,6 +221,7 @@ Command *CommandParser::parse(const std::vector<std::string> &argv) {
   case Command::Candidates:
     positionalArgs.push_back(StringConverter(&command_.prefix));
     positionalArgs.push_back(PrefixMatchStyleConverter(&command_.style));
+    positionalArgs.push_back(StringConverter(&command_.sorting));
     break;
   case Command::CompletionDiagnostics:
   case Command::Diagnostics:

@@ -180,6 +180,17 @@ Larger values can improve performances on large buffers.
 If non-nil, `w32-pipe-buffer-size' will be let-bound to this value
 during the creation of the irony-server process.")
 
+(defcustom irony-candidates-clang-sorting nil
+  "Determine the sorting strategy for completion candidates list
+
+If set to nil, clang priority will be used on top of alphabetical sorting when completing to propose context-aware and more-likely completions.
+
+If set to `alphabetical', clang priority will be ignored and candidates will be sorted alphabetically only."
+  :type '(choice
+          (const :tag "Alphabetical + clang priority" nil)
+          (const :tag "Alphabetical only" alphabetical)))
+
+
 
 ;;
 ;; Public/API variables
