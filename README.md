@@ -49,7 +49,7 @@ requires the following packages to be installed on your system:
 The recommended way to install `irony-mode` and its dependencies is to use a
 package manager.
 
-* Using [MELPA](http://melpa.milkbox.net/)
+* Using [MELPA](https://melpa.org/#/)
 
         M-x package-install RET irony RET
 
