@@ -372,7 +372,7 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
   std::cout << "(\n";
 
   // re-use the same buffers to avoid unnecessary allocations
-  std::string typedtext, brief, resultType, prototype, postCompCar, available;
+  std::string typedtext, brief, resultType, prototype, postCompCar;
 
   std::vector<unsigned> postCompCdr;
 
@@ -387,29 +387,18 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
     bool typedTextSet = false;
     bool hasPrefix = true;
 
+
+    if (availability == CXAvailability_NotAccessible ||
+        availability == CXAvailability_NotAvailable) {
+      continue;
+    }
+    
     typedtext.clear();
     brief.clear();
     resultType.clear();
     prototype.clear();
     postCompCar.clear();
     postCompCdr.clear();
-    available.clear();
-
-    switch (availability) {
-    case CXAvailability_NotAvailable:
-      // No benefits to expose this to elisp for now
-      continue;
-
-    case CXAvailability_Available:
-      available = "available";
-      break;
-    case CXAvailability_Deprecated:
-      available = "deprecated";
-      break;
-    case CXAvailability_NotAccessible:
-      available = "not-accessible";
-      break;
-    }
 
     for (CompletionChunk chunk(candidate.CompletionString); chunk.hasNext();
          chunk.next()) {
@@ -519,7 +508,6 @@ void Irony::candidates(const std::string &prefix, PrefixMatchStyle style) const 
     for (unsigned index : postCompCdr)
       std::cout << ' ' << index;
     std::cout << ")"
-              << ' ' << available
               << ")\n";
   }
 
