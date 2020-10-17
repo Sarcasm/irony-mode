@@ -259,8 +259,10 @@ A candidate is composed of the following elements:
     more indices. These indices work by pairs and describe ranges
     of placeholder text.
     Example: (\"(int a, int b)\" 1 6 8 13)"
-  (and (irony-completion-candidates-available-p)
-       irony-completion--candidates))
+  (irony--awhen (irony-completion-symbol-bounds)
+    (irony-completion--filter-candidates
+     (irony--run-task
+      (irony--candidates-task nil (car it) prefix style)))))
 
 (defun irony-completion-candidates-async (callback &optional prefix style)
   (irony--aif (irony-completion-symbol-bounds)
