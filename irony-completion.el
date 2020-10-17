@@ -222,25 +222,24 @@ displayed when a derived class overrides virtual methods."
   (cdr (nth 6 candidate)))
 
 (defun irony-completion--filter-candidates (candidates)
-  "Filter candidates based on availability (CXAvailabilityKind)
-first then remove any duplicates. Duplicate candidates are those
-that have the same `irony-completion-typed-text',
-`irony-completion-annotation' and `irony-completion-type'. An
-example of when this is useful is when there are many derived
-classes that override a virtual method resulting in redundant
-duplicate entries being displayed in the list of completions."
+  "Filter candidates by removing duplicates if
+`irony-duplicate-candidates-filter' is non nil; Duplicate
+candidates are those that have the same
+`irony-completion-typed-text', `irony-completion-annotation' and
+`irony-completion-type'. An example of when this is useful is
+when there are many derived classes that override a virtual
+method resulting in redundant duplicate entries being displayed
+in the list of completions."
   (let (unique-candidates)
     (cl-remove-if-not
      (lambda (candidate)
-       (and (memq (irony-completion-availability candidate)
-		   irony-completion-availability-filter)
-            (or (not irony-duplicate-candidates-filter)
-                (let ((unique-key (list (irony-completion-typed-text candidate)
-                                        (irony-completion-annotation candidate)
-                                        (irony-completion-type candidate))))
-                  (and (not (member unique-key unique-candidates))
-                       (push unique-key unique-candidates))))))
-     candidates)))
+       (or (not irony-duplicate-candidates-filter)
+           (let ((unique-key (list (irony-completion-typed-text candidate)
+                                   (irony-completion-annotation candidate)
+                                   (irony-completion-type candidate))))
+             (and (not (member unique-key unique-candidates))
+                  (push unique-key unique-candidates))))))
+    candidates))
 
 (defun irony-completion-candidates (&optional prefix style)
   "Return the list of candidates at point.
