@@ -238,8 +238,8 @@ in the list of completions."
                                    (irony-completion-annotation candidate)
                                    (irony-completion-type candidate))))
              (and (not (member unique-key unique-candidates))
-                  (push unique-key unique-candidates))))))
-    candidates))
+                  (push unique-key unique-candidates)))))
+     candidates)))
 
 (defun irony-completion-candidates (&optional prefix style)
   "Return the list of candidates at point.
