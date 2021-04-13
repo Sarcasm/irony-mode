@@ -1,7 +1,23 @@
 # XXX: if there are issues
 # due to https://reviews.llvm.org/D30911 / SVN Revision 298424
 # then use the fallback when LLVM_VERSION VERSION_LESS 5.0.1
-find_package(Clang)
+set(clangconfig_search_paths)
+# Homebrew LLVM (latest) paths. Check for nonstandard Homebrew configuration
+# by testing for the HOMEBREW_PREFIX environment variable. If present, use it;
+# otherwise, assume default configurations for macOS and Linux.
+if(DEFINED ENV{HOMEBREW_PREFIX})
+  list(APPEND clangconfig_search_paths
+    "$ENV{HOMEBREW_PREFIX}/opt/llvm/lib/cmake/clang")
+else()
+  list(APPEND clangconfig_search_paths
+    # default macOS Homebrew path
+    "/usr/local/opt/llvm"
+    # default Linux Homebrew path
+    "$ENV{HOME}/.linuxbrew/llvm")
+endif()
+find_package(Clang
+  PATHS ${clangconfig_search_paths}
+  PATH_SUFFIXES "lib/cmake/clang")
 
 if (Clang_FOUND)
   # XXX: at least since Clang 8.0.0
