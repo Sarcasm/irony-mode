@@ -56,20 +56,29 @@ package manager.
 * Using `apt` on Debian ≥10 and derivatives
 
         sudo apt install elpa-irony
-#### Accessing a newer Clang and LLVM Toolchain on Debian and derivatives
+
+Exactly one package manager should manage `irony-mode`. If using apt,
+but the MELPA package is desired, uninstall the version managed by
+apt; Likewise, installing from both MELPA and `straight.el` may result
+in a state that requires a manual workaround.
+
+#### To install the latest Debian-supported `irony-mode ` and Clang
 The [backports](https://backports.debian.org/) mechanism is the
 recommended and officially supported method of accessing newer
-versions than `Debian stable` provides.
+versions than `Debian stable` provides. For example on Debian 10 (buster):
 
-        sudo apt install -t $release_name-backports elpa-irony
+        sudo apt install -t buster-backports elpa-irony
 
-If the llvm-toolchain backport is not new enough please use the
-following repository: [LLVM Debian/Ubuntu nightly
-packages.](https://apt.llvm.org) This repository is maintained by
-Sylvestre Ledru, who is responsible for the official Debian package.
-His repository also supports Ubuntu and derivatives.  When using
-this unofficial repository the MELPA package of irony-mode should be
-used in preference to the `elpa-irony` package.
+If one requires a newer version of Clang/LLVM than the one provided in
+backports, the following repository is available: [LLVM Debian/Ubuntu
+nightly packages.](https://apt.llvm.org) This unofficial repository is
+maintained by Sylvestre Ledru, who is responsible for the official
+Debian package.  His repository also supports Ubuntu and derivatives.
+When using this unofficial repository, it is recommended to use the
+_MELPA package_ of irony-mode and to uninstall `elpa-irony`. Finally,
+when switching from apt to MELPA, the following action is required:
+`M-x irony-install-server RET`.
+
 
 ## Configuration
 
