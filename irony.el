@@ -525,7 +525,7 @@ Note: WORK-DIR is not used when the compile option
 (defun irony-install-server (command)
   "Install or reinstall the Irony server.
 
-The installation requires CMake and the libclang developpement package."
+The installation requires CMake and the libclang development package."
   (interactive
    (list (let ((command
                 (format
