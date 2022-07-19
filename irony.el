@@ -393,7 +393,7 @@ If no such file exists on the filesystem the special file '-' is
   returned instead."
   (let ((file (buffer-file-name buffer)))
     (if (and file (file-exists-p file))
-        (if (and 'irony-disable-over-tramp
+        (if (and irony-disable-over-tramp
                  (file-remote-p file))
             "-"
           file)
