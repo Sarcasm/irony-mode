@@ -180,6 +180,9 @@ Larger values can improve performances on large buffers.
 If non-nil, `w32-pipe-buffer-size' will be let-bound to this value
 during the creation of the irony-server process.")
 
+(defcustom irony-disable-over-tramp nil
+  "Set to non-nil to disable when editing over tramp.")
+
 
 ;;
 ;; Public/API variables
@@ -390,7 +393,10 @@ If no such file exists on the filesystem the special file '-' is
   returned instead."
   (let ((file (buffer-file-name buffer)))
     (if (and file (file-exists-p file))
-        file
+        (if (and 'irony-disable-over-tramp
+                 (file-remote-p file))
+            "-"
+          file)
       "-")))
 
 
