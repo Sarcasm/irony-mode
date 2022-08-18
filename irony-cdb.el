@@ -92,9 +92,12 @@ such as a custom named build directory.
 ;;;###autoload
 (defun irony-cdb-autosetup-compile-options ()
   (interactive)
-  (irony--awhen (irony-cdb--autodetect-compile-options)
-    (setq irony-cdb--compilation-database (nth 0 it))
-    (irony-cdb--update-compile-options (nth 1 it) (nth 2 it))))
+  (unless (and irony-disable-over-tramp
+               buffer-file-name
+               (file-remote-p buffer-file-name))
+    (irony--awhen (irony-cdb--autodetect-compile-options)
+      (setq irony-cdb--compilation-database (nth 0 it))
+      (irony-cdb--update-compile-options (nth 1 it) (nth 2 it)))))
 
 ;;;###autoload
 (defun irony-cdb-menu ()
