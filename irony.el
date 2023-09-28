@@ -406,9 +406,9 @@ If no such file exists on the filesystem the special file '-' is
 ;;;###autoload
 (define-minor-mode irony-mode
   "Minor mode for C, C++ and Objective-C, powered by libclang."
-  nil
-  irony-lighter
-  irony-mode-map
+  :init-value nil
+  :lighter irony-lighter
+  :keymap irony-mode-map
   :group 'irony
   (if irony-mode
       (irony--mode-enter)
