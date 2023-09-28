@@ -884,6 +884,18 @@ old-state can be nil if the old state isn't known."
            (irony--server-send-command "get-type" line col))
   :update irony--server-query-update)
 
+(defun irony--completion-line-column (&optional pos)
+  (save-excursion
+    (when pos
+      (goto-char pos))
+    ;; `position-bytes' to handle multibytes and 'multicolumns' (i.e
+    ;; tabulations) characters properly
+    (irony--without-narrowing
+      (cons
+       (line-number-at-pos)
+       (1+ (- (position-bytes (point))
+              (position-bytes (pos-bol))))))))
+
 (defun irony--get-type-task (&optional buffer pos)
   (let ((line-column (irony--completion-line-column pos)))
     (irony-iotask-chain

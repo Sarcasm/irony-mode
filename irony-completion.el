@@ -109,18 +109,6 @@ displayed when a derived class overrides virtual methods."
     (irony-completion--skip-whitespaces-backward)
     (point)))
 
-(defun irony--completion-line-column (&optional pos)
-  (save-excursion
-    (when pos
-      (goto-char pos))
-    ;; `position-bytes' to handle multibytes and 'multicolumns' (i.e
-    ;; tabulations) characters properly
-    (irony--without-narrowing
-      (cons
-       (line-number-at-pos)
-       (1+ (- (position-bytes (point))
-              (position-bytes (point-at-bol))))))))
-
 
 ;;
 ;; Functions
