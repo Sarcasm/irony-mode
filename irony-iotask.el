@@ -105,9 +105,9 @@ Defaults to `error'."
 
 (defun irony-iotask-result-get (result)
   (cl-case (irony-iotask-result--tag result)
-    ('value (irony-iotask-result--value result))
-    ('error (signal (irony-iotask-result--error result)
-                    (irony-iotask-result--error-data result)))
+    (value (irony-iotask-result--value result))
+    (error (signal (irony-iotask-result--error result)
+                   (irony-iotask-result--error-data result)))
     (t
      (signal 'irony-iotask-result-get-error (list result)))))
 
