@@ -145,7 +145,7 @@ Properties:
 
      The function should determine whether a message is complete
      and set the result when it is. It should also detect if the
-     message is invalid and throw the 'invalid-msg tag with a
+     message is invalid and throw the \\'invalid-msg tag with a
      value of t in this case. If the message is incomplete, the
      function should do nothing.
 

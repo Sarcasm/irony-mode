@@ -664,8 +664,8 @@ list (and undo information is not kept).")
 `irony--quote-strings' will convert it to \"\" instead of <SPC>.
 That is:
 
-  (irony--quote-strings \'(\"a\" \"\" \"b\"))            => \"a \\\"\\\" b\"
-  (combine-and-quote-strings \'(\"a\" \"\" \"b\"))       => \"a  b\"
+  (irony--quote-strings \\'(\"a\" \"\" \"b\"))            => \"a \\\"\\\" b\"
+  (combine-and-quote-strings \\'(\"a\" \"\" \"b\"))       => \"a  b\"
 "
   (let* ((sep (or separator " "))
          (re (concat "[\\\"]" "\\|" (regexp-quote sep))))
