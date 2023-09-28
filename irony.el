@@ -178,7 +178,9 @@ the buffer size to use for the irony-server process pipe on Windows.
 Larger values can improve performances on large buffers.
 
 If non-nil, `w32-pipe-buffer-size' will be let-bound to this value
-during the creation of the irony-server process.")
+during the creation of the irony-server process."
+  :type 'integer
+  :group 'irony)
 
 
 ;;
