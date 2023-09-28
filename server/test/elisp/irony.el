@@ -51,8 +51,8 @@
              '("clang" "-Wall" "-Wextra" "-I/tmp/dir with spaces")
              (irony--split-command-line cmd-line)))))
 
-(ert-deftest irony/split-command-line/with-quotes ()
-  "Test if files are removed from the arguments list.
+(ert-deftest irony/split-command-line/quotes-empty ()
+  "Handle empty strings / consecutive quotes.
 
 https://github.com/Sarcasm/irony-mode/issues/101"
   (let ((cmd-line "g++ -DFOO=\\\"\\\""))
