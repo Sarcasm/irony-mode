@@ -575,7 +575,8 @@ found."
                           exec-path))
          (exe (executable-find "irony-server")))
     (condition-case err
-        (let ((version (car (process-lines exe "--version"))))
+        (let ((version (car (mapcar #'string-trim-right
+                                    (process-lines exe "--version")))))
           (if (and (string-match "^irony-server version " version)
                    (version= (irony-version)
                              (substring version
